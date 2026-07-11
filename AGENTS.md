@@ -86,6 +86,52 @@ For every phase:
 
 Do not skip the critique step. The user explicitly wants decisions challenged before selection.
 
+## Git Branch And Merge Workflow
+
+Every implementation phase must be developed on its own branch.
+
+Branch rules:
+
+- Start each phase from a clean, up-to-date `main`.
+- Create one branch per phase.
+- Recommended branch format: `phase-<number>-<short-name>`.
+- Example: `phase-02-local-dev-tooling`.
+- Do not implement multiple phases on the same branch unless the user explicitly approves it.
+
+Commit rules:
+
+- Run the relevant tests, lint, validation, or smoke checks before committing.
+- Do not commit broken or unverified phase work.
+- Make commits inside the phase branch after the relevant checks pass.
+- Keep commits scoped to the active phase.
+- Do not mix unrelated refactors, experiments, or future-phase work into the phase branch.
+
+Merge rules:
+
+- Merge a phase branch into `main` only after the phase exit criteria are verified.
+- Merge with `--no-ff`; do not fast-forward phase branches into `main`.
+- After merge, push `main`.
+- Keep the phase branch until the user confirms it can be deleted.
+
+Standard manual flow:
+
+```powershell
+git switch main
+git pull --ff-only
+git switch -c phase-02-local-dev-tooling
+
+git status --short
+git add .
+git commit -m "phase 02: local development tooling"
+
+git switch main
+git pull --ff-only
+git merge --no-ff phase-02-local-dev-tooling -m "merge phase 02 local development tooling"
+git push origin main
+```
+
+If tests cannot be run because the project is still being scaffolded, state that clearly before committing and in the final response.
+
 ## Architecture Rules
 
 The selected MVP stack is:
@@ -352,10 +398,13 @@ When implementation changes a locked decision:
 Before finishing a task, check:
 
 - Did you follow the current phase?
+- Did you create/use a phase-specific branch?
 - Did you read the phase-specific docs?
 - Did you keep Flutter/admin behind the FastAPI backend?
 - Did you avoid MVP out-of-scope features?
 - Did you avoid direct database writes from frontend/admin?
 - Did you preserve privacy rules for contact, address, and verification documents?
 - Did you run relevant tests or explain why they could not run?
+- Did you commit only after checks passed or after explicitly documenting why checks could not run?
+- Did you merge completed phase branches with `--no-ff`?
 - Did you mention changed files clearly?
