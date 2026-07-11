@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "spaces": 2,
+  "generator-cli": {
+    "version": "7.23.0",
+    "generators": {
+      "mobile-dart": {
+        "inputSpec": "./openapi.yaml",
+        "generatorName": "dart-dio",
+        "output": "./generated/mobile/connect_api_client",
+        "globalProperty": {
+          "apiDocs": false,
+          "modelDocs": false,
+          "apiTests": false,
+          "modelTests": false
+        },
+        "additionalProperties": {
+          "pubName": "connect_api_client",
+          "pubVersion": "0.1.0",
+          "serializationLibrary": "json_serializable"
+        }
+      }
+    }
+  }
+}

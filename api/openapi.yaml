@@ -6,8 +6,8 @@ info:
 servers:
   - url: https://api.example.com/v1
     description: Production placeholder
-  - url: http://localhost:8080/v1
-    description: Local development placeholder
+  - url: http://127.0.0.1:8000/v1
+    description: Local FastAPI development server
 security:
   - bearerAuth: []
 tags:
