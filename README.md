@@ -51,3 +51,14 @@ The generation script installs pinned API tooling under `api\node_modules`, then
 The script also runs Dart `build_runner` inside the generated mobile package so generated serializers exist before the Flutter app imports the client.
 
 `scripts\smoke_api.ps1` is available for later phases after the FastAPI health endpoint exists.
+
+## Database Migrations
+
+Alembic migrations live under `database\migrations`.
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic -c database\alembic.ini upgrade head --sql
+.\.venv\Scripts\python.exe -m alembic -c database\alembic.ini upgrade head
+```
+
+The live migration command reads `DATABASE_URL` from `backend\.env`.
