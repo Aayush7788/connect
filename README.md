@@ -35,12 +35,19 @@ Copy-Item frontend\admin\.env.example frontend\admin\.env.local
 
 Never commit real `.env` files or provider secrets.
 
-## Phase 2 Validation
+## OpenAPI And Client Generation
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 python scripts\validate_openapi.py
 .\scripts\generate_clients.ps1
 ```
+
+The generation script installs pinned API tooling under `api\node_modules`, then generates:
+
+- Dart `dart-dio` client package at `api\generated\mobile\connect_api_client`.
+- TypeScript OpenAPI schema types at `api\generated\admin\schema.d.ts`.
+
+The script also runs Dart `build_runner` inside the generated mobile package so generated serializers exist before the Flutter app imports the client.
 
 `scripts\smoke_api.ps1` is available for later phases after the FastAPI health endpoint exists.

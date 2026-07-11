@@ -1,0 +1,15 @@
+{
+  "name": "connect-api-contract",
+  "private": true,
+  "version": "0.1.0",
+  "description": "OpenAPI validation and generated client pipeline for the Connect textile marketplace MVP.",
+  "scripts": {
+    "generate": "npm run generate:mobile && npm run generate:admin",
+    "generate:mobile": "openapi-generator-cli generate --generator-key mobile-dart",
+    "generate:admin": "openapi-typescript ./openapi.yaml -o ./generated/admin/schema.d.ts"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "2.39.1",
+    "openapi-typescript": "7.13.0"
+  }
+}
