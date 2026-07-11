@@ -94,8 +94,10 @@ def test_taxonomy_seed_data_contains_mvp_terms() -> None:
         assert expected_term in combined_seed_text
 
 
-def test_category_suggestions_can_store_profile_reference_before_profile_fk() -> None:
+def test_category_suggestions_profile_reference_has_fk_after_profile_schema() -> None:
     category_suggestions = Base.metadata.tables["category_suggestions"]
+    profile_id = category_suggestions.columns["profile_id"]
 
     assert "profile_id" in category_suggestions.columns
-    assert not category_suggestions.columns["profile_id"].foreign_keys
+    assert len(profile_id.foreign_keys) == 1
+    assert next(iter(profile_id.foreign_keys)).target_fullname == "profiles.id"
