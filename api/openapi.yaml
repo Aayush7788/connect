@@ -1,0 +1,2004 @@
+openapi: 3.1.0
+info:
+  title: Textile Marketplace MVP API
+  version: 0.1.0
+  description: Android-first private MVP backend API draft for the textile marketplace.
+servers:
+  - url: https://api.example.com/v1
+    description: Production placeholder
+  - url: http://localhost:8080/v1
+    description: Local development placeholder
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Me
+  - name: Search
+  - name: Profiles
+  - name: WorkCards
+  - name: WorkNeededPosts
+  - name: Media
+  - name: Verification
+  - name: Saved
+  - name: Reports
+  - name: Notifications
+  - name: Settings
+  - name: Contact
+  - name: Share
+  - name: Admin
+paths:
+  /auth/otp/request:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Request mobile OTP
+      operationId: requestOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpRequest'
+      responses:
+        '200':
+          description: OTP request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpRequestResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/otp/verify:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Verify OTP and create or resume session
+      operationId: verifyOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyRequest'
+      responses:
+        '200':
+          description: OTP verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/account:
+    post:
+      tags: [Auth]
+      summary: Complete basic account after OTP
+      operationId: completeBasicAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BasicAccountRequest'
+      responses:
+        '200':
+          description: Account updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/role/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm immutable user role and create profile shell
+      operationId: confirmRole
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  $ref: '#/components/schemas/UserRole'
+      responses:
+        '200':
+          description: Role confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout current device/session
+      operationId: logout
+      responses:
+        '204':
+          description: Logged out
+        default:
+          $ref: '#/components/responses/Error'
+  /me:
+    get:
+      tags: [Me]
+      summary: Bootstrap current user app state
+      operationId: getMe
+      responses:
+        '200':
+          description: Current user state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/profile:
+    get:
+      tags: [Me]
+      summary: Get owner profile with private owner state
+      operationId: getMyProfile
+      responses:
+        '200':
+          description: Owner profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerProfileResponse'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags: [Me]
+      summary: Update owner profile fields
+      operationId: updateMyProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateRequest'
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerProfileResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/profile/complete:
+    post:
+      tags: [Me]
+      summary: Complete and publish own profile
+      operationId: completeMyProfile
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Profile completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerProfileResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/profile/hide:
+    post:
+      tags: [Me]
+      summary: Hide own profile from discovery
+      operationId: hideMyProfile
+      responses:
+        '200':
+          description: Profile hidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerProfileResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/profile/show:
+    post:
+      tags: [Me]
+      summary: Restore own profile to discovery if eligible
+      operationId: showMyProfile
+      responses:
+        '200':
+          description: Profile shown
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerProfileResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /search:
+    get:
+      tags: [Search]
+      summary: Search marketplace objects
+      operationId: searchMarketplace
+      parameters:
+        - name: target
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/SearchTarget'
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: business_mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [work_needed_posts, profiles]
+        - name: category_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: product_type_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: locality
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: verified_only
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [best, verified_first, nearby, most_photos, recent]
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /profiles/{profile_id}:
+    get:
+      tags: [Profiles]
+      summary: Get public profile detail and record contact reveal in free MVP
+      operationId: getProfileDetail
+      parameters:
+        - $ref: '#/components/parameters/ProfileId'
+        - name: source_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [work_card, work_needed_post, profile]
+        - name: source_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Public profile detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProfileDetail'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/work-cards:
+    get:
+      tags: [WorkCards]
+      summary: List own work cards
+      operationId: listMyWorkCards
+      responses:
+        '200':
+          description: Work cards
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkCard'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [WorkCards]
+      summary: Create own work card draft
+      operationId: createWorkCard
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkCardUpsertRequest'
+      responses:
+        '201':
+          description: Work card created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkCard'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/work-cards/{work_card_id}:
+    patch:
+      tags: [WorkCards]
+      summary: Update own work card
+      operationId: updateWorkCard
+      parameters:
+        - $ref: '#/components/parameters/WorkCardId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkCardUpsertRequest'
+      responses:
+        '200':
+          description: Updated work card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkCard'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [WorkCards]
+      summary: Soft delete own work card
+      operationId: deleteWorkCard
+      parameters:
+        - $ref: '#/components/parameters/WorkCardId'
+      responses:
+        '204':
+          description: Deleted
+        default:
+          $ref: '#/components/responses/Error'
+  /me/work-cards/{work_card_id}/publish:
+    post:
+      tags: [WorkCards]
+      summary: Publish own work card
+      operationId: publishWorkCard
+      parameters:
+        - $ref: '#/components/parameters/WorkCardId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Published work card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkCard'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/work-cards/{work_card_id}/hide:
+    post:
+      tags: [WorkCards]
+      summary: Hide own work card
+      operationId: hideWorkCard
+      parameters:
+        - $ref: '#/components/parameters/WorkCardId'
+      responses:
+        '200':
+          description: Hidden work card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkCard'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/work-cards/{work_card_id}/show:
+    post:
+      tags: [WorkCards]
+      summary: Show own hidden work card
+      operationId: showWorkCard
+      parameters:
+        - $ref: '#/components/parameters/WorkCardId'
+      responses:
+        '200':
+          description: Shown work card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkCard'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/work-needed-posts:
+    get:
+      tags: [WorkNeededPosts]
+      summary: List own work-needed posts
+      operationId: listMyWorkNeededPosts
+      responses:
+        '200':
+          description: Work-needed posts
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkNeededPost'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [WorkNeededPosts]
+      summary: Create own work-needed post draft
+      operationId: createWorkNeededPost
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkNeededPostUpsertRequest'
+      responses:
+        '201':
+          description: Work-needed post created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkNeededPost'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/work-needed-posts/{post_id}:
+    patch:
+      tags: [WorkNeededPosts]
+      summary: Update own work-needed post
+      operationId: updateWorkNeededPost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkNeededPostUpsertRequest'
+      responses:
+        '200':
+          description: Updated work-needed post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkNeededPost'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [WorkNeededPosts]
+      summary: Soft delete own work-needed post
+      operationId: deleteWorkNeededPost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '204':
+          description: Deleted
+        default:
+          $ref: '#/components/responses/Error'
+  /me/work-needed-posts/{post_id}/publish:
+    post:
+      tags: [WorkNeededPosts]
+      summary: Publish own work-needed post as active
+      operationId: publishWorkNeededPost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Active work-needed post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkNeededPost'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/work-needed-posts/{post_id}/pause:
+    post:
+      tags: [WorkNeededPosts]
+      summary: Pause own active work-needed post
+      operationId: pauseWorkNeededPost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: Paused work-needed post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkNeededPost'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/work-needed-posts/{post_id}/resume:
+    post:
+      tags: [WorkNeededPosts]
+      summary: Resume own paused work-needed post
+      operationId: resumeWorkNeededPost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: Active work-needed post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkNeededPost'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/work-needed-posts/{post_id}/close:
+    post:
+      tags: [WorkNeededPosts]
+      summary: Close own work-needed post
+      operationId: closeWorkNeededPost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: Closed work-needed post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkNeededPost'
+        default:
+          $ref: '#/components/responses/Error'
+  /media/upload-intent:
+    post:
+      tags: [Media]
+      summary: Create backend-authorized upload intent
+      operationId: createUploadIntent
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadIntentRequest'
+      responses:
+        '201':
+          description: Upload intent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadIntentResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /media/{media_asset_id}/complete:
+    post:
+      tags: [Media]
+      summary: Mark upload complete after backend verification
+      operationId: completeMediaUpload
+      parameters:
+        - $ref: '#/components/parameters/MediaAssetId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Media ready or processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+        default:
+          $ref: '#/components/responses/Error'
+  /media/{media_asset_id}/retry:
+    post:
+      tags: [Media]
+      summary: Retry pending or failed media upload
+      operationId: retryMediaUpload
+      parameters:
+        - $ref: '#/components/parameters/MediaAssetId'
+      responses:
+        '200':
+          description: Retry upload intent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadIntentResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /media/{media_asset_id}/cancel:
+    post:
+      tags: [Media]
+      summary: Cancel pending media upload
+      operationId: cancelMediaUpload
+      parameters:
+        - $ref: '#/components/parameters/MediaAssetId'
+      responses:
+        '204':
+          description: Cancelled
+        default:
+          $ref: '#/components/responses/Error'
+  /media/{media_asset_id}:
+    delete:
+      tags: [Media]
+      summary: Delete media if minimum photo rules allow
+      operationId: deleteMedia
+      parameters:
+        - $ref: '#/components/parameters/MediaAssetId'
+      responses:
+        '204':
+          description: Deleted
+        default:
+          $ref: '#/components/responses/Error'
+  /me/verification:
+    get:
+      tags: [Verification]
+      summary: Get own verification summary
+      operationId: getMyVerification
+      responses:
+        '200':
+          description: Verification summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSummary'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/verification/submit:
+    post:
+      tags: [Verification]
+      summary: Submit profile for manual verification
+      operationId: submitVerification
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: Verification case created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSummary'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/verification/resubmit:
+    post:
+      tags: [Verification]
+      summary: Resubmit changes-requested verification case
+      operationId: resubmitVerification
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Verification resubmitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSummary'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/saved-items:
+    get:
+      tags: [Saved]
+      summary: List saved items
+      operationId: listSavedItems
+      parameters:
+        - name: target_type
+          in: query
+          schema:
+            $ref: '#/components/schemas/SavedTargetType'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Saved items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedItemsResponse'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [Saved]
+      summary: Save a profile, work card, or work-needed post
+      operationId: saveItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveItemRequest'
+      responses:
+        '200':
+          description: Saved item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedItem'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/saved-items/{saved_item_id}:
+    delete:
+      tags: [Saved]
+      summary: Remove saved item
+      operationId: removeSavedItem
+      parameters:
+        - name: saved_item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Removed
+        default:
+          $ref: '#/components/responses/Error'
+  /reports:
+    post:
+      tags: [Reports]
+      summary: Submit report
+      operationId: createReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReportRequest'
+      responses:
+        '201':
+          description: Report submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/notifications:
+    get:
+      tags: [Notifications]
+      summary: List in-app notifications
+      operationId: listNotifications
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationsResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/notifications/{notification_id}/read:
+    post:
+      tags: [Notifications]
+      summary: Mark notification read
+      operationId: markNotificationRead
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/device-tokens:
+    post:
+      tags: [Notifications]
+      summary: Register Android FCM token
+      operationId: registerDeviceToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeviceTokenRequest'
+      responses:
+        '204':
+          description: Registered
+        default:
+          $ref: '#/components/responses/Error'
+  /me/settings:
+    patch:
+      tags: [Settings]
+      summary: Update own settings
+      operationId: updateSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsRequest'
+      responses:
+        '200':
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSettings'
+        default:
+          $ref: '#/components/responses/Error'
+  /contact-actions:
+    post:
+      tags: [Contact]
+      summary: Log contact action
+      operationId: createContactAction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactActionRequest'
+      responses:
+        '202':
+          description: Accepted
+        default:
+          $ref: '#/components/responses/Error'
+  /share-links:
+    post:
+      tags: [Share]
+      summary: Create canonical share link and log share event
+      operationId: createShareLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareLinkRequest'
+      responses:
+        '200':
+          description: Share link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareLinkResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/me:
+    get:
+      tags: [Admin]
+      summary: Get admin session
+      operationId: getAdminMe
+      responses:
+        '200':
+          description: Admin user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/verification-cases:
+    get:
+      tags: [Admin]
+      summary: List verification cases
+      operationId: adminListVerificationCases
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/VerificationCaseStatus'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Verification case list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVerificationCasesResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/verification-cases/{case_id}:
+    get:
+      tags: [Admin]
+      summary: Get verification case detail
+      operationId: adminGetVerificationCase
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      responses:
+        '200':
+          description: Verification case detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVerificationCase'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/verification-cases/{case_id}/approve:
+    post:
+      tags: [Admin]
+      summary: Approve verification case
+      operationId: adminApproveVerificationCase
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      requestBody:
+        $ref: '#/components/requestBodies/AdminDecision'
+      responses:
+        '200':
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVerificationCase'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/verification-cases/{case_id}/request-changes:
+    post:
+      tags: [Admin]
+      summary: Request verification changes
+      operationId: adminRequestVerificationChanges
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      requestBody:
+        $ref: '#/components/requestBodies/AdminDecision'
+      responses:
+        '200':
+          description: Changes requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVerificationCase'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/verification-cases/{case_id}/reject:
+    post:
+      tags: [Admin]
+      summary: Reject verification case
+      operationId: adminRejectVerificationCase
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      requestBody:
+        $ref: '#/components/requestBodies/AdminDecision'
+      responses:
+        '200':
+          description: Rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVerificationCase'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/profiles:
+    get:
+      tags: [Admin]
+      summary: List profiles for admin
+      operationId: adminListProfiles
+      parameters:
+        - name: role
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: verification_status
+          in: query
+          schema:
+            $ref: '#/components/schemas/VerificationStatus'
+        - name: is_admin_seeded
+          in: query
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Admin profile list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProfilesResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/seed-profiles:
+    post:
+      tags: [Admin]
+      summary: Create admin-seeded profile
+      operationId: adminCreateSeedProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminSeedProfileRequest'
+      responses:
+        '201':
+          description: Seed profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProfile'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/profiles/{profile_id}/suspend:
+    post:
+      tags: [Admin]
+      summary: Suspend profile and account where applicable
+      operationId: adminSuspendProfile
+      parameters:
+        - $ref: '#/components/parameters/ProfileId'
+      requestBody:
+        $ref: '#/components/requestBodies/AdminDecision'
+      responses:
+        '200':
+          description: Suspended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProfile'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/profiles/{profile_id}/unsuspend:
+    post:
+      tags: [Admin]
+      summary: Unsuspend profile and account where applicable
+      operationId: adminUnsuspendProfile
+      parameters:
+        - $ref: '#/components/parameters/ProfileId'
+      responses:
+        '200':
+          description: Unsuspended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProfile'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/reports:
+    get:
+      tags: [Admin]
+      summary: List reports grouped or raw
+      operationId: adminListReports
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ReportStatus'
+        - name: grouped
+          in: query
+          schema:
+            type: boolean
+            default: true
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Report list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminReportsResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/analytics/summary:
+    get:
+      tags: [Admin]
+      summary: Get admin analytics summary
+      operationId: adminAnalyticsSummary
+      responses:
+        '200':
+          description: Analytics summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAnalyticsSummary'
+        default:
+          $ref: '#/components/responses/Error'
+  /admin/exports:
+    post:
+      tags: [Admin]
+      summary: Create admin CSV export
+      operationId: adminCreateExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExportRequest'
+      responses:
+        '202':
+          description: Export accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportJob'
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 128
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 20
+    ProfileId:
+      name: profile_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    WorkCardId:
+      name: work_card_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PostId:
+      name: post_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MediaAssetId:
+      name: media_asset_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CaseId:
+      name: case_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBodies:
+    AdminDecision:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              notes_to_user:
+                type: string
+              internal_note:
+                type: string
+              reason:
+                type: string
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    UserRole:
+      type: string
+      enum: [business, job_worker, skilled_worker]
+    AccountStatus:
+      type: string
+      enum: [active, suspended, terminated]
+    ProfileVisibilityStatus:
+      type: string
+      enum: [draft, public, hidden_by_user, suspended_by_admin, deleted]
+    VerificationStatus:
+      type: string
+      enum: [unverified, pending, verified, changes_requested, rejected]
+    WorkCardStatus:
+      type: string
+      enum: [draft, published, hidden_by_user, removed_by_admin, deleted]
+    WorkNeededPostStatus:
+      type: string
+      enum: [draft, active, paused, closed_by_user, removed_by_admin, deleted]
+    SearchTarget:
+      type: string
+      enum: [business, job_worker, skilled_worker]
+    SavedTargetType:
+      type: string
+      enum: [profile, work_card, work_needed_post]
+    ReportReason:
+      type: string
+      enum: [wrong_contact, wrong_category, inappropriate_photo, wrong_details, fake_profile, spam, other]
+    ReportStatus:
+      type: string
+      enum: [submitted, in_review, resolved_no_action, action_taken, dismissed]
+    VerificationCaseStatus:
+      type: string
+      enum: [pending, approved, changes_requested, rejected]
+    MediaVisibility:
+      type: string
+      enum: [public, private_admin_only]
+    MediaKind:
+      type: string
+      enum: [image, document]
+    UploadStatus:
+      type: string
+      enum: [pending_upload, uploaded, processing, ready, failed, deleted]
+    OtpRequest:
+      type: object
+      required: [mobile]
+      properties:
+        mobile:
+          type: string
+          example: '+919999999999'
+    OtpRequestResponse:
+      type: object
+      required: [otp_request_id, message]
+      properties:
+        otp_request_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+    OtpVerifyRequest:
+      type: object
+      required: [mobile, otp, otp_request_id]
+      properties:
+        mobile:
+          type: string
+        otp:
+          type: string
+        otp_request_id:
+          type: string
+          format: uuid
+        device:
+          $ref: '#/components/schemas/DeviceInfo'
+    DeviceInfo:
+      type: object
+      properties:
+        device_id:
+          type: string
+        platform:
+          type: string
+          enum: [android]
+        app_version:
+          type: string
+    AuthSessionResponse:
+      type: object
+      required: [access_token, refresh_token, next_state]
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        next_state:
+          type: string
+          enum: [complete_basic_account, role_selection_required, home, account_blocked]
+        user:
+          $ref: '#/components/schemas/User'
+    BasicAccountRequest:
+      type: object
+      required: [display_name, accepted_terms_version, accepted_privacy_version]
+      properties:
+        display_name:
+          type: string
+        accepted_terms_version:
+          type: string
+        accepted_privacy_version:
+          type: string
+    User:
+      type: object
+      required: [id, display_name, primary_mobile, account_status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        primary_mobile:
+          type: string
+        account_status:
+          $ref: '#/components/schemas/AccountStatus'
+        role:
+          $ref: '#/components/schemas/UserRole'
+    MeResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        profile:
+          $ref: '#/components/schemas/ProfileSummary'
+        unread_notification_count:
+          type: integer
+        allowed_actions:
+          type: array
+          items:
+            type: string
+    ProfileSummary:
+      type: object
+      required: [id, role, visibility_status, completion_score, verification_status, is_verified]
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/UserRole'
+        display_name:
+          type: string
+        visibility_status:
+          $ref: '#/components/schemas/ProfileVisibilityStatus'
+        completion_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        completion_flags:
+          type: object
+          additionalProperties: true
+        verification_status:
+          $ref: '#/components/schemas/VerificationStatus'
+        is_verified:
+          type: boolean
+        reverification_required:
+          type: boolean
+    OwnerProfileResponse:
+      type: object
+      required: [profile]
+      properties:
+        profile:
+          $ref: '#/components/schemas/ProfileSummary'
+        editable_fields:
+          type: array
+          items:
+            type: string
+        locked_fields:
+          type: array
+          items:
+            type: string
+        role_specific:
+          type: object
+          additionalProperties: true
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+    ProfileUpdateRequest:
+      type: object
+      additionalProperties: true
+      description: Role-specific profile update body validated by backend.
+    PublicProfileDetail:
+      type: object
+      required: [profile, contact, media]
+      properties:
+        profile:
+          $ref: '#/components/schemas/ProfileSummary'
+        contact:
+          $ref: '#/components/schemas/PublicContact'
+        address:
+          $ref: '#/components/schemas/PublicAddress'
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+        work_cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkCard'
+        work_needed_posts:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkNeededPost'
+        similar_profiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+    PublicContact:
+      type: object
+      properties:
+        mobile:
+          type: string
+        whatsapp_number:
+          type: string
+    PublicAddress:
+      type: object
+      properties:
+        locality:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        pincode:
+          type: string
+        full_address:
+          type: string
+    SearchResponse:
+      type: object
+      required: [items, result_count]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+        result_count:
+          type: integer
+        next_cursor:
+          type: string
+          nullable: true
+        search_log_id:
+          type: string
+          format: uuid
+    SearchResult:
+      type: object
+      required: [result_type, id, title]
+      properties:
+        result_type:
+          type: string
+          enum: [profile, work_card, work_needed_post]
+        id:
+          type: string
+          format: uuid
+        profile_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        subtitle:
+          type: string
+        category:
+          type: string
+        product_types:
+          type: array
+          items:
+            type: string
+        is_verified:
+          type: boolean
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+    WorkCard:
+      type: object
+      required: [id, status, work_name, category_name, product_types, photo_count]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/WorkCardStatus'
+        work_name:
+          type: string
+        custom_work_name:
+          type: string
+        category_id:
+          type: string
+          format: uuid
+        category_name:
+          type: string
+        product_types:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        photo_count:
+          type: integer
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+    WorkCardUpsertRequest:
+      type: object
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        custom_category_text:
+          type: string
+        work_name_id:
+          type: string
+          format: uuid
+        custom_work_name:
+          type: string
+        product_type_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        custom_product_texts:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+    WorkNeededPost:
+      type: object
+      required: [id, status, work_name, category_name, product_types, photo_count]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/WorkNeededPostStatus'
+        work_name:
+          type: string
+        category_name:
+          type: string
+        product_types:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        photo_count:
+          type: integer
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+    WorkNeededPostUpsertRequest:
+      type: object
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        custom_category_text:
+          type: string
+        work_name_id:
+          type: string
+          format: uuid
+        custom_work_name:
+          type: string
+        product_type_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        custom_product_texts:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+    UploadIntentRequest:
+      type: object
+      required: [entity_type, entity_id, media_kind, visibility, filename, mime_type, byte_size]
+      properties:
+        entity_type:
+          type: string
+          enum: [profile, work_card, work_needed_post, verification_case]
+        entity_id:
+          type: string
+          format: uuid
+        media_kind:
+          $ref: '#/components/schemas/MediaKind'
+        visibility:
+          $ref: '#/components/schemas/MediaVisibility'
+        document_type:
+          type: string
+          enum: [identity_proof, masked_aadhaar, gst_proof, shop_photo, workplace_photo, work_photo, other]
+        filename:
+          type: string
+        mime_type:
+          type: string
+        byte_size:
+          type: integer
+    UploadIntentResponse:
+      type: object
+      required: [media_asset, upload]
+      properties:
+        media_asset:
+          $ref: '#/components/schemas/MediaAsset'
+        upload:
+          type: object
+          required: [method]
+          properties:
+            method:
+              type: string
+              enum: [signed_url, backend_proxy]
+            url:
+              type: string
+              format: uri
+            headers:
+              type: object
+              additionalProperties:
+                type: string
+            expires_at:
+              type: string
+              format: date-time
+    MediaAsset:
+      type: object
+      required: [id, media_kind, visibility, upload_status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        media_kind:
+          $ref: '#/components/schemas/MediaKind'
+        visibility:
+          $ref: '#/components/schemas/MediaVisibility'
+        upload_status:
+          $ref: '#/components/schemas/UploadStatus'
+        url:
+          type: string
+          format: uri
+          description: Public-ready media URL only. Private proof media does not expose URL to owners/public.
+        thumbnail_url:
+          type: string
+          format: uri
+        sort_order:
+          type: integer
+        document_type:
+          type: string
+        safe_display_name:
+          type: string
+    VerificationSummary:
+      type: object
+      required: [verification_status, is_verified]
+      properties:
+        verification_status:
+          $ref: '#/components/schemas/VerificationStatus'
+        is_verified:
+          type: boolean
+        reverification_required:
+          type: boolean
+        active_case_id:
+          type: string
+          format: uuid
+        notes_to_user:
+          type: string
+        safe_documents:
+          type: array
+          items:
+            type: object
+            properties:
+              document_type:
+                type: string
+              status:
+                type: string
+              safe_display_name:
+                type: string
+    SavedItemsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SavedItem'
+        next_cursor:
+          type: string
+          nullable: true
+    SaveItemRequest:
+      type: object
+      required: [target_type, target_id]
+      properties:
+        target_type:
+          $ref: '#/components/schemas/SavedTargetType'
+        target_id:
+          type: string
+          format: uuid
+    SavedItem:
+      type: object
+      required: [id, target_type, target_id]
+      properties:
+        id:
+          type: string
+          format: uuid
+        target_type:
+          $ref: '#/components/schemas/SavedTargetType'
+        target_id:
+          type: string
+          format: uuid
+        card:
+          $ref: '#/components/schemas/SearchResult'
+    CreateReportRequest:
+      type: object
+      required: [reported_entity_type, reported_entity_id, reason]
+      properties:
+        reported_entity_type:
+          type: string
+          enum: [profile, work_card, work_needed_post]
+        reported_entity_id:
+          type: string
+          format: uuid
+        reason:
+          $ref: '#/components/schemas/ReportReason'
+    Report:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/ReportStatus'
+    NotificationsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        next_cursor:
+          type: string
+          nullable: true
+    Notification:
+      type: object
+      required: [id, title, message, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+    RegisterDeviceTokenRequest:
+      type: object
+      required: [fcm_token, platform]
+      properties:
+        fcm_token:
+          type: string
+        platform:
+          type: string
+          enum: [android]
+        device_id:
+          type: string
+        app_version:
+          type: string
+    UpdateSettingsRequest:
+      type: object
+      properties:
+        push_notifications_enabled:
+          type: boolean
+        hidden_from_search:
+          type: boolean
+    UserSettings:
+      type: object
+      properties:
+        push_notifications_enabled:
+          type: boolean
+        hidden_from_search:
+          type: boolean
+    ContactActionRequest:
+      type: object
+      required: [profile_id, action_type]
+      properties:
+        profile_id:
+          type: string
+          format: uuid
+        action_type:
+          type: string
+          enum: [call, whatsapp, address]
+        source_type:
+          type: string
+          enum: [profile, work_card, work_needed_post]
+        source_id:
+          type: string
+          format: uuid
+    CreateShareLinkRequest:
+      type: object
+      required: [target_type, target_id]
+      properties:
+        target_type:
+          type: string
+          enum: [profile, work_card, work_needed_post]
+        target_id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+          enum: [copy_link, whatsapp, sms, x, email, linkedin, native_other]
+    ShareLinkResponse:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+        share_text:
+          type: string
+    AdminUser:
+      type: object
+      required: [id, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        role:
+          type: string
+          enum: [super_admin]
+    AdminVerificationCasesResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminVerificationCase'
+        next_cursor:
+          type: string
+          nullable: true
+    AdminVerificationCase:
+      type: object
+      required: [id, status, profile]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/VerificationCaseStatus'
+        profile:
+          $ref: '#/components/schemas/ProfileSummary'
+        checks:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        private_document_access:
+          type: array
+          items:
+            type: object
+            properties:
+              media_asset_id:
+                type: string
+                format: uuid
+              access_url:
+                type: string
+                format: uri
+              expires_at:
+                type: string
+                format: date-time
+    AdminProfilesResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminProfile'
+        next_cursor:
+          type: string
+          nullable: true
+    AdminProfile:
+      allOf:
+        - $ref: '#/components/schemas/ProfileSummary'
+        - type: object
+          properties:
+            owner_user_id:
+              type: string
+              format: uuid
+              nullable: true
+            is_admin_seeded:
+              type: boolean
+            claim_status:
+              type: string
+              enum: [unclaimed, claimed, not_applicable]
+    AdminSeedProfileRequest:
+      type: object
+      required: [role, display_name]
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+        display_name:
+          type: string
+        profile_data:
+          type: object
+          additionalProperties: true
+        make_public:
+          type: boolean
+          default: false
+    AdminReportsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        next_cursor:
+          type: string
+          nullable: true
+    AdminAnalyticsSummary:
+      type: object
+      properties:
+        total_profiles:
+          type: integer
+        verified_profiles:
+          type: integer
+        top_search_terms:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        contact_actions:
+          type: object
+          additionalProperties: true
+    CreateExportRequest:
+      type: object
+      required: [dataset]
+      properties:
+        dataset:
+          type: string
+          enum: [profiles, verification_cases, reports, search_summary, contact_summary]
+        filters:
+          type: object
+          additionalProperties: true
+    ExportJob:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, processing, ready, failed]
+        download_url:
+          type: string
+          format: uri
+          nullable: true
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, request_id]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+            field_errors:
+              type: object
+              additionalProperties:
+                type: string
+            request_id:
+              type: string

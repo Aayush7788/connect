@@ -1,0 +1,15 @@
+﻿fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+sqlalchemy
+alembic
+psycopg[binary]
+asyncpg
+httpx
+python-dotenv
+python-multipart
+pyjwt[crypto]
+orjson
+supabase
+firebase-admin

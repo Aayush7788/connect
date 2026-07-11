@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "database-design": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/database-design/SKILL.md",
+      "computedHash": "412e8f6c0160ce140c5fe3c6489eb0b7c6fa265807e03c6b0d56a9f3ef69a925"
+    },
+    "wireframe-prototyping": {
+      "source": "aj-geddes/useful-ai-prompts",
+      "sourceType": "github",
+      "skillPath": "skills/wireframe-prototyping/SKILL.md",
+      "computedHash": "f3ecd86053011e0b34a1703cd0da969e39633e689cbd3542b7d818355658bfbd"
+    }
+  }
+}
