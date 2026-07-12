@@ -21,7 +21,7 @@ def test_alembic_has_single_head() -> None:
     config = Config(str(ALEMBIC_INI))
     script = ScriptDirectory.from_config(config)
 
-    assert script.get_heads() == ["20260711_0005"]
+    assert script.get_heads() == ["20260711_0006"]
 
 
 def test_first_migration_enables_required_extensions() -> None:

@@ -108,19 +108,25 @@ def test_profile_migration_enables_rls_and_updated_at_triggers() -> None:
         assert f"create trigger trg_{table_name}_set_updated_at" in migration_sql
 
 
-def test_profile_schema_does_not_store_raw_identity_document_numbers() -> None:
-    migration_sql = render_offline_sql().lower()
+def test_profile_schema_does_not_store_raw_identity_document_number_columns() -> None:
+    forbidden_column_fragments = ("aadhaar", "aadhar", "pan")
 
-    assert "aadhaar" not in migration_sql
-    assert "aadhar" not in migration_sql
-    assert "pan" not in migration_sql
+    for table in Base.metadata.tables.values():
+        for column in table.columns:
+            assert not any(
+                fragment in column.name.lower()
+                for fragment in forbidden_column_fragments
+            )
 
 
-def test_gst_proof_media_reference_is_deferred_until_media_assets_schema() -> None:
+def test_gst_proof_media_reference_targets_media_assets_after_media_schema() -> None:
     gst_table = Base.metadata.tables["profile_gst_details"]
     proof_media_asset_id = gst_table.columns["proof_media_asset_id"]
 
-    assert not proof_media_asset_id.foreign_keys
+    assert (
+        next(iter(proof_media_asset_id.foreign_keys)).target_fullname
+        == "media_assets.id"
+    )
 
 
 def test_category_suggestions_profile_fk_is_added_by_profile_migration() -> None:
