@@ -39,7 +39,7 @@ class MediaAsset(TimestampMixin, Base):
         CheckConstraint(
             "document_type is null or document_type in "
             "('identity_proof', 'masked_aadhaar', 'gst_proof', 'shop_photo', "
-            "'workplace_photo', 'other')",
+            "'workplace_photo', 'work_photo', 'other')",
             name="document_type_valid",
         ),
         CheckConstraint(

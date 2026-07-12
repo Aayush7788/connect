@@ -9,7 +9,7 @@ part of 'upload_intent_response.dart';
 abstract class _$UploadIntentResponseCWProxy {
   UploadIntentResponse mediaAsset(MediaAsset mediaAsset);
 
-  UploadIntentResponse upload(UploadIntentResponseUpload upload);
+  UploadIntentResponse upload(UploadDetails upload);
 
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `UploadIntentResponse(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
@@ -17,10 +17,7 @@ abstract class _$UploadIntentResponseCWProxy {
   /// ```dart
   /// UploadIntentResponse(...).copyWith(id: 12, name: "My name")
   /// ````
-  UploadIntentResponse call({
-    MediaAsset mediaAsset,
-    UploadIntentResponseUpload upload,
-  });
+  UploadIntentResponse call({MediaAsset mediaAsset, UploadDetails upload});
 }
 
 /// Proxy class for `copyWith` functionality. This is a callable class and can be used as follows: `instanceOfUploadIntentResponse.copyWith(...)`. Additionally contains functions for specific fields e.g. `instanceOfUploadIntentResponse.copyWith.fieldName(...)`
@@ -35,8 +32,7 @@ class _$UploadIntentResponseCWProxyImpl
       this(mediaAsset: mediaAsset);
 
   @override
-  UploadIntentResponse upload(UploadIntentResponseUpload upload) =>
-      this(upload: upload);
+  UploadIntentResponse upload(UploadDetails upload) => this(upload: upload);
 
   @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `UploadIntentResponse(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
@@ -57,7 +53,7 @@ class _$UploadIntentResponseCWProxyImpl
       upload: upload == const $CopyWithPlaceholder()
           ? _value.upload
           // ignore: cast_nullable_to_non_nullable
-          : upload as UploadIntentResponseUpload,
+          : upload as UploadDetails,
     );
   }
 }
@@ -84,7 +80,7 @@ UploadIntentResponse _$UploadIntentResponseFromJson(
     ),
     upload: $checkedConvert(
       'upload',
-      (v) => UploadIntentResponseUpload.fromJson(v as Map<String, dynamic>),
+      (v) => UploadDetails.fromJson(v as Map<String, dynamic>),
     ),
   );
   return val;

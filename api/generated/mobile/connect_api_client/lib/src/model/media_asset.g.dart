@@ -19,7 +19,7 @@ abstract class _$MediaAssetCWProxy {
 
   MediaAsset thumbnailUrl(String? thumbnailUrl);
 
-  MediaAsset sortOrder(int? sortOrder);
+  MediaAsset sortOrder(int sortOrder);
 
   MediaAsset documentType(String? documentType);
 
@@ -38,7 +38,7 @@ abstract class _$MediaAssetCWProxy {
     UploadStatus uploadStatus,
     String? url,
     String? thumbnailUrl,
-    int? sortOrder,
+    int sortOrder,
     String? documentType,
     String? safeDisplayName,
   });
@@ -72,7 +72,7 @@ class _$MediaAssetCWProxyImpl implements _$MediaAssetCWProxy {
       this(thumbnailUrl: thumbnailUrl);
 
   @override
-  MediaAsset sortOrder(int? sortOrder) => this(sortOrder: sortOrder);
+  MediaAsset sortOrder(int sortOrder) => this(sortOrder: sortOrder);
 
   @override
   MediaAsset documentType(String? documentType) =>
@@ -128,7 +128,7 @@ class _$MediaAssetCWProxyImpl implements _$MediaAssetCWProxy {
       sortOrder: sortOrder == const $CopyWithPlaceholder()
           ? _value.sortOrder
           // ignore: cast_nullable_to_non_nullable
-          : sortOrder as int?,
+          : sortOrder as int,
       documentType: documentType == const $CopyWithPlaceholder()
           ? _value.documentType
           // ignore: cast_nullable_to_non_nullable
@@ -157,7 +157,13 @@ MediaAsset _$MediaAssetFromJson(Map<String, dynamic> json) => $checkedCreate(
   ($checkedConvert) {
     $checkKeys(
       json,
-      requiredKeys: const ['id', 'media_kind', 'visibility', 'upload_status'],
+      requiredKeys: const [
+        'id',
+        'media_kind',
+        'visibility',
+        'upload_status',
+        'sort_order',
+      ],
     );
     final val = MediaAsset(
       id: $checkedConvert('id', (v) => v as String),
@@ -175,7 +181,7 @@ MediaAsset _$MediaAssetFromJson(Map<String, dynamic> json) => $checkedCreate(
       ),
       url: $checkedConvert('url', (v) => v as String?),
       thumbnailUrl: $checkedConvert('thumbnail_url', (v) => v as String?),
-      sortOrder: $checkedConvert('sort_order', (v) => (v as num?)?.toInt()),
+      sortOrder: $checkedConvert('sort_order', (v) => (v as num).toInt()),
       documentType: $checkedConvert('document_type', (v) => v as String?),
       safeDisplayName: $checkedConvert(
         'safe_display_name',
@@ -202,7 +208,7 @@ Map<String, dynamic> _$MediaAssetToJson(MediaAsset instance) =>
       'upload_status': _$UploadStatusEnumMap[instance.uploadStatus]!,
       'url': ?instance.url,
       'thumbnail_url': ?instance.thumbnailUrl,
-      'sort_order': ?instance.sortOrder,
+      'sort_order': instance.sortOrder,
       'document_type': ?instance.documentType,
       'safe_display_name': ?instance.safeDisplayName,
     };

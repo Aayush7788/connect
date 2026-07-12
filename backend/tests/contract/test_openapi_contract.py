@@ -78,3 +78,13 @@ def test_profile_update_contract_is_typed_and_role_is_not_editable() -> None:
     assert "skill_mastery" in properties
     assert "role" not in properties
     assert "primary_mobile" not in properties
+
+
+def test_media_contract_uses_scoped_multipart_upload_without_private_url() -> None:
+    spec = load_openapi()
+    upload = spec["components"]["schemas"]["UploadDetails"]
+    media = spec["components"]["schemas"]["MediaAsset"]
+
+    assert upload["properties"]["http_method"]["enum"] == ["PUT"]
+    assert upload["properties"]["form_field"]["enum"] == ["file"]
+    assert media["properties"]["url"]["nullable"] is True

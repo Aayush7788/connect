@@ -3,7 +3,7 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:connect_api_client/src/model/upload_intent_response_upload.dart';
+import 'package:connect_api_client/src/model/upload_details.dart';
 import 'package:connect_api_client/src/model/media_asset.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -47,7 +47,7 @@ class UploadIntentResponse {
   )
 
 
-  final UploadIntentResponseUpload upload;
+  final UploadDetails upload;
 
 
 

@@ -116,6 +116,7 @@ def test_media_schema_keeps_private_verification_documents_separate() -> None:
     ) in migration_sql
     assert "CREATE INDEX idx_media_assets_entity" in migration_sql
     assert "CREATE INDEX idx_media_assets_private_documents" in migration_sql
+    assert "'workplace_photo', 'work_photo', 'other'" in migration_sql
 
 
 def test_verification_schema_supports_admin_review_and_future_provider_checks() -> None:

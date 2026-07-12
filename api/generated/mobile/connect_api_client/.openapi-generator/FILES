@@ -82,9 +82,9 @@ lib/src/model/search_result.dart
 lib/src/model/search_target.dart
 lib/src/model/share_link_response.dart
 lib/src/model/update_settings_request.dart
+lib/src/model/upload_details.dart
 lib/src/model/upload_intent_request.dart
 lib/src/model/upload_intent_response.dart
-lib/src/model/upload_intent_response_upload.dart
 lib/src/model/upload_status.dart
 lib/src/model/user.dart
 lib/src/model/user_role.dart

@@ -527,7 +527,9 @@ Endpoints:
 Rules:
 
 - backend creates a pending media record before issuing upload details
-- signed direct-to-storage upload is allowed only if scoped and verified
+- signed direct-to-storage upload is scoped to one backend-generated private staging path and expires after two hours
+- the client uploads as multipart `PUT` using form field `file`
+- backend downloads and validates actual bytes before promoting public images to the public bucket
 - fallback to backend-proxied upload if signed upload cannot be secured
 - public photos and private verification documents use separate storage areas
 - first uploaded ready image is cover
@@ -535,6 +537,7 @@ Rules:
 - no reorder/cover picker in MVP
 - deletion is blocked if it would drop below required photo minimum
 - owner cannot preview/download private verification proof after upload
+- cancel marks an abandoned pending/failed media row as deleted
 
 ## 12. Verification
 

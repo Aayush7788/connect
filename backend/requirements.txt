@@ -13,3 +13,4 @@ pyjwt[crypto]
 orjson
 supabase
 firebase-admin
+pillow==12.3.0

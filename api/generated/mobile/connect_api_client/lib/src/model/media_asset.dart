@@ -35,7 +35,7 @@ class MediaAsset {
 
      this.thumbnailUrl,
 
-     this.sortOrder,
+    required  this.sortOrder,
 
      this.documentType,
 
@@ -118,12 +118,12 @@ class MediaAsset {
   @JsonKey(
     
     name: r'sort_order',
-    required: false,
+    required: true,
     includeIfNull: false,
   )
 
 
-  final int? sortOrder;
+  final int sortOrder;
 
 
 

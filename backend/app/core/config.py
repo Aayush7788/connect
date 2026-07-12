@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
     contact_reveal_mode: str = "free_unlimited"
     max_upload_mb: int = Field(default=10, ge=1, le=100)
+    max_image_dimension: int = Field(default=12000, ge=1000, le=30000)
+    max_image_pixels: int = Field(default=40_000_000, ge=1_000_000)
 
     @property
     def cors_origins(self) -> list[str]:

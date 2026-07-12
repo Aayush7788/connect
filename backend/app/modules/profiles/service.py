@@ -97,6 +97,25 @@ class ProfileService:
         completion = self._calculate_completion(bundle)
         return self._response(bundle, completion)
 
+    def refresh_completion(self, profile_id: UUID) -> CompletionResult:
+        bundle = self.repository.get_bundle_by_profile_id(
+            profile_id,
+            for_update=False,
+        )
+        if bundle is None:
+            raise ApiError(
+                status_code=404,
+                code=ErrorCode.NOT_FOUND,
+                message="Profile not found.",
+            )
+        completion = self._calculate_completion(bundle)
+        bundle.profile.completion_score = completion.score
+        bundle.profile.completion_flags = completion.flags
+        bundle.profile.photo_count = self.repository.completion_evidence(
+            bundle.profile
+        ).public_photo_count
+        return completion
+
     def update_owner_profile(
         self,
         *,

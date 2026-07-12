@@ -7,6 +7,7 @@ from app.core.errors import register_exception_handlers
 from app.core.logging import RequestIdMiddleware, configure_logging, get_request_id
 from app.modules.auth.router import router as auth_router
 from app.modules.me.router import router as me_router
+from app.modules.media.router import router as media_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.taxonomy.router import router as taxonomy_router
 
@@ -62,6 +63,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(auth_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(me_router, prefix=resolved_settings.api_v1_prefix)
+    app.include_router(media_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(profiles_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(taxonomy_router, prefix=resolved_settings.api_v1_prefix)
 
