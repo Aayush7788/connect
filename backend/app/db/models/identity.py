@@ -105,7 +105,7 @@ class UserDevice(TimestampMixin, Base):
             "uq_user_devices_active_fcm_token",
             "fcm_token",
             unique=True,
-            postgresql_where=text("status = 'active'"),
+            postgresql_where=text("fcm_token is not null and status = 'active'"),
         ),
         Index(
             "uq_user_devices_active_device",
@@ -124,7 +124,7 @@ class UserDevice(TimestampMixin, Base):
     user_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), ForeignKey("users.id"))
     device_id: Mapped[str | None] = mapped_column(Text)
     platform: Mapped[str] = mapped_column(Text)
-    fcm_token: Mapped[str] = mapped_column(Text)
+    fcm_token: Mapped[str | None] = mapped_column(Text)
     app_version: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, server_default=text("'active'"))
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
