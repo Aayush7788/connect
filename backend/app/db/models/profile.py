@@ -336,7 +336,10 @@ class ProfileGstDetail(TimestampMixin, Base):
         Text,
         server_default=text("'unreviewed'"),
     )
-    proof_media_asset_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True))
+    proof_media_asset_id: Mapped[UUID | None] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("media_assets.id"),
+    )
     reviewed_by_admin_user_id: Mapped[UUID | None] = mapped_column(
         PgUUID(as_uuid=True),
         ForeignKey("admin_users.id"),

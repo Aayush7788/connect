@@ -1,3 +1,20 @@
+from app.db.models.cross_cutting import AdminAccessGrant
+from app.db.models.cross_cutting import ContactActionEvent
+from app.db.models.cross_cutting import ContactReveal
+from app.db.models.cross_cutting import MediaAsset
+from app.db.models.cross_cutting import Notification
+from app.db.models.cross_cutting import PaymentTransaction
+from app.db.models.cross_cutting import ProfileViewEvent
+from app.db.models.cross_cutting import Report
+from app.db.models.cross_cutting import SavedItem
+from app.db.models.cross_cutting import SearchLog
+from app.db.models.cross_cutting import ShareEvent
+from app.db.models.cross_cutting import SubscriptionPlan
+from app.db.models.cross_cutting import UserContactQuota
+from app.db.models.cross_cutting import UserSubscription
+from app.db.models.cross_cutting import VerificationCase
+from app.db.models.cross_cutting import VerificationCheck
+from app.db.models.cross_cutting import VerificationProviderCheck
 from app.db.models.identity import AdminAuditLog
 from app.db.models.identity import AdminUser
 from app.db.models.identity import AppSetting
@@ -23,6 +40,7 @@ from app.db.models.taxonomy import CategorySuggestion
 
 
 __all__ = [
+    "AdminAccessGrant",
     "AdminAuditLog",
     "AdminUser",
     "AppSetting",
@@ -32,15 +50,31 @@ __all__ = [
     "Category",
     "CategoryAlias",
     "CategorySuggestion",
+    "ContactActionEvent",
+    "ContactReveal",
     "JobWorkerProfile",
+    "MediaAsset",
+    "Notification",
+    "PaymentTransaction",
     "Profile",
     "ProfileBusinessSubtype",
     "ProfileChangeHistory",
     "ProfileGstDetail",
+    "ProfileViewEvent",
+    "Report",
+    "SavedItem",
+    "SearchLog",
+    "ShareEvent",
     "SkilledWorkerProfile",
+    "SubscriptionPlan",
     "User",
+    "UserContactQuota",
     "UserDevice",
     "UserSetting",
+    "UserSubscription",
+    "VerificationCase",
+    "VerificationCheck",
+    "VerificationProviderCheck",
     "WorkCard",
     "WorkCardProductType",
     "WorkNeededPost",
