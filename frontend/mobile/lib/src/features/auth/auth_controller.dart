@@ -13,7 +13,9 @@ enum AppRoute {
   selectRole('/select-role'),
   confirmRole('/confirm-role'),
   blocked('/blocked'),
-  home('/home');
+  home('/home'),
+  completeProfile('/profile/complete'),
+  settings('/settings');
 
   const AppRoute(this.path);
 
@@ -198,6 +200,13 @@ class AuthController extends Notifier<AuthState> {
     await ref.read(connectApiProvider).logout();
     await ref.read(tokenStoreProvider).clear();
     state = const AuthState();
+  }
+
+  void updateProfileSummary(ProfileSummary profile) {
+    final me = state.me;
+    if (me != null) {
+      state = state.copyWith(me: me.withProfile(profile));
+    }
   }
 
   AppRoute routeForNextState(String nextState) {

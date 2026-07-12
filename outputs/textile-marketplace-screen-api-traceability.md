@@ -69,9 +69,9 @@ Analytics/share/contact failures must not block the visible user action, except 
 | Screen | Primary APIs | Notes |
 |---|---|---|
 | My Profile Dashboard | `GET /v1/me`, `GET /v1/me/profile` | Shows name, role, mobile, completion percent, verification status, edit controls. |
-| Business Completion | `PATCH /v1/me/profile`, media APIs, `POST /v1/me/profile/complete` | Requires shop photos minimum 3. |
+| Business Completion | `GET /v1/taxonomy/categories`, `PATCH /v1/me/profile`, media APIs, `POST /v1/me/profile/complete` | Loads business/product options through FastAPI; requires shop photos minimum 3. |
 | Job Worker Completion | `PATCH /v1/me/profile`, work-card APIs, media APIs, `POST /v1/me/profile/complete` | Requires at least one published valid work card for 100%. |
-| Skilled Worker Completion | `PATCH /v1/me/profile`, media APIs, `POST /v1/me/profile/complete` | Worker photo recommended; required fields enforced by backend. |
+| Skilled Worker Completion | `GET /v1/taxonomy/categories`, `PATCH /v1/me/profile`, media APIs, `POST /v1/me/profile/complete` | Loads skill options through FastAPI; worker photo recommended; required fields enforced by backend. |
 | Edit Profile | `GET /v1/me/profile`, `PATCH /v1/me/profile` | Locked fields cannot change; pending verification locks verification-sensitive edits. |
 | Hide From Search | `PATCH /v1/me/settings` or profile hide/show endpoint | Settings toggle controls visibility. |
 
@@ -146,4 +146,3 @@ Analytics/share/contact failures must not block the visible user action, except 
 | Categories/Aliases | category admin endpoints | Manage taxonomy and suggestions. |
 | Analytics | `GET /v1/admin/analytics/summary` | Search/contact/profile view summary. |
 | Exports | `POST /v1/admin/exports`, `GET /v1/admin/exports/{id}` | Profiles, verification, reports, search/contact summary. |
-

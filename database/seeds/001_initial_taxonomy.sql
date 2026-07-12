@@ -17,6 +17,13 @@ select
   '{}'::jsonb
 from (
   values
+    ('business_category', 'Manufacturing', 'manufacturing', 'manufacturing', 10),
+    ('business_category', 'Wholesale', 'wholesale', 'wholesale', 20),
+    ('business_category', 'Trading', 'trading', 'trading', 30),
+    ('business_category', 'Retail', 'retail', 'retail', 40),
+    ('business_category', 'Process house', 'process-house', 'process house', 50),
+    ('business_category', 'Textile brand', 'textile-brand', 'textile brand', 60),
+    ('business_category', 'Other textile business', 'other-textile-business', 'other textile business', 70),
     ('work_category', 'Embroidery', 'embroidery', 'embroidery', 10),
     ('work_category', 'Decorative and hand work', 'decorative-hand-work', 'decorative and hand work', 20),
     ('work_category', 'Printing', 'printing', 'printing', 30),

@@ -19,6 +19,7 @@ import 'package:connect_api_client/src/api/saved_api.dart';
 import 'package:connect_api_client/src/api/search_api.dart';
 import 'package:connect_api_client/src/api/settings_api.dart';
 import 'package:connect_api_client/src/api/share_api.dart';
+import 'package:connect_api_client/src/api/taxonomy_api.dart';
 import 'package:connect_api_client/src/api/verification_api.dart';
 import 'package:connect_api_client/src/api/work_cards_api.dart';
 import 'package:connect_api_client/src/api/work_needed_posts_api.dart';
@@ -31,7 +32,7 @@ class ConnectApiClient {
     Dio? dio,
     String? basePathOverride,
     List<Interceptor>? interceptors,
-  })  : 
+  })  :
         this.dio = dio ??
             Dio(BaseOptions(
               baseUrl: basePathOverride ?? basePath,
@@ -184,6 +185,12 @@ class ConnectApiClient {
   /// by doing that all interceptors will not be executed
   ShareApi getShareApi() {
     return ShareApi(dio);
+  }
+
+  /// Get TaxonomyApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  TaxonomyApi getTaxonomyApi() {
+    return TaxonomyApi(dio);
   }
 
   /// Get VerificationApi instance, base route and serializer can be overridden by a given but be careful,

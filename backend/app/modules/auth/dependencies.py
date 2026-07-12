@@ -3,6 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.core.auth_context import CurrentUser
+from app.core.errors import ApiError, ErrorCode
 from app.core.config import Settings, get_settings
 from app.core.security import bearer_scheme, require_bearer_token
 from app.db.session import get_db_session
@@ -33,6 +34,24 @@ async def get_current_user_from_token(
 ) -> CurrentUser:
     access_token = require_bearer_token(credentials)
     return await auth_service.get_current_user_from_token(access_token)
+
+
+async def get_active_current_user(
+    current_user: CurrentUser = Depends(get_current_user_from_token),
+) -> CurrentUser:
+    if current_user.account_status == "suspended":
+        raise ApiError(
+            status_code=403,
+            code=ErrorCode.ACCOUNT_SUSPENDED,
+            message="Your account is suspended. Please contact support.",
+        )
+    if current_user.account_status == "terminated":
+        raise ApiError(
+            status_code=401,
+            code=ErrorCode.UNAUTHORIZED,
+            message="Please login again.",
+        )
+    return current_user
 
 
 async def get_current_access_token(

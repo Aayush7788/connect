@@ -106,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/taxonomy/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active categories for profile and marketplace forms */
+        get: operations["listCategories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/profile": {
         parameters: {
             query?: never;
@@ -918,6 +935,19 @@ export interface components {
         /** @enum {string} */
         UserRole: "business" | "job_worker" | "skilled_worker";
         /** @enum {string} */
+        CategoryType: "business_category" | "work_category" | "work_name" | "product_type" | "skill";
+        Category: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parent_id?: string | null;
+            category_type: components["schemas"]["CategoryType"];
+            name: string;
+        };
+        CategoryListResponse: {
+            items: components["schemas"]["Category"][];
+        };
+        /** @enum {string} */
         AccountStatus: "active" | "suspended" | "terminated";
         /** @enum {string} */
         ProfileVisibilityStatus: "draft" | "public" | "hidden_by_user" | "suspended_by_admin" | "deleted";
@@ -1540,6 +1570,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listCategories: {
+        parameters: {
+            query: {
+                category_type: components["schemas"]["CategoryType"];
+                parent_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active categories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryListResponse"];
                 };
             };
             default: components["responses"]["Error"];

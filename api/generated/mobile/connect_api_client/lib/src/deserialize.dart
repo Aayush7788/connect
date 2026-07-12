@@ -10,6 +10,8 @@ import 'package:connect_api_client/src/model/admin_verification_case_private_doc
 import 'package:connect_api_client/src/model/admin_verification_cases_response.dart';
 import 'package:connect_api_client/src/model/auth_session_response.dart';
 import 'package:connect_api_client/src/model/basic_account_request.dart';
+import 'package:connect_api_client/src/model/category.dart';
+import 'package:connect_api_client/src/model/category_list_response.dart';
 import 'package:connect_api_client/src/model/confirm_role_request.dart';
 import 'package:connect_api_client/src/model/contact_action_request.dart';
 import 'package:connect_api_client/src/model/create_export_request.dart';
@@ -100,6 +102,13 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return AuthSessionResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'BasicAccountRequest':
           return BasicAccountRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'Category':
+          return Category.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'CategoryListResponse':
+          return CategoryListResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'CategoryType':
+
+
         case 'ConfirmRoleRequest':
           return ConfirmRoleRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ContactActionRequest':

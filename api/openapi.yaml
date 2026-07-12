@@ -13,6 +13,7 @@ security:
 tags:
   - name: Auth
   - name: Me
+  - name: Taxonomy
   - name: Search
   - name: Profiles
   - name: WorkCards
@@ -137,6 +138,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MeResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /taxonomy/categories:
+    get:
+      tags: [Taxonomy]
+      summary: List active categories for profile and marketplace forms
+      operationId: listCategories
+      parameters:
+        - name: category_type
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryType'
+        - name: parent_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Active categories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
         default:
           $ref: '#/components/responses/Error'
   /me/profile:
@@ -1216,6 +1243,32 @@ components:
     UserRole:
       type: string
       enum: [business, job_worker, skilled_worker]
+    CategoryType:
+      type: string
+      enum: [business_category, work_category, work_name, product_type, skill]
+    Category:
+      type: object
+      required: [id, category_type, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        category_type:
+          $ref: '#/components/schemas/CategoryType'
+        name:
+          type: string
+    CategoryListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
     AccountStatus:
       type: string
       enum: [active, suspended, terminated]
