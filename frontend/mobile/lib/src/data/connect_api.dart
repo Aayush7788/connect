@@ -67,6 +67,18 @@ abstract class ConnectApi {
 
   Future<MeResult> me();
 
+  Future<OwnerProfileResult> ownerProfile();
+
+  Future<OwnerProfileResult> updateOwnerProfile(Map<String, dynamic> fields);
+
+  Future<OwnerProfileResult> completeOwnerProfile();
+
+  Future<OwnerProfileResult> hideOwnerProfile();
+
+  Future<OwnerProfileResult> showOwnerProfile();
+
+  Future<List<CategoryOption>> categories({required String categoryType});
+
   Future<void> logout();
 }
 
@@ -150,6 +162,76 @@ class DioConnectApi implements ConnectApi {
   }
 
   @override
+  Future<OwnerProfileResult> ownerProfile() {
+    return _profileRequest(() async {
+      return _dio.get<Map<String, dynamic>>(
+        '/me/profile',
+        options: await _authOptions(),
+      );
+    });
+  }
+
+  @override
+  Future<OwnerProfileResult> updateOwnerProfile(Map<String, dynamic> fields) {
+    return _profileRequest(() async {
+      return _dio.patch<Map<String, dynamic>>(
+        '/me/profile',
+        data: fields,
+        options: await _authOptions(),
+      );
+    });
+  }
+
+  @override
+  Future<OwnerProfileResult> completeOwnerProfile() {
+    return _profileRequest(() async {
+      return _dio.post<Map<String, dynamic>>(
+        '/me/profile/complete',
+        options: await _authOptions(),
+      );
+    });
+  }
+
+  @override
+  Future<OwnerProfileResult> hideOwnerProfile() {
+    return _profileRequest(() async {
+      return _dio.post<Map<String, dynamic>>(
+        '/me/profile/hide',
+        options: await _authOptions(),
+      );
+    });
+  }
+
+  @override
+  Future<OwnerProfileResult> showOwnerProfile() {
+    return _profileRequest(() async {
+      return _dio.post<Map<String, dynamic>>(
+        '/me/profile/show',
+        options: await _authOptions(),
+      );
+    });
+  }
+
+  @override
+  Future<List<CategoryOption>> categories({
+    required String categoryType,
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/taxonomy/categories',
+        queryParameters: {'category_type': categoryType},
+        options: await _authOptions(),
+      );
+      final items = _body(response)['items'] as List<dynamic>? ?? [];
+      return items
+          .map((item) => CategoryOption.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
   Future<void> logout() async {
     try {
       await _dio.post<void>('/auth/logout', options: await _authOptions());
@@ -170,6 +252,58 @@ class DioConnectApi implements ConnectApi {
     }
     return data;
   }
+
+  Future<OwnerProfileResult> _profileRequest(
+    Future<Response<Map<String, dynamic>>> Function() request,
+  ) async {
+    try {
+      final response = await request();
+      return OwnerProfileResult.fromJson(_body(response));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+}
+
+class ApiFailure implements Exception {
+  const ApiFailure({
+    required this.code,
+    required this.message,
+    this.fieldErrors = const {},
+    this.missingFields = const [],
+  });
+
+  factory ApiFailure.fromDio(DioException error) {
+    final data = error.response?.data;
+    if (data is Map<String, dynamic>) {
+      final errorBody = data['error'];
+      if (errorBody is Map<String, dynamic>) {
+        final details = errorBody['details'];
+        final fieldErrors = errorBody['field_errors'];
+        return ApiFailure(
+          code: errorBody['code'] as String? ?? 'request_failed',
+          message: errorBody['message'] as String? ?? 'Something went wrong.',
+          fieldErrors: fieldErrors is Map<String, dynamic>
+              ? fieldErrors.map((key, value) => MapEntry(key, value.toString()))
+              : const {},
+          missingFields: details is Map<String, dynamic>
+              ? (details['missing_fields'] as List<dynamic>? ?? [])
+                    .map((value) => value.toString())
+                    .toList(growable: false)
+              : const [],
+        );
+      }
+    }
+    return const ApiFailure(
+      code: 'network_error',
+      message: "Can't access internet",
+    );
+  }
+
+  final String code;
+  final String message;
+  final Map<String, String> fieldErrors;
+  final List<String> missingFields;
 }
 
 class OtpRequestResult {
@@ -238,6 +372,16 @@ class MeResult {
   final ProfileSummary? profile;
   final int unreadNotificationCount;
   final List<String> allowedActions;
+
+  MeResult withProfile(ProfileSummary updatedProfile) {
+    return MeResult(
+      user: user,
+      nextState: nextState,
+      profile: updatedProfile,
+      unreadNotificationCount: unreadNotificationCount,
+      allowedActions: allowedActions,
+    );
+  }
 }
 
 class UserSummary {
@@ -275,6 +419,8 @@ class ProfileSummary {
     required this.verificationStatus,
     required this.isVerified,
     this.displayName,
+    this.completionFlags = const {},
+    this.reverificationRequired = false,
   });
 
   factory ProfileSummary.fromJson(Map<String, dynamic> json) {
@@ -287,6 +433,9 @@ class ProfileSummary {
       verificationStatus:
           json['verification_status'] as String? ?? 'unverified',
       isVerified: json['is_verified'] as bool? ?? false,
+      completionFlags: (json['completion_flags'] as Map<String, dynamic>? ?? {})
+          .map((key, value) => MapEntry(key, value == true)),
+      reverificationRequired: json['reverification_required'] as bool? ?? false,
     );
   }
 
@@ -297,4 +446,58 @@ class ProfileSummary {
   final int completionScore;
   final String verificationStatus;
   final bool isVerified;
+  final Map<String, bool> completionFlags;
+  final bool reverificationRequired;
+}
+
+class OwnerProfileResult {
+  const OwnerProfileResult({
+    required this.profile,
+    required this.editableFields,
+    required this.lockedFields,
+    required this.roleSpecific,
+  });
+
+  factory OwnerProfileResult.fromJson(Map<String, dynamic> json) {
+    return OwnerProfileResult(
+      profile: ProfileSummary.fromJson(json['profile'] as Map<String, dynamic>),
+      editableFields: (json['editable_fields'] as List<dynamic>? ?? [])
+          .map((value) => value.toString())
+          .toList(growable: false),
+      lockedFields: (json['locked_fields'] as List<dynamic>? ?? [])
+          .map((value) => value.toString())
+          .toList(growable: false),
+      roleSpecific: Map<String, dynamic>.from(
+        json['role_specific'] as Map<String, dynamic>? ?? {},
+      ),
+    );
+  }
+
+  final ProfileSummary profile;
+  final List<String> editableFields;
+  final List<String> lockedFields;
+  final Map<String, dynamic> roleSpecific;
+}
+
+class CategoryOption {
+  const CategoryOption({
+    required this.id,
+    required this.categoryType,
+    required this.name,
+    this.parentId,
+  });
+
+  factory CategoryOption.fromJson(Map<String, dynamic> json) {
+    return CategoryOption(
+      id: json['id'] as String,
+      parentId: json['parent_id'] as String?,
+      categoryType: json['category_type'] as String,
+      name: json['name'] as String,
+    );
+  }
+
+  final String id;
+  final String? parentId;
+  final String categoryType;
+  final String name;
 }

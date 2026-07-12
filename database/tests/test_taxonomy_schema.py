@@ -90,6 +90,8 @@ def test_taxonomy_seed_data_contains_mvp_terms() -> None:
         "manufacturer",
         "wholesaler",
         "trader",
+        "manufacturing",
+        "other-textile-business",
     ):
         assert expected_term in combined_seed_text
 

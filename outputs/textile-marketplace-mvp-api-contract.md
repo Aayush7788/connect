@@ -408,6 +408,15 @@ Skilled worker:
 
 Hide removes from search/recommended/similar lists. Saved/direct links can still open the profile with status rules.
 
+### 6.6 Profile Form Taxonomy
+
+`GET /v1/taxonomy/categories?category_type={type}&parent_id={optional_uuid}`
+
+Returns active category IDs and labels for authenticated profile and marketplace
+forms. Supported types are `business_category`, `work_category`, `work_name`,
+`product_type`, and `skill`. The backend remains the only database access layer;
+mobile and admin clients do not read category tables directly.
+
 ## 7. Search APIs
 
 ### 7.1 Search

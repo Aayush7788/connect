@@ -34,6 +34,7 @@ def test_required_mvp_operations_are_named() -> None:
         "completeBasicAccount",
         "confirmRole",
         "getMe",
+        "listCategories",
         "getMyProfile",
         "updateMyProfile",
         "completeMyProfile",

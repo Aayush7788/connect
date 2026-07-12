@@ -16,6 +16,7 @@ lib/src/api/saved_api.dart
 lib/src/api/search_api.dart
 lib/src/api/settings_api.dart
 lib/src/api/share_api.dart
+lib/src/api/taxonomy_api.dart
 lib/src/api/verification_api.dart
 lib/src/api/work_cards_api.dart
 lib/src/api/work_needed_posts_api.dart
@@ -38,6 +39,9 @@ lib/src/model/admin_verification_case_private_document_access_inner.dart
 lib/src/model/admin_verification_cases_response.dart
 lib/src/model/auth_session_response.dart
 lib/src/model/basic_account_request.dart
+lib/src/model/category.dart
+lib/src/model/category_list_response.dart
+lib/src/model/category_type.dart
 lib/src/model/confirm_role_request.dart
 lib/src/model/contact_action_request.dart
 lib/src/model/create_export_request.dart

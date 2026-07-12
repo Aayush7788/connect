@@ -21,6 +21,7 @@ export 'package:connect_api_client/src/api/saved_api.dart';
 export 'package:connect_api_client/src/api/search_api.dart';
 export 'package:connect_api_client/src/api/settings_api.dart';
 export 'package:connect_api_client/src/api/share_api.dart';
+export 'package:connect_api_client/src/api/taxonomy_api.dart';
 export 'package:connect_api_client/src/api/verification_api.dart';
 export 'package:connect_api_client/src/api/work_cards_api.dart';
 export 'package:connect_api_client/src/api/work_needed_posts_api.dart';
@@ -38,6 +39,9 @@ export 'package:connect_api_client/src/model/admin_verification_case_private_doc
 export 'package:connect_api_client/src/model/admin_verification_cases_response.dart';
 export 'package:connect_api_client/src/model/auth_session_response.dart';
 export 'package:connect_api_client/src/model/basic_account_request.dart';
+export 'package:connect_api_client/src/model/category.dart';
+export 'package:connect_api_client/src/model/category_list_response.dart';
+export 'package:connect_api_client/src/model/category_type.dart';
 export 'package:connect_api_client/src/model/confirm_role_request.dart';
 export 'package:connect_api_client/src/model/contact_action_request.dart';
 export 'package:connect_api_client/src/model/create_export_request.dart';
@@ -95,4 +99,3 @@ export 'package:connect_api_client/src/model/work_card_upsert_request.dart';
 export 'package:connect_api_client/src/model/work_needed_post.dart';
 export 'package:connect_api_client/src/model/work_needed_post_status.dart';
 export 'package:connect_api_client/src/model/work_needed_post_upsert_request.dart';
-

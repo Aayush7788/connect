@@ -106,6 +106,7 @@ Class | Method | HTTP request | Description
 [*SearchApi*](doc/SearchApi.md) | [**searchMarketplace**](doc/SearchApi.md#searchmarketplace) | **GET** /search | Search marketplace objects
 [*SettingsApi*](doc/SettingsApi.md) | [**updateSettings**](doc/SettingsApi.md#updatesettings) | **PATCH** /me/settings | Update own settings
 [*ShareApi*](doc/ShareApi.md) | [**createShareLink**](doc/ShareApi.md#createsharelink) | **POST** /share-links | Create canonical share link and log share event
+[*TaxonomyApi*](doc/TaxonomyApi.md) | [**listCategories**](doc/TaxonomyApi.md#listcategories) | **GET** /taxonomy/categories | List active categories for profile and marketplace forms
 [*VerificationApi*](doc/VerificationApi.md) | [**getMyVerification**](doc/VerificationApi.md#getmyverification) | **GET** /me/verification | Get own verification summary
 [*VerificationApi*](doc/VerificationApi.md) | [**resubmitVerification**](doc/VerificationApi.md#resubmitverification) | **POST** /me/verification/resubmit | Resubmit changes-requested verification case
 [*VerificationApi*](doc/VerificationApi.md) | [**submitVerification**](doc/VerificationApi.md#submitverification) | **POST** /me/verification/submit | Submit profile for manual verification
@@ -141,6 +142,9 @@ Class | Method | HTTP request | Description
  - [AdminVerificationCasesResponse](doc/AdminVerificationCasesResponse.md)
  - [AuthSessionResponse](doc/AuthSessionResponse.md)
  - [BasicAccountRequest](doc/BasicAccountRequest.md)
+ - [Category](doc/Category.md)
+ - [CategoryListResponse](doc/CategoryListResponse.md)
+ - [CategoryType](doc/CategoryType.md)
  - [ConfirmRoleRequest](doc/ConfirmRoleRequest.md)
  - [ContactActionRequest](doc/ContactActionRequest.md)
  - [CreateExportRequest](doc/CreateExportRequest.md)

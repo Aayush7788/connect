@@ -1,6 +1,8 @@
 import 'package:connect_app/src/features/auth/auth_controller.dart';
 import 'package:connect_app/src/features/auth/auth_screens.dart';
 import 'package:connect_app/src/features/home/home_screen.dart';
+import 'package:connect_app/src/features/profile/profile_form_screen.dart';
+import 'package:connect_app/src/features/profile/profile_settings_screen.dart';
 import 'package:connect_app/src/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -49,6 +51,14 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: AppRoute.home.path,
       builder: (context, state) => const HomeScreen(),
+    ),
+    GoRoute(
+      path: AppRoute.completeProfile.path,
+      builder: (context, state) => const ProfileFormScreen(),
+    ),
+    GoRoute(
+      path: AppRoute.settings.path,
+      builder: (context, state) => const ProfileSettingsScreen(),
     ),
   ],
 );
