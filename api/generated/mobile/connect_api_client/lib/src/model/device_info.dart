@@ -25,6 +25,8 @@ class DeviceInfo {
      this.platform,
 
      this.appVersion,
+
+     this.fcmToken,
   });
 
   @JsonKey(
@@ -63,19 +65,33 @@ class DeviceInfo {
 
 
 
+  @JsonKey(
+
+    name: r'fcm_token',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? fcmToken;
+
+
+
 
 
     @override
     bool operator ==(Object other) => identical(this, other) || other is DeviceInfo &&
       other.deviceId == deviceId &&
       other.platform == platform &&
-      other.appVersion == appVersion;
+      other.appVersion == appVersion &&
+      other.fcmToken == fcmToken;
 
     @override
     int get hashCode =>
         deviceId.hashCode +
         platform.hashCode +
-        appVersion.hashCode;
+        appVersion.hashCode +
+        fcmToken.hashCode;
 
   factory DeviceInfo.fromJson(Map<String, dynamic> json) => _$DeviceInfoFromJson(json);
 
@@ -100,5 +116,4 @@ final String value;
 @override
 String toString() => value;
 }
-
 

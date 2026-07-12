@@ -17,7 +17,7 @@ abstract class _$AdminProfileCWProxy {
 
   AdminProfile completionScore(int completionScore);
 
-  AdminProfile completionFlags(Map<String, Object>? completionFlags);
+  AdminProfile completionFlags(Map<String, bool>? completionFlags);
 
   AdminProfile verificationStatus(VerificationStatus verificationStatus);
 
@@ -43,7 +43,7 @@ abstract class _$AdminProfileCWProxy {
     String? displayName,
     ProfileVisibilityStatus visibilityStatus,
     int completionScore,
-    Map<String, Object>? completionFlags,
+    Map<String, bool>? completionFlags,
     VerificationStatus verificationStatus,
     bool isVerified,
     bool? reverificationRequired,
@@ -78,7 +78,7 @@ class _$AdminProfileCWProxyImpl implements _$AdminProfileCWProxy {
       this(completionScore: completionScore);
 
   @override
-  AdminProfile completionFlags(Map<String, Object>? completionFlags) =>
+  AdminProfile completionFlags(Map<String, bool>? completionFlags) =>
       this(completionFlags: completionFlags);
 
   @override
@@ -149,7 +149,7 @@ class _$AdminProfileCWProxyImpl implements _$AdminProfileCWProxy {
       completionFlags: completionFlags == const $CopyWithPlaceholder()
           ? _value.completionFlags
           // ignore: cast_nullable_to_non_nullable
-          : completionFlags as Map<String, Object>?,
+          : completionFlags as Map<String, bool>?,
       verificationStatus: verificationStatus == const $CopyWithPlaceholder()
           ? _value.verificationStatus
           // ignore: cast_nullable_to_non_nullable
@@ -189,74 +189,71 @@ extension $AdminProfileCopyWith on AdminProfile {
 // JsonSerializableGenerator
 // **************************************************************************
 
-AdminProfile _$AdminProfileFromJson(Map<String, dynamic> json) =>
-    $checkedCreate(
-      'AdminProfile',
+AdminProfile _$AdminProfileFromJson(
+  Map<String, dynamic> json,
+) => $checkedCreate(
+  'AdminProfile',
+  json,
+  ($checkedConvert) {
+    $checkKeys(
       json,
-      ($checkedConvert) {
-        $checkKeys(
-          json,
-          requiredKeys: const [
-            'id',
-            'role',
-            'visibility_status',
-            'completion_score',
-            'verification_status',
-            'is_verified',
-          ],
-        );
-        final val = AdminProfile(
-          id: $checkedConvert('id', (v) => v as String),
-          role: $checkedConvert(
-            'role',
-            (v) => $enumDecode(_$UserRoleEnumMap, v),
-          ),
-          displayName: $checkedConvert('display_name', (v) => v as String?),
-          visibilityStatus: $checkedConvert(
-            'visibility_status',
-            (v) => $enumDecode(_$ProfileVisibilityStatusEnumMap, v),
-          ),
-          completionScore: $checkedConvert(
-            'completion_score',
-            (v) => (v as num).toInt(),
-          ),
-          completionFlags: $checkedConvert(
-            'completion_flags',
-            (v) => (v as Map<String, dynamic>?)?.map(
-              (k, e) => MapEntry(k, e as Object),
-            ),
-          ),
-          verificationStatus: $checkedConvert(
-            'verification_status',
-            (v) => $enumDecode(_$VerificationStatusEnumMap, v),
-          ),
-          isVerified: $checkedConvert('is_verified', (v) => v as bool),
-          reverificationRequired: $checkedConvert(
-            'reverification_required',
-            (v) => v as bool?,
-          ),
-          ownerUserId: $checkedConvert('owner_user_id', (v) => v as String?),
-          isAdminSeeded: $checkedConvert('is_admin_seeded', (v) => v as bool?),
-          claimStatus: $checkedConvert(
-            'claim_status',
-            (v) => $enumDecodeNullable(_$AdminProfileClaimStatusEnumEnumMap, v),
-          ),
-        );
-        return val;
-      },
-      fieldKeyMap: const {
-        'displayName': 'display_name',
-        'visibilityStatus': 'visibility_status',
-        'completionScore': 'completion_score',
-        'completionFlags': 'completion_flags',
-        'verificationStatus': 'verification_status',
-        'isVerified': 'is_verified',
-        'reverificationRequired': 'reverification_required',
-        'ownerUserId': 'owner_user_id',
-        'isAdminSeeded': 'is_admin_seeded',
-        'claimStatus': 'claim_status',
-      },
+      requiredKeys: const [
+        'id',
+        'role',
+        'visibility_status',
+        'completion_score',
+        'verification_status',
+        'is_verified',
+      ],
     );
+    final val = AdminProfile(
+      id: $checkedConvert('id', (v) => v as String),
+      role: $checkedConvert('role', (v) => $enumDecode(_$UserRoleEnumMap, v)),
+      displayName: $checkedConvert('display_name', (v) => v as String?),
+      visibilityStatus: $checkedConvert(
+        'visibility_status',
+        (v) => $enumDecode(_$ProfileVisibilityStatusEnumMap, v),
+      ),
+      completionScore: $checkedConvert(
+        'completion_score',
+        (v) => (v as num).toInt(),
+      ),
+      completionFlags: $checkedConvert(
+        'completion_flags',
+        (v) =>
+            (v as Map<String, dynamic>?)?.map((k, e) => MapEntry(k, e as bool)),
+      ),
+      verificationStatus: $checkedConvert(
+        'verification_status',
+        (v) => $enumDecode(_$VerificationStatusEnumMap, v),
+      ),
+      isVerified: $checkedConvert('is_verified', (v) => v as bool),
+      reverificationRequired: $checkedConvert(
+        'reverification_required',
+        (v) => v as bool?,
+      ),
+      ownerUserId: $checkedConvert('owner_user_id', (v) => v as String?),
+      isAdminSeeded: $checkedConvert('is_admin_seeded', (v) => v as bool?),
+      claimStatus: $checkedConvert(
+        'claim_status',
+        (v) => $enumDecodeNullable(_$AdminProfileClaimStatusEnumEnumMap, v),
+      ),
+    );
+    return val;
+  },
+  fieldKeyMap: const {
+    'displayName': 'display_name',
+    'visibilityStatus': 'visibility_status',
+    'completionScore': 'completion_score',
+    'completionFlags': 'completion_flags',
+    'verificationStatus': 'verification_status',
+    'isVerified': 'is_verified',
+    'reverificationRequired': 'reverification_required',
+    'ownerUserId': 'owner_user_id',
+    'isAdminSeeded': 'is_admin_seeded',
+    'claimStatus': 'claim_status',
+  },
+);
 
 Map<String, dynamic> _$AdminProfileToJson(
   AdminProfile instance,

@@ -964,6 +964,7 @@ export interface components {
             /** @enum {string} */
             platform?: "android";
             app_version?: string;
+            fcm_token?: string;
         };
         AuthSessionResponse: {
             access_token: string;
@@ -987,6 +988,8 @@ export interface components {
         };
         MeResponse: {
             user: components["schemas"]["User"];
+            /** @enum {string} */
+            next_state: "complete_basic_account" | "role_selection_required" | "home" | "account_blocked";
             profile?: components["schemas"]["ProfileSummary"];
             unread_notification_count?: number;
             allowed_actions?: string[];
@@ -999,7 +1002,7 @@ export interface components {
             visibility_status: components["schemas"]["ProfileVisibilityStatus"];
             completion_score: number;
             completion_flags?: {
-                [key: string]: unknown;
+                [key: string]: boolean;
             };
             verification_status: components["schemas"]["VerificationStatus"];
             is_verified: boolean;
@@ -1014,9 +1017,33 @@ export interface components {
             };
             media?: components["schemas"]["MediaAsset"][];
         };
-        /** @description Role-specific profile update body validated by backend. */
+        /** @description Partial owner profile update. Backend rejects fields outside the authenticated profile role. */
         ProfileUpdateRequest: {
-            [key: string]: unknown;
+            owner_name?: string | null;
+            alternate_contact_number?: string | null;
+            full_address?: string | null;
+            address_line1?: string | null;
+            address_line2?: string | null;
+            locality?: string | null;
+            city?: string | null;
+            state?: string | null;
+            pincode?: string | null;
+            business_name?: string | null;
+            /** Format: uuid */
+            business_category_id?: string | null;
+            manufacture_sell_details?: string | null;
+            product_notes?: string | null;
+            product_type_ids?: string[] | null;
+            custom_product_types?: string[] | null;
+            workshop_name?: string | null;
+            has_workshop?: boolean | null;
+            work_summary?: string | null;
+            profile_experience_years?: number | null;
+            /** Format: uuid */
+            primary_skill_category_id?: string | null;
+            skill_mastery?: string | null;
+            experience_years?: number | null;
+            bio?: string | null;
         };
         PublicProfileDetail: {
             profile: components["schemas"]["ProfileSummary"];

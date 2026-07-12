@@ -163,6 +163,7 @@ Class | Method | HTTP request | Description
  - [OtpVerifyRequest](doc/OtpVerifyRequest.md)
  - [OwnerProfileResponse](doc/OwnerProfileResponse.md)
  - [ProfileSummary](doc/ProfileSummary.md)
+ - [ProfileUpdateRequest](doc/ProfileUpdateRequest.md)
  - [ProfileVisibilityStatus](doc/ProfileVisibilityStatus.md)
  - [PublicAddress](doc/PublicAddress.md)
  - [PublicContact](doc/PublicContact.md)

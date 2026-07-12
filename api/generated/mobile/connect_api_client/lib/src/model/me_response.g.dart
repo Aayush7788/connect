@@ -9,6 +9,8 @@ part of 'me_response.dart';
 abstract class _$MeResponseCWProxy {
   MeResponse user(User user);
 
+  MeResponse nextState(MeResponseNextStateEnum nextState);
+
   MeResponse profile(ProfileSummary? profile);
 
   MeResponse unreadNotificationCount(int? unreadNotificationCount);
@@ -23,6 +25,7 @@ abstract class _$MeResponseCWProxy {
   /// ````
   MeResponse call({
     User user,
+    MeResponseNextStateEnum nextState,
     ProfileSummary? profile,
     int? unreadNotificationCount,
     List<String>? allowedActions,
@@ -37,6 +40,10 @@ class _$MeResponseCWProxyImpl implements _$MeResponseCWProxy {
 
   @override
   MeResponse user(User user) => this(user: user);
+
+  @override
+  MeResponse nextState(MeResponseNextStateEnum nextState) =>
+      this(nextState: nextState);
 
   @override
   MeResponse profile(ProfileSummary? profile) => this(profile: profile);
@@ -58,6 +65,7 @@ class _$MeResponseCWProxyImpl implements _$MeResponseCWProxy {
   /// ````
   MeResponse call({
     Object? user = const $CopyWithPlaceholder(),
+    Object? nextState = const $CopyWithPlaceholder(),
     Object? profile = const $CopyWithPlaceholder(),
     Object? unreadNotificationCount = const $CopyWithPlaceholder(),
     Object? allowedActions = const $CopyWithPlaceholder(),
@@ -67,6 +75,10 @@ class _$MeResponseCWProxyImpl implements _$MeResponseCWProxy {
           ? _value.user
           // ignore: cast_nullable_to_non_nullable
           : user as User,
+      nextState: nextState == const $CopyWithPlaceholder()
+          ? _value.nextState
+          // ignore: cast_nullable_to_non_nullable
+          : nextState as MeResponseNextStateEnum,
       profile: profile == const $CopyWithPlaceholder()
           ? _value.profile
           // ignore: cast_nullable_to_non_nullable
@@ -98,11 +110,15 @@ MeResponse _$MeResponseFromJson(Map<String, dynamic> json) => $checkedCreate(
   'MeResponse',
   json,
   ($checkedConvert) {
-    $checkKeys(json, requiredKeys: const ['user']);
+    $checkKeys(json, requiredKeys: const ['user', 'next_state']);
     final val = MeResponse(
       user: $checkedConvert(
         'user',
         (v) => User.fromJson(v as Map<String, dynamic>),
+      ),
+      nextState: $checkedConvert(
+        'next_state',
+        (v) => $enumDecode(_$MeResponseNextStateEnumEnumMap, v),
       ),
       profile: $checkedConvert(
         'profile',
@@ -122,6 +138,7 @@ MeResponse _$MeResponseFromJson(Map<String, dynamic> json) => $checkedCreate(
     return val;
   },
   fieldKeyMap: const {
+    'nextState': 'next_state',
     'unreadNotificationCount': 'unread_notification_count',
     'allowedActions': 'allowed_actions',
   },
@@ -130,7 +147,15 @@ MeResponse _$MeResponseFromJson(Map<String, dynamic> json) => $checkedCreate(
 Map<String, dynamic> _$MeResponseToJson(MeResponse instance) =>
     <String, dynamic>{
       'user': instance.user.toJson(),
+      'next_state': _$MeResponseNextStateEnumEnumMap[instance.nextState]!,
       'profile': ?instance.profile?.toJson(),
       'unread_notification_count': ?instance.unreadNotificationCount,
       'allowed_actions': ?instance.allowedActions,
     };
+
+const _$MeResponseNextStateEnumEnumMap = {
+  MeResponseNextStateEnum.completeBasicAccount: 'complete_basic_account',
+  MeResponseNextStateEnum.roleSelectionRequired: 'role_selection_required',
+  MeResponseNextStateEnum.home: 'home',
+  MeResponseNextStateEnum.accountBlocked: 'account_blocked',
+};

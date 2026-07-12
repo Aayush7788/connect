@@ -60,6 +60,7 @@ export 'package:connect_api_client/src/model/otp_request_response.dart';
 export 'package:connect_api_client/src/model/otp_verify_request.dart';
 export 'package:connect_api_client/src/model/owner_profile_response.dart';
 export 'package:connect_api_client/src/model/profile_summary.dart';
+export 'package:connect_api_client/src/model/profile_update_request.dart';
 export 'package:connect_api_client/src/model/profile_visibility_status.dart';
 export 'package:connect_api_client/src/model/public_address.dart';
 export 'package:connect_api_client/src/model/public_contact.dart';

@@ -34,6 +34,11 @@ def test_required_mvp_operations_are_named() -> None:
         "completeBasicAccount",
         "confirmRole",
         "getMe",
+        "getMyProfile",
+        "updateMyProfile",
+        "completeMyProfile",
+        "hideMyProfile",
+        "showMyProfile",
         "searchMarketplace",
         "getProfileDetail",
         "createUploadIntent",
@@ -59,3 +64,16 @@ def test_search_result_card_does_not_expose_contact_or_full_address() -> None:
     }
 
     assert properties.isdisjoint(forbidden_public_card_fields)
+
+
+def test_profile_update_contract_is_typed_and_role_is_not_editable() -> None:
+    spec = load_openapi()
+    profile_update = spec["components"]["schemas"]["ProfileUpdateRequest"]
+    properties = profile_update["properties"]
+
+    assert profile_update["additionalProperties"] is False
+    assert "business_name" in properties
+    assert "workshop_name" in properties
+    assert "skill_mastery" in properties
+    assert "role" not in properties
+    assert "primary_mobile" not in properties

@@ -112,7 +112,7 @@ class ProfileSummary {
   )
 
 
-  final Map<String, Object>? completionFlags;
+  final Map<String, bool>? completionFlags;
 
 
 

@@ -70,6 +70,12 @@ def test_profile_migration_renders_required_tables_constraints_and_indexes() -> 
         "'changes_requested', 'rejected')"
     ) in migration_sql
     assert "completion_score between 0 and 100" in migration_sql
+    assert "reverification_required BOOLEAN DEFAULT false NOT NULL" in migration_sql
+    assert (
+        "reverification_required = false or "
+        "(is_verified = false and verification_status <> 'verified')" in migration_sql
+    )
+    assert "experience_years is null or experience_years >= 0" in migration_sql
     assert "owner_user_id is not null or is_admin_seeded = true" in migration_sql
     assert "CREATE UNIQUE INDEX uq_profiles_owner_active" in migration_sql
     assert "owner_user_id is not null and deleted_at is null" in migration_sql
@@ -133,3 +139,12 @@ def test_category_suggestions_profile_fk_is_added_by_profile_migration() -> None
     migration_sql = render_offline_sql()
 
     assert "fk_category_suggestions_profile_id_profiles" in migration_sql
+
+
+def test_skilled_worker_experience_distinguishes_unanswered_from_zero() -> None:
+    experience_years = Base.metadata.tables["skilled_worker_profiles"].columns[
+        "experience_years"
+    ]
+
+    assert experience_years.nullable is True
+    assert experience_years.server_default is None

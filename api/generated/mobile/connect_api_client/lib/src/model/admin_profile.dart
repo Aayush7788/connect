@@ -118,7 +118,7 @@ class AdminProfile {
   )
 
 
-  final Map<String, Object>? completionFlags;
+  final Map<String, bool>? completionFlags;
 
 
 

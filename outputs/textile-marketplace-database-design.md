@@ -155,6 +155,7 @@ Columns:
 | `completion_flags` | jsonb not null default '{}' | Missing/complete field flags |
 | `photo_count` | integer not null default 0 | Public profile/shop/workplace photo count cache |
 | `is_verified` | boolean not null default false | Cached from verification status |
+| `reverification_required` | boolean not null default false | Sensitive verified-field edits require a new review |
 | `ranking_score` | numeric(10,4) not null default 0 | Cached ranking score |
 | `last_activity_at` | timestamptz null | Ranking and stale-reminder support |
 | `search_text` | text null | Backend-generated search text |
@@ -311,7 +312,7 @@ Columns:
 | `profile_id` | uuid pk fk profiles(id) |  |
 | `primary_skill_category_id` | uuid null fk categories(id) | Category type `skill` or `work_name` |
 | `skill_mastery` | text not null | Mandatory |
-| `experience_years` | integer not null default 0 | Mandatory |
+| `experience_years` | integer null | Mandatory before completion; null distinguishes unanswered from zero years |
 | `bio` | text null | Optional |
 | `created_at` | timestamptz |  |
 | `updated_at` | timestamptz |  |
