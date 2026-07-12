@@ -26,6 +26,7 @@ build/
 .flutter-plugins-dependencies
 .packages
 pubspec.lock
+!frontend/mobile/pubspec.lock
 
 # IDE / OS
 .vscode/

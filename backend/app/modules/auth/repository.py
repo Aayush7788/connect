@@ -6,7 +6,10 @@ from sqlalchemy.orm import Session
 
 from app.db.models.cross_cutting import Notification
 from app.db.models.identity import User, UserDevice, UserSetting
+from app.db.models.profile import BusinessProfile
+from app.db.models.profile import JobWorkerProfile
 from app.db.models.profile import Profile
+from app.db.models.profile import SkilledWorkerProfile
 from app.modules.auth.schemas import DeviceInfo
 
 
@@ -103,6 +106,43 @@ class AuthRepository:
                 Profile.deleted_at.is_(None),
             )
         )
+
+    def create_profile_shell(self, *, user: User, role: str) -> Profile:
+        profile = Profile(
+            owner_user_id=user.id,
+            role=role,
+            public_name=user.display_name or None,
+            owner_name=user.display_name or None,
+            visibility_status="draft",
+            verification_status="unverified",
+            completion_score=0,
+            completion_flags={},
+            photo_count=0,
+            is_verified=False,
+            ranking_score=0,
+        )
+        self.session.add(profile)
+        self.session.flush()
+
+        if role == "business":
+            self.session.add(
+                BusinessProfile(
+                    profile_id=profile.id,
+                    business_name="",
+                    manufacture_sell_details="",
+                )
+            )
+        elif role == "job_worker":
+            self.session.add(JobWorkerProfile(profile_id=profile.id))
+        elif role == "skilled_worker":
+            self.session.add(
+                SkilledWorkerProfile(
+                    profile_id=profile.id,
+                    skill_mastery="",
+                    experience_years=0,
+                )
+            )
+        return profile
 
     def unread_notification_count(self, user_id: UUID) -> int:
         count_statement: Select[tuple[int]] = select(func.count(Notification.id)).where(

@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from app.core.auth_context import CurrentUser
@@ -12,6 +13,7 @@ from app.modules.auth.schemas import OtpRequest
 from app.modules.auth.schemas import OtpRequestResponse
 from app.modules.auth.schemas import OtpVerifyRequest
 from app.modules.auth.schemas import ProfileSummaryResponse
+from app.modules.auth.schemas import RoleConfirmRequest
 from app.modules.auth.schemas import UserResponse
 
 
@@ -105,6 +107,39 @@ class AuthService:
             accepted_terms_version=payload.accepted_terms_version,
             accepted_privacy_version=payload.accepted_privacy_version,
         )
+        self.repository.commit()
+        return self.me_response_for_user(user)
+
+    async def confirm_role(
+        self,
+        *,
+        current_user: CurrentUser,
+        payload: RoleConfirmRequest,
+    ) -> MeResponse:
+        user = self.repository.get_user_by_auth_user_id(current_user.auth_user_id)
+        if user is None:
+            raise ApiError(
+                status_code=401,
+                code=ErrorCode.UNAUTHORIZED,
+                message="Please login again.",
+            )
+        self.ensure_user_can_use_account_endpoints(user.account_status)
+
+        if user.role is not None and user.role != payload.role:
+            raise ApiError(
+                status_code=403,
+                code=ErrorCode.FORBIDDEN,
+                message="Role is already selected.",
+            )
+
+        profile = self.repository.get_profile_for_user(user.id)
+        if user.role is None:
+            user.role = payload.role
+            user.role_confirmed_at = datetime.now(timezone.utc)
+
+        if profile is None:
+            self.repository.create_profile_shell(user=user, role=payload.role)
+
         self.repository.commit()
         return self.me_response_for_user(user)
 

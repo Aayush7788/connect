@@ -67,3 +67,7 @@ class BasicAccountRequest(BaseModel):
     display_name: str = Field(min_length=1)
     accepted_terms_version: str = Field(min_length=1)
     accepted_privacy_version: str = Field(min_length=1)
+
+
+class RoleConfirmRequest(BaseModel):
+    role: UserRole
