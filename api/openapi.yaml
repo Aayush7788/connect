@@ -1294,6 +1294,8 @@ components:
           enum: [android]
         app_version:
           type: string
+        fcm_token:
+          type: string
     AuthSessionResponse:
       type: object
       required: [access_token, refresh_token, next_state]
@@ -1334,10 +1336,13 @@ components:
           $ref: '#/components/schemas/UserRole'
     MeResponse:
       type: object
-      required: [user]
+      required: [user, next_state]
       properties:
         user:
           $ref: '#/components/schemas/User'
+        next_state:
+          type: string
+          enum: [complete_basic_account, role_selection_required, home, account_blocked]
         profile:
           $ref: '#/components/schemas/ProfileSummary'
         unread_notification_count:

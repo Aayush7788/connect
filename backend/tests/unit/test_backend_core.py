@@ -107,9 +107,9 @@ def test_pagination_dependency_validates_limits() -> None:
 
 
 @pytest.mark.asyncio
-async def test_auth_placeholder_fails_closed() -> None:
+async def test_auth_dependency_requires_bearer_token() -> None:
     with pytest.raises(ApiError) as exc_info:
-        await get_current_user()
+        await get_current_user(credentials=None)
 
     assert exc_info.value.status_code == 401
     assert exc_info.value.code == ErrorCode.UNAUTHORIZED

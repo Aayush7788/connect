@@ -1,32 +1,48 @@
-from dataclasses import dataclass
-from typing import Literal
-from uuid import UUID
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
 
+from app.core.auth_context import CurrentUser
+from app.core.config import Settings, get_settings
 from app.core.errors import ApiError, ErrorCode
+from app.db.session import get_db_session
 
 
-UserRole = Literal["business", "job_worker", "skilled_worker"]
-AccountStatus = Literal["active", "suspended", "terminated"]
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
-@dataclass(frozen=True)
-class CurrentUser:
-    user_id: UUID
-    mobile: str
-    role: UserRole | None
-    account_status: AccountStatus
+def require_bearer_token(
+    credentials: HTTPAuthorizationCredentials | None,
+) -> str:
+    if credentials is None or not credentials.credentials:
+        raise ApiError(
+            status_code=401,
+            code=ErrorCode.UNAUTHORIZED,
+            message="Please login again.",
+        )
+    return credentials.credentials
 
 
-async def get_current_user() -> CurrentUser:
-    raise ApiError(
-        status_code=401,
-        code=ErrorCode.UNAUTHORIZED,
-        message="Please login again.",
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    settings: Settings = Depends(get_settings),
+    session: Session = Depends(get_db_session),
+) -> CurrentUser:
+    from app.integrations.supabase_auth import SupabasePythonAuthGateway
+    from app.modules.auth.repository import AuthRepository
+    from app.modules.auth.service import AuthService
+
+    access_token = require_bearer_token(credentials)
+    auth_service = AuthService(
+        repository=AuthRepository(session),
+        auth_gateway=SupabasePythonAuthGateway(settings),
     )
+    return await auth_service.get_current_user_from_token(access_token)
 
 
-async def get_active_user() -> CurrentUser:
-    user = await get_current_user()
+async def get_active_user(
+    user: CurrentUser = Depends(get_current_user),
+) -> CurrentUser:
     if user.account_status == "suspended":
         raise ApiError(
             status_code=403,
