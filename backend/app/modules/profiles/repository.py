@@ -80,6 +80,22 @@ class ProfileRepository:
             media=media,
         )
 
+    def get_bundle_by_profile_id(
+        self,
+        profile_id: UUID,
+        *,
+        for_update: bool = False,
+    ) -> OwnerProfileBundle | None:
+        owner_user_id = self.session.scalar(
+            select(Profile.owner_user_id).where(
+                Profile.id == profile_id,
+                Profile.deleted_at.is_(None),
+            )
+        )
+        if owner_user_id is None:
+            return None
+        return self.get_owner_bundle(owner_user_id, for_update=for_update)
+
     def _get_role_profile(
         self,
         profile: Profile,

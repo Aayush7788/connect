@@ -1173,22 +1173,28 @@ export interface components {
             /** @enum {string} */
             document_type?: "identity_proof" | "masked_aadhaar" | "gst_proof" | "shop_photo" | "workplace_photo" | "work_photo" | "other";
             filename: string;
-            mime_type: string;
+            /** @enum {string} */
+            mime_type: "image/jpeg" | "image/png" | "image/webp" | "application/pdf";
             byte_size: number;
         };
         UploadIntentResponse: {
             media_asset: components["schemas"]["MediaAsset"];
-            upload: {
-                /** @enum {string} */
-                method: "signed_url" | "backend_proxy";
-                /** Format: uri */
-                url?: string;
-                headers?: {
-                    [key: string]: string;
-                };
-                /** Format: date-time */
-                expires_at?: string;
+            upload: components["schemas"]["UploadDetails"];
+        };
+        UploadDetails: {
+            /** @enum {string} */
+            method: "signed_url";
+            /** @enum {string} */
+            http_method: "PUT";
+            /** @enum {string} */
+            form_field: "file";
+            /** Format: uri */
+            url: string;
+            headers: {
+                [key: string]: string;
             };
+            /** Format: date-time */
+            expires_at: string;
         };
         MediaAsset: {
             /** Format: uuid */
@@ -1200,10 +1206,10 @@ export interface components {
              * Format: uri
              * @description Public-ready media URL only. Private proof media does not expose URL to owners/public.
              */
-            url?: string;
+            url?: string | null;
             /** Format: uri */
             thumbnail_url?: string;
-            sort_order?: number;
+            sort_order: number;
             document_type?: string;
             safe_display_name?: string;
         };

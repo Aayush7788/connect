@@ -45,9 +45,9 @@ import 'package:connect_api_client/src/model/search_response.dart';
 import 'package:connect_api_client/src/model/search_result.dart';
 import 'package:connect_api_client/src/model/share_link_response.dart';
 import 'package:connect_api_client/src/model/update_settings_request.dart';
+import 'package:connect_api_client/src/model/upload_details.dart';
 import 'package:connect_api_client/src/model/upload_intent_request.dart';
 import 'package:connect_api_client/src/model/upload_intent_response.dart';
-import 'package:connect_api_client/src/model/upload_intent_response_upload.dart';
 import 'package:connect_api_client/src/model/user.dart';
 import 'package:connect_api_client/src/model/user_settings.dart';
 import 'package:connect_api_client/src/model/verification_summary.dart';
@@ -196,12 +196,12 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return ShareLinkResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'UpdateSettingsRequest':
           return UpdateSettingsRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'UploadDetails':
+          return UploadDetails.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'UploadIntentRequest':
           return UploadIntentRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'UploadIntentResponse':
           return UploadIntentResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
-        case 'UploadIntentResponseUpload':
-          return UploadIntentResponseUpload.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'UploadStatus':
           
           

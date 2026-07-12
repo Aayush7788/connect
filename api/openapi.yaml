@@ -1770,10 +1770,15 @@ components:
           enum: [identity_proof, masked_aadhaar, gst_proof, shop_photo, workplace_photo, work_photo, other]
         filename:
           type: string
+          minLength: 1
+          maxLength: 255
         mime_type:
           type: string
+          enum: [image/jpeg, image/png, image/webp, application/pdf]
         byte_size:
           type: integer
+          minimum: 1
+          maximum: 10485760
     UploadIntentResponse:
       type: object
       required: [media_asset, upload]
@@ -1781,25 +1786,33 @@ components:
         media_asset:
           $ref: '#/components/schemas/MediaAsset'
         upload:
+          $ref: '#/components/schemas/UploadDetails'
+    UploadDetails:
+      type: object
+      required: [method, http_method, form_field, url, headers, expires_at]
+      properties:
+        method:
+          type: string
+          enum: [signed_url]
+        http_method:
+          type: string
+          enum: [PUT]
+        form_field:
+          type: string
+          enum: [file]
+        url:
+          type: string
+          format: uri
+        headers:
           type: object
-          required: [method]
-          properties:
-            method:
-              type: string
-              enum: [signed_url, backend_proxy]
-            url:
-              type: string
-              format: uri
-            headers:
-              type: object
-              additionalProperties:
-                type: string
-            expires_at:
-              type: string
-              format: date-time
+          additionalProperties:
+            type: string
+        expires_at:
+          type: string
+          format: date-time
     MediaAsset:
       type: object
-      required: [id, media_kind, visibility, upload_status]
+      required: [id, media_kind, visibility, upload_status, sort_order]
       properties:
         id:
           type: string
@@ -1813,6 +1826,7 @@ components:
         url:
           type: string
           format: uri
+          nullable: true
           description: Public-ready media URL only. Private proof media does not expose URL to owners/public.
         thumbnail_url:
           type: string

@@ -119,10 +119,12 @@ class UploadIntentRequest {
   )
 
 
-  final String mimeType;
+  final UploadIntentRequestMimeTypeEnum mimeType;
 
 
 
+          // minimum: 1
+          // maximum: 10485760
   @JsonKey(
     
     name: r'byte_size',
@@ -208,6 +210,26 @@ workPhoto(r'work_photo'),
 other(r'other');
 
 const UploadIntentRequestDocumentTypeEnum(this.value);
+
+final String value;
+
+@override
+String toString() => value;
+}
+
+
+
+enum UploadIntentRequestMimeTypeEnum {
+@JsonValue(r'image/jpeg')
+imageSlashJpeg(r'image/jpeg'),
+@JsonValue(r'image/png')
+imageSlashPng(r'image/png'),
+@JsonValue(r'image/webp')
+imageSlashWebp(r'image/webp'),
+@JsonValue(r'application/pdf')
+applicationSlashPdf(r'application/pdf');
+
+const UploadIntentRequestMimeTypeEnum(this.value);
 
 final String value;
 

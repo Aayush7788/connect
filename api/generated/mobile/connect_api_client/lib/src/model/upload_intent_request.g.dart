@@ -21,7 +21,7 @@ abstract class _$UploadIntentRequestCWProxy {
 
   UploadIntentRequest filename(String filename);
 
-  UploadIntentRequest mimeType(String mimeType);
+  UploadIntentRequest mimeType(UploadIntentRequestMimeTypeEnum mimeType);
 
   UploadIntentRequest byteSize(int byteSize);
 
@@ -38,7 +38,7 @@ abstract class _$UploadIntentRequestCWProxy {
     MediaVisibility visibility,
     UploadIntentRequestDocumentTypeEnum? documentType,
     String filename,
-    String mimeType,
+    UploadIntentRequestMimeTypeEnum mimeType,
     int byteSize,
   });
 }
@@ -74,7 +74,8 @@ class _$UploadIntentRequestCWProxyImpl implements _$UploadIntentRequestCWProxy {
   UploadIntentRequest filename(String filename) => this(filename: filename);
 
   @override
-  UploadIntentRequest mimeType(String mimeType) => this(mimeType: mimeType);
+  UploadIntentRequest mimeType(UploadIntentRequestMimeTypeEnum mimeType) =>
+      this(mimeType: mimeType);
 
   @override
   UploadIntentRequest byteSize(int byteSize) => this(byteSize: byteSize);
@@ -124,7 +125,7 @@ class _$UploadIntentRequestCWProxyImpl implements _$UploadIntentRequestCWProxy {
       mimeType: mimeType == const $CopyWithPlaceholder()
           ? _value.mimeType
           // ignore: cast_nullable_to_non_nullable
-          : mimeType as String,
+          : mimeType as UploadIntentRequestMimeTypeEnum,
       byteSize: byteSize == const $CopyWithPlaceholder()
           ? _value.byteSize
           // ignore: cast_nullable_to_non_nullable
@@ -183,7 +184,10 @@ UploadIntentRequest _$UploadIntentRequestFromJson(Map<String, dynamic> json) =>
             ),
           ),
           filename: $checkedConvert('filename', (v) => v as String),
-          mimeType: $checkedConvert('mime_type', (v) => v as String),
+          mimeType: $checkedConvert(
+            'mime_type',
+            (v) => $enumDecode(_$UploadIntentRequestMimeTypeEnumEnumMap, v),
+          ),
           byteSize: $checkedConvert('byte_size', (v) => (v as num).toInt()),
         );
         return val;
@@ -209,7 +213,7 @@ Map<String, dynamic> _$UploadIntentRequestToJson(
   'document_type':
       ?_$UploadIntentRequestDocumentTypeEnumEnumMap[instance.documentType],
   'filename': instance.filename,
-  'mime_type': instance.mimeType,
+  'mime_type': _$UploadIntentRequestMimeTypeEnumEnumMap[instance.mimeType]!,
   'byte_size': instance.byteSize,
 };
 
@@ -238,4 +242,11 @@ const _$UploadIntentRequestDocumentTypeEnumEnumMap = {
   UploadIntentRequestDocumentTypeEnum.workplacePhoto: 'workplace_photo',
   UploadIntentRequestDocumentTypeEnum.workPhoto: 'work_photo',
   UploadIntentRequestDocumentTypeEnum.other: 'other',
+};
+
+const _$UploadIntentRequestMimeTypeEnumEnumMap = {
+  UploadIntentRequestMimeTypeEnum.imageSlashJpeg: 'image/jpeg',
+  UploadIntentRequestMimeTypeEnum.imageSlashPng: 'image/png',
+  UploadIntentRequestMimeTypeEnum.imageSlashWebp: 'image/webp',
+  UploadIntentRequestMimeTypeEnum.applicationSlashPdf: 'application/pdf',
 };

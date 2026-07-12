@@ -586,7 +586,7 @@ Columns:
 | `entity_type` | text not null | `profile`, `work_card`, `work_needed_post`, `verification_case` |
 | `entity_id` | uuid not null | Polymorphic target id |
 | `media_kind` | text not null | `image`, `document` |
-| `document_type` | text null | `identity_proof`, `masked_aadhaar`, `gst_proof`, `shop_photo`, `workplace_photo`, `other` |
+| `document_type` | text null | `identity_proof`, `masked_aadhaar`, `gst_proof`, `shop_photo`, `workplace_photo`, `work_photo`, `other` |
 | `visibility` | text not null | `public`, `private_admin_only` |
 | `upload_status` | text not null | `pending_upload`, `uploaded`, `processing`, `ready`, `failed`, `deleted` |
 | `original_path` | text not null | Storage object path |
