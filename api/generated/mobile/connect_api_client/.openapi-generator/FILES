@@ -60,6 +60,7 @@ lib/src/model/otp_request_response.dart
 lib/src/model/otp_verify_request.dart
 lib/src/model/owner_profile_response.dart
 lib/src/model/profile_summary.dart
+lib/src/model/profile_update_request.dart
 lib/src/model/profile_visibility_status.dart
 lib/src/model/public_address.dart
 lib/src/model/public_contact.dart

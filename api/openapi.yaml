@@ -1370,7 +1370,8 @@ components:
           maximum: 100
         completion_flags:
           type: object
-          additionalProperties: true
+          additionalProperties:
+            type: boolean
         verification_status:
           $ref: '#/components/schemas/VerificationStatus'
         is_verified:
@@ -1400,8 +1401,109 @@ components:
             $ref: '#/components/schemas/MediaAsset'
     ProfileUpdateRequest:
       type: object
-      additionalProperties: true
-      description: Role-specific profile update body validated by backend.
+      additionalProperties: false
+      minProperties: 1
+      description: Partial owner profile update. Backend rejects fields outside the authenticated profile role.
+      properties:
+        owner_name:
+          type: string
+          maxLength: 160
+          nullable: true
+        alternate_contact_number:
+          type: string
+          maxLength: 20
+          nullable: true
+        full_address:
+          type: string
+          maxLength: 500
+          nullable: true
+        address_line1:
+          type: string
+          maxLength: 250
+          nullable: true
+        address_line2:
+          type: string
+          maxLength: 250
+          nullable: true
+        locality:
+          type: string
+          maxLength: 160
+          nullable: true
+        city:
+          type: string
+          maxLength: 120
+          nullable: true
+        state:
+          type: string
+          maxLength: 120
+          nullable: true
+        pincode:
+          type: string
+          pattern: '^\d{6}$'
+          nullable: true
+        business_name:
+          type: string
+          maxLength: 200
+          nullable: true
+        business_category_id:
+          type: string
+          format: uuid
+          nullable: true
+        manufacture_sell_details:
+          type: string
+          maxLength: 2000
+          nullable: true
+        product_notes:
+          type: string
+          maxLength: 1000
+          nullable: true
+        product_type_ids:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            format: uuid
+          nullable: true
+        custom_product_types:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 160
+          nullable: true
+        workshop_name:
+          type: string
+          maxLength: 200
+          nullable: true
+        has_workshop:
+          type: boolean
+          nullable: true
+        work_summary:
+          type: string
+          maxLength: 2000
+          nullable: true
+        profile_experience_years:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        primary_skill_category_id:
+          type: string
+          format: uuid
+          nullable: true
+        skill_mastery:
+          type: string
+          maxLength: 1000
+          nullable: true
+        experience_years:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        bio:
+          type: string
+          maxLength: 2000
+          nullable: true
     PublicProfileDetail:
       type: object
       required: [profile, contact, media]

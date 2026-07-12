@@ -55,6 +55,11 @@ class Profile(TimestampMixin, Base):
             name="verified_flag_requires_verified_status",
         ),
         CheckConstraint(
+            "reverification_required = false or "
+            "(is_verified = false and verification_status <> 'verified')",
+            name="reverification_requires_unverified_profile",
+        ),
+        CheckConstraint(
             "owner_user_id is not null or is_admin_seeded = true",
             name="owner_or_admin_seeded_required",
         ),
@@ -142,6 +147,10 @@ class Profile(TimestampMixin, Base):
         server_default=text("0"),
     )
     is_verified: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default=text("false"),
+    )
+    reverification_required: Mapped[bool] = mapped_column(
         Boolean,
         server_default=text("false"),
     )
@@ -282,7 +291,7 @@ class SkilledWorkerProfile(TimestampMixin, Base):
     __tablename__ = "skilled_worker_profiles"
     __table_args__ = (
         CheckConstraint(
-            "experience_years >= 0",
+            "experience_years is null or experience_years >= 0",
             name="experience_years_non_negative",
         ),
         Index("idx_skilled_worker_profiles_skill", "primary_skill_category_id"),
@@ -298,10 +307,7 @@ class SkilledWorkerProfile(TimestampMixin, Base):
         ForeignKey("categories.id"),
     )
     skill_mastery: Mapped[str] = mapped_column(Text)
-    experience_years: Mapped[int] = mapped_column(
-        Integer,
-        server_default=text("0"),
-    )
+    experience_years: Mapped[int | None] = mapped_column(Integer)
     bio: Mapped[str | None] = mapped_column(Text)
 
 

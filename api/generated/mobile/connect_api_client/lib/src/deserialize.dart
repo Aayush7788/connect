@@ -30,6 +30,7 @@ import 'package:connect_api_client/src/model/otp_request_response.dart';
 import 'package:connect_api_client/src/model/otp_verify_request.dart';
 import 'package:connect_api_client/src/model/owner_profile_response.dart';
 import 'package:connect_api_client/src/model/profile_summary.dart';
+import 'package:connect_api_client/src/model/profile_update_request.dart';
 import 'package:connect_api_client/src/model/public_address.dart';
 import 'package:connect_api_client/src/model/public_contact.dart';
 import 'package:connect_api_client/src/model/public_profile_detail.dart';
@@ -145,6 +146,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return OwnerProfileResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ProfileSummary':
           return ProfileSummary.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'ProfileUpdateRequest':
+          return ProfileUpdateRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ProfileVisibilityStatus':
           
           

@@ -139,7 +139,7 @@ class AuthRepository:
                 SkilledWorkerProfile(
                     profile_id=profile.id,
                     skill_mastery="",
-                    experience_years=0,
+                    experience_years=None,
                 )
             )
         return profile

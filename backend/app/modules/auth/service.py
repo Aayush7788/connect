@@ -211,7 +211,7 @@ class AuthService:
             completion_flags=profile.completion_flags,
             verification_status=profile.verification_status,
             is_verified=profile.is_verified,
-            reverification_required=False,
+            reverification_required=getattr(profile, "reverification_required", False),
         )
 
     @staticmethod

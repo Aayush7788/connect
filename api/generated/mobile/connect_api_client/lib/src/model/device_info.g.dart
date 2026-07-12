@@ -13,6 +13,8 @@ abstract class _$DeviceInfoCWProxy {
 
   DeviceInfo appVersion(String? appVersion);
 
+  DeviceInfo fcmToken(String? fcmToken);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `DeviceInfo(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -23,6 +25,7 @@ abstract class _$DeviceInfoCWProxy {
     String? deviceId,
     DeviceInfoPlatformEnum? platform,
     String? appVersion,
+    String? fcmToken,
   });
 }
 
@@ -43,6 +46,9 @@ class _$DeviceInfoCWProxyImpl implements _$DeviceInfoCWProxy {
   DeviceInfo appVersion(String? appVersion) => this(appVersion: appVersion);
 
   @override
+  DeviceInfo fcmToken(String? fcmToken) => this(fcmToken: fcmToken);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `DeviceInfo(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -53,6 +59,7 @@ class _$DeviceInfoCWProxyImpl implements _$DeviceInfoCWProxy {
     Object? deviceId = const $CopyWithPlaceholder(),
     Object? platform = const $CopyWithPlaceholder(),
     Object? appVersion = const $CopyWithPlaceholder(),
+    Object? fcmToken = const $CopyWithPlaceholder(),
   }) {
     return DeviceInfo(
       deviceId: deviceId == const $CopyWithPlaceholder()
@@ -67,6 +74,10 @@ class _$DeviceInfoCWProxyImpl implements _$DeviceInfoCWProxy {
           ? _value.appVersion
           // ignore: cast_nullable_to_non_nullable
           : appVersion as String?,
+      fcmToken: fcmToken == const $CopyWithPlaceholder()
+          ? _value.fcmToken
+          // ignore: cast_nullable_to_non_nullable
+          : fcmToken as String?,
     );
   }
 }
@@ -92,10 +103,15 @@ DeviceInfo _$DeviceInfoFromJson(Map<String, dynamic> json) => $checkedCreate(
         (v) => $enumDecodeNullable(_$DeviceInfoPlatformEnumEnumMap, v),
       ),
       appVersion: $checkedConvert('app_version', (v) => v as String?),
+      fcmToken: $checkedConvert('fcm_token', (v) => v as String?),
     );
     return val;
   },
-  fieldKeyMap: const {'deviceId': 'device_id', 'appVersion': 'app_version'},
+  fieldKeyMap: const {
+    'deviceId': 'device_id',
+    'appVersion': 'app_version',
+    'fcmToken': 'fcm_token',
+  },
 );
 
 Map<String, dynamic> _$DeviceInfoToJson(DeviceInfo instance) =>
@@ -103,6 +119,7 @@ Map<String, dynamic> _$DeviceInfoToJson(DeviceInfo instance) =>
       'device_id': ?instance.deviceId,
       'platform': ?_$DeviceInfoPlatformEnumEnumMap[instance.platform],
       'app_version': ?instance.appVersion,
+      'fcm_token': ?instance.fcmToken,
     };
 
 const _$DeviceInfoPlatformEnumEnumMap = {

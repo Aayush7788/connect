@@ -24,6 +24,8 @@ class MeResponse {
 
     required  this.user,
 
+    required  this.nextState,
+
      this.profile,
 
      this.unreadNotificationCount,
@@ -45,6 +47,18 @@ class MeResponse {
 
   @JsonKey(
     
+    name: r'next_state',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final MeResponseNextStateEnum nextState;
+
+
+
+  @JsonKey(
+
     name: r'profile',
     required: false,
     includeIfNull: false,
@@ -84,6 +98,7 @@ class MeResponse {
     @override
     bool operator ==(Object other) => identical(this, other) || other is MeResponse &&
       other.user == user &&
+      other.nextState == nextState &&
       other.profile == profile &&
       other.unreadNotificationCount == unreadNotificationCount &&
       other.allowedActions == allowedActions;
@@ -91,6 +106,7 @@ class MeResponse {
     @override
     int get hashCode =>
         user.hashCode +
+        nextState.hashCode +
         profile.hashCode +
         unreadNotificationCount.hashCode +
         allowedActions.hashCode;
@@ -106,3 +122,21 @@ class MeResponse {
 
 }
 
+
+enum MeResponseNextStateEnum {
+@JsonValue(r'complete_basic_account')
+completeBasicAccount(r'complete_basic_account'),
+@JsonValue(r'role_selection_required')
+roleSelectionRequired(r'role_selection_required'),
+@JsonValue(r'home')
+home(r'home'),
+@JsonValue(r'account_blocked')
+accountBlocked(r'account_blocked');
+
+const MeResponseNextStateEnum(this.value);
+
+final String value;
+
+@override
+String toString() => value;
+}

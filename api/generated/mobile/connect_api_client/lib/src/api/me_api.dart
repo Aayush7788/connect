@@ -12,6 +12,7 @@ import 'package:dio/dio.dart';
 import 'package:connect_api_client/src/model/error_response.dart';
 import 'package:connect_api_client/src/model/me_response.dart';
 import 'package:connect_api_client/src/model/owner_profile_response.dart';
+import 'package:connect_api_client/src/model/profile_update_request.dart';
 
 class MeApi {
 
@@ -406,7 +407,7 @@ _responseData = rawData == null ? null : deserialize<OwnerProfileResponse, Owner
   /// 
   ///
   /// Parameters:
-  /// * [requestBody] 
+  /// * [profileUpdateRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -417,7 +418,7 @@ _responseData = rawData == null ? null : deserialize<OwnerProfileResponse, Owner
   /// Returns a [Future] containing a [Response] with a [OwnerProfileResponse] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<OwnerProfileResponse>> updateMyProfile({ 
-    required Map<String, Object> requestBody,
+    required ProfileUpdateRequest profileUpdateRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -448,7 +449,7 @@ _responseData = rawData == null ? null : deserialize<OwnerProfileResponse, Owner
     dynamic _bodyData;
 
     try {
-      _bodyData = jsonEncode(requestBody);
+      _bodyData = jsonEncode(profileUpdateRequest);
 
     } catch(error, stackTrace) {
       throw DioException(
