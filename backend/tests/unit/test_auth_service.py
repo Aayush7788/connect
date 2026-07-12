@@ -10,6 +10,7 @@ from app.modules.auth.schemas import BasicAccountRequest
 from app.modules.auth.schemas import DeviceInfo
 from app.modules.auth.schemas import OtpRequest
 from app.modules.auth.schemas import OtpVerifyRequest
+from app.modules.auth.schemas import RoleConfirmRequest
 from app.modules.auth.service import AuthService, normalize_mobile
 
 
@@ -93,6 +94,19 @@ class FakeRepository:
         self.devices.append((user.id, device))
 
     def get_profile_for_user(self, user_id: UUID):
+        return self.profile
+
+    def create_profile_shell(self, *, user, role: str):
+        self.profile = SimpleNamespace(
+            id=uuid4(),
+            role=role,
+            public_name=user.display_name,
+            visibility_status="draft",
+            completion_score=0,
+            completion_flags={},
+            verification_status="unverified",
+            is_verified=False,
+        )
         return self.profile
 
     def unread_notification_count(self, user_id: UUID) -> int:
@@ -184,6 +198,94 @@ async def test_complete_basic_account_moves_user_to_role_selection() -> None:
     assert response.next_state == "role_selection_required"
     assert response.user.display_name == "Aayush"
     assert response.allowed_actions == ["select_role", "logout"]
+
+
+@pytest.mark.asyncio
+async def test_confirm_role_saves_role_and_creates_profile_shell() -> None:
+    service, repository, gateway = make_service()
+    user = repository.create_user_after_otp(
+        auth_user_id=gateway.auth_user_id,
+        mobile="+919999999999",
+    )
+    user.display_name = "Aayush"
+    user.accepted_terms_version = "2026-07-10"
+    user.accepted_privacy_version = "2026-07-10"
+    current_user = CurrentUser(
+        user_id=user.id,
+        auth_user_id=user.auth_user_id,
+        mobile=user.primary_mobile,
+        role=None,
+        account_status="active",
+    )
+
+    response = await service.confirm_role(
+        current_user=current_user,
+        payload=RoleConfirmRequest(role="job_worker"),
+    )
+
+    assert user.role == "job_worker"
+    assert user.role_confirmed_at is not None
+    assert response.next_state == "home"
+    assert response.profile is not None
+    assert response.profile.role == "job_worker"
+
+
+@pytest.mark.asyncio
+async def test_confirm_role_is_idempotent_for_same_role() -> None:
+    service, repository, gateway = make_service()
+    user = repository.create_user_after_otp(
+        auth_user_id=gateway.auth_user_id,
+        mobile="+919999999999",
+    )
+    user.display_name = "Aayush"
+    user.accepted_terms_version = "2026-07-10"
+    user.accepted_privacy_version = "2026-07-10"
+    user.role = "job_worker"
+    repository.create_profile_shell(user=user, role="job_worker")
+    current_user = CurrentUser(
+        user_id=user.id,
+        auth_user_id=user.auth_user_id,
+        mobile=user.primary_mobile,
+        role="job_worker",
+        account_status="active",
+    )
+
+    response = await service.confirm_role(
+        current_user=current_user,
+        payload=RoleConfirmRequest(role="job_worker"),
+    )
+
+    assert response.next_state == "home"
+    assert response.profile is not None
+    assert response.profile.role == "job_worker"
+
+
+@pytest.mark.asyncio
+async def test_confirm_role_rejects_different_existing_role() -> None:
+    service, repository, gateway = make_service()
+    user = repository.create_user_after_otp(
+        auth_user_id=gateway.auth_user_id,
+        mobile="+919999999999",
+    )
+    user.display_name = "Aayush"
+    user.accepted_terms_version = "2026-07-10"
+    user.accepted_privacy_version = "2026-07-10"
+    user.role = "job_worker"
+    current_user = CurrentUser(
+        user_id=user.id,
+        auth_user_id=user.auth_user_id,
+        mobile=user.primary_mobile,
+        role="job_worker",
+        account_status="active",
+    )
+
+    with pytest.raises(ApiError) as exc_info:
+        await service.confirm_role(
+            current_user=current_user,
+            payload=RoleConfirmRequest(role="business"),
+        )
+
+    assert exc_info.value.code == ErrorCode.FORBIDDEN
 
 
 @pytest.mark.asyncio

@@ -52,6 +52,12 @@ class FakeAuthService:
     async def complete_basic_account(self, *, current_user, payload) -> MeResponse:
         return self.me_response
 
+    async def confirm_role(self, *, current_user, payload) -> MeResponse:
+        self.me_response.user.role = payload.role
+        self.me_response.next_state = "home"
+        self.me_response.allowed_actions = ["search", "view_profile", "logout"]
+        return self.me_response
+
     async def get_current_user_from_token(self, access_token: str) -> CurrentUser:
         return self.current_user
 
@@ -116,6 +122,20 @@ def test_get_me_returns_onboarding_state_for_verified_session() -> None:
     assert response.status_code == 200
     assert response.json()["next_state"] == "role_selection_required"
     assert response.json()["allowed_actions"] == ["select_role", "logout"]
+
+
+def test_confirm_role_endpoint_returns_home_state() -> None:
+    client = client_with_fake_auth(FakeAuthService())
+
+    response = client.post(
+        "/v1/auth/role/confirm",
+        headers={"Authorization": "Bearer access-token"},
+        json={"role": "job_worker"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["next_state"] == "home"
+    assert response.json()["user"]["role"] == "job_worker"
 
 
 def test_logout_uses_current_bearer_token() -> None:

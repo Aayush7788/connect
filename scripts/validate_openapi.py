@@ -35,7 +35,9 @@ def main() -> int:
         print("OpenAPI document must contain paths.", file=sys.stderr)
         return 1
 
-    print(f"OpenAPI OK: version={openapi_version}, paths={len(paths)}, schemas={len(schemas)}")
+    print(
+        f"OpenAPI OK: version={openapi_version}, paths={len(paths)}, schemas={len(schemas)}"
+    )
     return 0
 
 

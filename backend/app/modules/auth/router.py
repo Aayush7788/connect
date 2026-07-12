@@ -10,6 +10,7 @@ from app.modules.auth.schemas import MeResponse
 from app.modules.auth.schemas import OtpRequest
 from app.modules.auth.schemas import OtpRequestResponse
 from app.modules.auth.schemas import OtpVerifyRequest
+from app.modules.auth.schemas import RoleConfirmRequest
 from app.modules.auth.service import AuthService
 
 
@@ -39,6 +40,18 @@ async def complete_basic_account(
     auth_service: AuthService = Depends(get_auth_service),
 ) -> MeResponse:
     return await auth_service.complete_basic_account(
+        current_user=current_user,
+        payload=payload,
+    )
+
+
+@router.post("/role/confirm", response_model=MeResponse)
+async def confirm_role(
+    payload: RoleConfirmRequest,
+    current_user: CurrentUser = Depends(get_current_user_from_token),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> MeResponse:
+    return await auth_service.confirm_role(
         current_user=current_user,
         payload=payload,
     )
