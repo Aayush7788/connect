@@ -187,6 +187,36 @@ def test_complete_business_profile_publishes_and_locks_owner_name() -> None:
     assert "owner_name" in response.locked_fields
 
 
+def test_owner_profile_returns_url_only_for_ready_public_media() -> None:
+    service, repository, current_user = make_service("business", products=1)
+    repository.bundle.media = [
+        SimpleNamespace(
+            id=uuid4(),
+            media_kind="image",
+            visibility="public",
+            upload_status="ready",
+            sort_order=0,
+            document_type="shop_photo",
+            original_path="profile/profile-id/photo.jpg",
+        ),
+        SimpleNamespace(
+            id=uuid4(),
+            media_kind="image",
+            visibility="public",
+            upload_status="failed",
+            sort_order=1,
+            document_type="shop_photo",
+            original_path="staging/photo.jpg",
+        ),
+    ]
+    service.public_media_url = lambda path: f"https://media.test/{path}"
+
+    response = service.get_owner_profile(current_user)
+
+    assert response.media[0].url == ("https://media.test/profile/profile-id/photo.jpg")
+    assert response.media[1].url is None
+
+
 def test_job_worker_cannot_reach_complete_without_published_valid_work_card() -> None:
     service, repository, current_user = make_service(
         "job_worker", photos=3, work_cards=0

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from collections.abc import Callable
 from typing import Any
 from uuid import UUID
 
@@ -88,8 +89,13 @@ def json_value(value: Any) -> Any:
 
 
 class ProfileService:
-    def __init__(self, repository: ProfileRepository) -> None:
+    def __init__(
+        self,
+        repository: ProfileRepository,
+        public_media_url: Callable[[str], str] | None = None,
+    ) -> None:
         self.repository = repository
+        self.public_media_url = public_media_url
 
     def get_owner_profile(self, current_user: CurrentUser) -> OwnerProfileResponse:
         bundle = self._get_bundle(current_user.user_id)
@@ -550,6 +556,13 @@ class ProfileService:
                     sort_order=media.sort_order,
                     document_type=media.document_type,
                     safe_display_name=self.repository.safe_media_name(media),
+                    url=(
+                        self.public_media_url(media.original_path)
+                        if self.public_media_url is not None
+                        and media.visibility == "public"
+                        and media.upload_status == "ready"
+                        else None
+                    ),
                 )
                 for media in bundle.media
             ],

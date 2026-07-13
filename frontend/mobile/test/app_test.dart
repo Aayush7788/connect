@@ -1,6 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:connect_app/src/connect_app.dart';
 import 'package:connect_app/src/data/connect_api.dart';
+import 'package:connect_app/src/features/media/media_upload_service.dart';
 import 'package:connect_app/src/features/profile/profile_controller.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -159,6 +163,7 @@ void main() {
             _MemoryTokenStore(initialAccessToken: 'access-token'),
           ),
           connectApiProvider.overrideWithValue(api),
+          mediaPickerProvider.overrideWithValue(_NoopMediaPicker()),
         ],
         child: const ConnectApp(),
       ),
@@ -176,7 +181,25 @@ void main() {
     expect(find.text('Job Worker / Value Adder'), findsOneWidget);
     expect(find.text('I work from a workshop'), findsOneWidget);
     expect(find.text('Workshop name'), findsOneWidget);
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Workplace photos'), findsOneWidget);
+    expect(find.text('Minimum 3 photos required'), findsOneWidget);
   });
+}
+
+class _NoopMediaPicker implements MediaPickerGateway {
+  @override
+  Future<List<SelectedMediaImage>> pickImages({required int limit}) async {
+    return const [];
+  }
+
+  @override
+  Future<List<SelectedMediaImage>> recoverLostImages() async => const [];
 }
 
 class _MemoryTokenStore implements TokenStore {
@@ -205,6 +228,7 @@ class _MemoryTokenStore implements TokenStore {
 class _FakeConnectApi implements ConnectApi {
   OwnerProfileResult profile = _ownerProfile();
   Map<String, dynamic>? lastProfileUpdate;
+  int mediaSequence = 0;
 
   @override
   Future<List<CategoryOption>> categories({
@@ -227,6 +251,33 @@ class _FakeConnectApi implements ConnectApi {
       unreadNotificationCount: 0,
     );
   }
+
+  @override
+  Future<void> cancelMediaUpload(String mediaAssetId) async {}
+
+  @override
+  Future<MediaAssetResult> completeMediaUpload(String mediaAssetId) async {
+    return MediaAssetResult(
+      id: mediaAssetId,
+      mediaKind: 'image',
+      visibility: 'public',
+      uploadStatus: 'ready',
+      sortOrder: 0,
+      url: 'https://media.test/$mediaAssetId.jpg',
+      documentType: 'shop_photo',
+    );
+  }
+
+  @override
+  Future<UploadIntentResult> createMediaUploadIntent(
+    MediaUploadIntentRequest request,
+  ) async {
+    final id = 'media-${mediaSequence++}';
+    return _uploadIntent(id, request.documentType);
+  }
+
+  @override
+  Future<void> deleteMedia(String mediaAssetId) async {}
 
   @override
   Future<MeResult> confirmRole({required String role}) async {
@@ -309,6 +360,11 @@ class _FakeConnectApi implements ConnectApi {
   }
 
   @override
+  Future<UploadIntentResult> retryMediaUpload(String mediaAssetId) async {
+    return _uploadIntent(mediaAssetId, 'shop_photo');
+  }
+
+  @override
   Future<OwnerProfileResult> showOwnerProfile() async {
     profile = _ownerProfile(role: profile.profile.role);
     return profile;
@@ -320,6 +376,18 @@ class _FakeConnectApi implements ConnectApi {
   ) async {
     lastProfileUpdate = fields;
     return profile;
+  }
+
+  @override
+  Future<void> uploadMediaBytes({
+    required UploadDetailsResult upload,
+    required Uint8List bytes,
+    required String filename,
+    required String mimeType,
+    required ProgressCallback onProgress,
+    required CancelToken cancelToken,
+  }) async {
+    onProgress(bytes.length, bytes.length);
   }
 
   @override
@@ -337,6 +405,25 @@ class _FakeConnectApi implements ConnectApi {
         displayName: '',
         primaryMobile: mobile,
         accountStatus: 'active',
+      ),
+    );
+  }
+
+  UploadIntentResult _uploadIntent(String id, String documentType) {
+    return UploadIntentResult(
+      mediaAsset: MediaAssetResult(
+        id: id,
+        mediaKind: 'image',
+        visibility: 'public',
+        uploadStatus: 'pending_upload',
+        sortOrder: mediaSequence,
+        documentType: documentType,
+      ),
+      upload: UploadDetailsResult(
+        url: 'https://storage.test/$id',
+        formField: 'file',
+        headers: const {},
+        expiresAt: DateTime.now().add(const Duration(hours: 2)),
       ),
     );
   }
