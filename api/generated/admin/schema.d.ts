@@ -1160,24 +1160,43 @@ export interface components {
         WorkNeededPost: {
             /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            profile_id: string;
             status: components["schemas"]["WorkNeededPostStatus"];
-            work_name: string;
-            category_name: string;
+            title: string;
+            /** Format: uuid */
+            category_id?: string | null;
+            category_name?: string | null;
+            custom_category_text?: string | null;
+            /** Format: uuid */
+            work_name_id?: string | null;
+            work_name?: string | null;
+            custom_work_name?: string | null;
+            product_type_ids: string[];
+            custom_product_texts: string[];
             product_types: string[];
-            description?: string;
+            description?: string | null;
             photo_count: number;
-            photos?: components["schemas"]["MediaAsset"][];
+            photos: components["schemas"]["MediaAsset"][];
+            /** Format: date-time */
+            last_activity_at?: string | null;
+            /** Format: date-time */
+            closed_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         WorkNeededPostUpsertRequest: {
             /** Format: uuid */
-            category_id?: string;
-            custom_category_text?: string;
+            category_id?: string | null;
+            custom_category_text?: string | null;
             /** Format: uuid */
-            work_name_id?: string;
-            custom_work_name?: string;
-            product_type_ids?: string[];
-            custom_product_texts?: string[];
-            description?: string;
+            work_name_id?: string | null;
+            custom_work_name?: string | null;
+            product_type_ids?: string[] | null;
+            custom_product_texts?: string[] | null;
+            description?: string | null;
         };
         UploadIntentRequest: {
             /** @enum {string} */
@@ -2129,7 +2148,9 @@ export interface operations {
     closeWorkNeededPost: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 post_id: components["parameters"]["PostId"];
             };

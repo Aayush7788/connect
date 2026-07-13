@@ -531,7 +531,9 @@ Columns:
 | `custom_work_name` | text null | If not in taxonomy |
 | `title` | text not null |  |
 | `description` | text null |  |
-| `status` | text not null default 'active' | `active`, `paused`, `closed_by_user`, `removed_by_admin`, `deleted` |
+| `creation_idempotency_key` | text null | Retry-safe owner draft creation; never exposed publicly |
+| `creation_request_hash` | text null | Detects reuse of a creation key with different details |
+| `status` | text not null default 'draft' | `draft`, `active`, `paused`, `closed_by_user`, `removed_by_admin`, `deleted` |
 | `photo_count` | integer not null default 0 | Must be at least 3 before publish |
 | `last_activity_at` | timestamptz null |  |
 | `closed_at` | timestamptz null | Future stale reminders |
@@ -544,7 +546,9 @@ Columns:
 
 Constraints:
 
-- `status in ('active', 'paused', 'closed_by_user', 'removed_by_admin', 'deleted')`
+- `status in ('draft', 'active', 'paused', 'closed_by_user', 'removed_by_admin', 'deleted')`
+- Unique `(profile_id, creation_idempotency_key)` where the key is not null.
+- Creation idempotency key and request hash must either both be null or both be present.
 
 Backend publish rules:
 
@@ -553,6 +557,7 @@ Backend publish rules:
 - mapped or custom work name required
 - at least one product type required
 - minimum 3 photos required
+- non-empty description required
 
 ### 8.4 `work_needed_post_product_types`
 

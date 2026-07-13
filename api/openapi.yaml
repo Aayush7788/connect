@@ -584,6 +584,7 @@ paths:
       operationId: closeWorkNeededPost
       parameters:
         - $ref: '#/components/parameters/PostId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: Closed work-needed post
@@ -1775,42 +1776,49 @@ components:
           nullable: true
     WorkNeededPost:
       type: object
-      required: [id, status, work_name, category_name, product_types, photo_count]
+      required:
+        - id
+        - profile_id
+        - status
+        - title
+        - product_type_ids
+        - custom_product_texts
+        - product_types
+        - photo_count
+        - photos
+        - created_at
+        - updated_at
       properties:
         id:
           type: string
           format: uuid
+        profile_id:
+          type: string
+          format: uuid
         status:
           $ref: '#/components/schemas/WorkNeededPostStatus'
-        work_name:
+        title:
           type: string
-        category_name:
-          type: string
-        product_types:
-          type: array
-          items:
-            type: string
-        description:
-          type: string
-        photo_count:
-          type: integer
-        photos:
-          type: array
-          items:
-            $ref: '#/components/schemas/MediaAsset'
-    WorkNeededPostUpsertRequest:
-      type: object
-      properties:
         category_id:
           type: string
           format: uuid
+          nullable: true
+        category_name:
+          type: string
+          nullable: true
         custom_category_text:
           type: string
+          nullable: true
         work_name_id:
           type: string
           format: uuid
+          nullable: true
+        work_name:
+          type: string
+          nullable: true
         custom_work_name:
           type: string
+          nullable: true
         product_type_ids:
           type: array
           items:
@@ -1820,8 +1828,72 @@ components:
           type: array
           items:
             type: string
+        product_types:
+          type: array
+          items:
+            type: string
         description:
           type: string
+          nullable: true
+        photo_count:
+          type: integer
+          minimum: 0
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+        last_activity_at:
+          type: string
+          format: date-time
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    WorkNeededPostUpsertRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
+        custom_category_text:
+          type: string
+          maxLength: 160
+          nullable: true
+        work_name_id:
+          type: string
+          format: uuid
+          nullable: true
+        custom_work_name:
+          type: string
+          maxLength: 160
+          nullable: true
+        product_type_ids:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            format: uuid
+          nullable: true
+        custom_product_texts:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 160
+          nullable: true
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
     UploadIntentRequest:
       type: object
       required: [entity_type, entity_id, media_kind, visibility, filename, mime_type, byte_size]

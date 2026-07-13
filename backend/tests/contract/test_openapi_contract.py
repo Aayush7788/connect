@@ -109,3 +109,22 @@ def test_work_card_contract_supports_drafts_without_exposing_internal_fields() -
     assert "custom_product_texts" in work_card["properties"]
     assert "creation_idempotency_key" not in work_card["properties"]
     assert "search_text" not in work_card["properties"]
+
+
+def test_work_needed_contract_supports_owner_lifecycle_without_internal_fields() -> None:
+    spec = load_openapi()
+    post = spec["components"]["schemas"]["WorkNeededPost"]
+    request = spec["components"]["schemas"]["WorkNeededPostUpsertRequest"]
+    paths = spec["paths"]
+
+    assert request["additionalProperties"] is False
+    assert not request.get("required")
+    assert "profile_id" in post["properties"]
+    assert "product_type_ids" in post["properties"]
+    assert "custom_product_texts" in post["properties"]
+    assert "closed_at" in post["properties"]
+    assert "creation_idempotency_key" not in post["properties"]
+    assert "search_text" not in post["properties"]
+    assert len(
+        paths["/me/work-needed-posts/{post_id}/close"]["post"]["parameters"]
+    ) == 2
