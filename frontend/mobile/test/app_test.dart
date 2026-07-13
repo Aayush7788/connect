@@ -3,12 +3,14 @@ import 'dart:typed_data';
 import 'package:connect_app/src/connect_app.dart';
 import 'package:connect_app/src/data/connect_api.dart';
 import 'package:connect_app/src/data/work_card_models.dart';
+import 'package:connect_app/src/data/work_needed_post_models.dart';
 import 'package:connect_app/src/features/media/media_upload_service.dart';
 import 'package:connect_app/src/features/profile/profile_controller.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   testWidgets('new user sees create account after splash', (tester) async {
@@ -171,6 +173,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    GoRouter.of(tester.element(find.byType(Navigator).first)).go('/splash');
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('My Profile'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('job-worker-profile-tab')));
@@ -192,6 +197,47 @@ void main() {
 
     expect(find.text('Workplace photos'), findsOneWidget);
     expect(find.text('Minimum 3 photos required'), findsOneWidget);
+  });
+
+  testWidgets('business opens work-needed list and sticky add flow', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final api = _FakeConnectApi();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(
+            _MemoryTokenStore(initialAccessToken: 'access-token'),
+          ),
+          connectApiProvider.overrideWithValue(api),
+          mediaPickerProvider.overrideWithValue(_NoopMediaPicker()),
+        ],
+        child: const ConnectApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    GoRouter.of(tester.element(find.byType(Navigator).first)).go('/splash');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('My Profile'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Work Needed Posts'), findsOneWidget);
+    expect(find.text('Find work by posting'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(api.ownerWorkNeededPosts, hasLength(1));
+    expect(find.text('Add Work Needed'), findsOneWidget);
+    expect(find.text('Save and Publish'), findsOneWidget);
   });
 }
 
@@ -231,6 +277,7 @@ class _MemoryTokenStore implements TokenStore {
 class _FakeConnectApi implements ConnectApi {
   OwnerProfileResult profile = _ownerProfile();
   final List<WorkCardResult> ownerWorkCards = [];
+  final List<WorkNeededPostResult> ownerWorkNeededPosts = [];
   Map<String, dynamic>? lastProfileUpdate;
   int mediaSequence = 0;
 
@@ -323,6 +370,54 @@ class _FakeConnectApi implements ConnectApi {
 
   @override
   Future<List<WorkCardResult>> workCards() async => ownerWorkCards;
+
+  @override
+  Future<WorkNeededPostResult> closeWorkNeededPost(String postId) async {
+    return ownerWorkNeededPosts.firstWhere((post) => post.id == postId);
+  }
+
+  @override
+  Future<WorkNeededPostResult> createWorkNeededPost(
+    WorkNeededPostUpsert fields, {
+    String? idempotencyKey,
+  }) async {
+    final post = _workNeededPost(id: 'post-${ownerWorkNeededPosts.length + 1}');
+    ownerWorkNeededPosts.insert(0, post);
+    return post;
+  }
+
+  @override
+  Future<void> deleteWorkNeededPost(String postId) async {
+    ownerWorkNeededPosts.removeWhere((post) => post.id == postId);
+  }
+
+  @override
+  Future<WorkNeededPostResult> pauseWorkNeededPost(String postId) async {
+    return ownerWorkNeededPosts.firstWhere((post) => post.id == postId);
+  }
+
+  @override
+  Future<WorkNeededPostResult> publishWorkNeededPost(String postId) async {
+    return ownerWorkNeededPosts.firstWhere((post) => post.id == postId);
+  }
+
+  @override
+  Future<WorkNeededPostResult> resumeWorkNeededPost(String postId) async {
+    return ownerWorkNeededPosts.firstWhere((post) => post.id == postId);
+  }
+
+  @override
+  Future<WorkNeededPostResult> updateWorkNeededPost(
+    String postId,
+    WorkNeededPostUpsert fields,
+  ) async {
+    return ownerWorkNeededPosts.firstWhere((post) => post.id == postId);
+  }
+
+  @override
+  Future<List<WorkNeededPostResult>> workNeededPosts() async {
+    return ownerWorkNeededPosts;
+  }
 
   @override
   Future<MeResult> confirmRole({required String role}) async {
@@ -477,6 +572,23 @@ class _FakeConnectApi implements ConnectApi {
 WorkCardResult _workCard({required String id}) {
   final now = DateTime(2026, 7, 13);
   return WorkCardResult(
+    id: id,
+    profileId: 'profile-1',
+    status: 'draft',
+    title: '',
+    productTypeIds: const [],
+    customProductTexts: const [],
+    productTypes: const [],
+    photoCount: 0,
+    photos: const [],
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
+WorkNeededPostResult _workNeededPost({required String id}) {
+  final now = DateTime(2026, 7, 13);
+  return WorkNeededPostResult(
     id: id,
     profileId: 'profile-1',
     status: 'draft',

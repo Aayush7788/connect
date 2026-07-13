@@ -3,22 +3,28 @@ import 'package:connect_app/src/features/auth/auth_controller.dart';
 import 'package:connect_app/src/features/profile/profile_controller.dart';
 import 'package:connect_app/src/features/profile/profile_display.dart';
 import 'package:connect_app/src/features/work_cards/work_card_owner_list.dart';
+import 'package:connect_app/src/features/work_needed_posts/work_needed_post_owner_list.dart';
 import 'package:connect_app/src/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class MyProfileDashboard extends ConsumerStatefulWidget {
-  const MyProfileDashboard({super.key, this.onWorkListSelectionChanged});
+  const MyProfileDashboard({
+    super.key,
+    this.onWorkListSelectionChanged,
+    this.onWorkNeededSelectionChanged,
+  });
 
   final ValueChanged<bool>? onWorkListSelectionChanged;
+  final ValueChanged<bool>? onWorkNeededSelectionChanged;
 
   @override
   ConsumerState<MyProfileDashboard> createState() => _MyProfileDashboardState();
 }
 
 class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
-  bool _showWorkList = true;
+  bool _showOwnerList = true;
 
   @override
   void initState() {
@@ -54,6 +60,7 @@ class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
     final isPending = profile.verificationStatus == 'pending';
     final isHidden = profile.visibilityStatus == 'hidden_by_user';
     final isJobWorker = profile.role == 'job_worker';
+    final isBusiness = profile.role == 'business';
     final header = Row(
       children: [
         Expanded(
@@ -70,18 +77,29 @@ class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
       ],
     );
 
-    if (isJobWorker && _showWorkList) {
+    if ((isJobWorker || isBusiness) && _showOwnerList) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           header,
           const SizedBox(height: 14),
-          _JobWorkerProfileTabs(
-            showWorkList: true,
-            onChanged: _setWorkListSelected,
-          ),
+          if (isJobWorker)
+            _JobWorkerProfileTabs(
+              showWorkList: true,
+              onChanged: (selected) =>
+                  _setOwnerListSelected(selected, profile.role),
+            )
+          else
+            _BusinessProfileTabs(
+              showPosts: true,
+              onChanged: (selected) =>
+                  _setOwnerListSelected(selected, profile.role),
+            ),
           const SizedBox(height: 18),
-          const WorkCardOwnerList(),
+          if (isJobWorker)
+            const WorkCardOwnerList()
+          else
+            const WorkNeededPostOwnerList(),
         ],
       );
     }
@@ -94,7 +112,16 @@ class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
           const SizedBox(height: 14),
           _JobWorkerProfileTabs(
             showWorkList: false,
-            onChanged: _setWorkListSelected,
+            onChanged: (selected) =>
+                _setOwnerListSelected(selected, profile.role),
+          ),
+        ],
+        if (isBusiness) ...[
+          const SizedBox(height: 14),
+          _BusinessProfileTabs(
+            showPosts: false,
+            onChanged: (selected) =>
+                _setOwnerListSelected(selected, profile.role),
           ),
         ],
         if (isHidden) ...[
@@ -217,9 +244,13 @@ class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
     );
   }
 
-  void _setWorkListSelected(bool selected) {
-    setState(() => _showWorkList = selected);
-    widget.onWorkListSelectionChanged?.call(selected);
+  void _setOwnerListSelected(bool selected, String role) {
+    setState(() => _showOwnerList = selected);
+    if (role == 'job_worker') {
+      widget.onWorkListSelectionChanged?.call(selected);
+    } else if (role == 'business') {
+      widget.onWorkNeededSelectionChanged?.call(selected);
+    }
   }
 }
 
@@ -250,6 +281,40 @@ class _JobWorkerProfileTabs extends StatelessWidget {
           ),
         ],
         selected: {showWorkList},
+        onSelectionChanged: (values) => onChanged(values.first),
+        showSelectedIcon: false,
+      ),
+    );
+  }
+}
+
+class _BusinessProfileTabs extends StatelessWidget {
+  const _BusinessProfileTabs({
+    required this.showPosts,
+    required this.onChanged,
+  });
+
+  final bool showPosts;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: SegmentedButton<bool>(
+        segments: const [
+          ButtonSegment(
+            value: true,
+            icon: Icon(Icons.post_add_outlined),
+            label: Text('Work Needed Posts'),
+          ),
+          ButtonSegment(
+            value: false,
+            icon: Icon(Icons.person_outline),
+            label: Text('My Profile', key: Key('business-profile-tab')),
+          ),
+        ],
+        selected: {showPosts},
         onSelectionChanged: (values) => onChanged(values.first),
         showSelectedIcon: false,
       ),

@@ -16,6 +16,7 @@ enum AppRoute {
   home('/home'),
   completeProfile('/profile/complete'),
   addWorkCard('/work-cards/new'),
+  addWorkNeededPost('/work-needed-posts/new'),
   settings('/settings');
 
   const AppRoute(this.path);
