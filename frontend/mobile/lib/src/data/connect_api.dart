@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -79,11 +81,32 @@ abstract class ConnectApi {
 
   Future<List<CategoryOption>> categories({required String categoryType});
 
+  Future<UploadIntentResult> createMediaUploadIntent(
+    MediaUploadIntentRequest request,
+  );
+
+  Future<UploadIntentResult> retryMediaUpload(String mediaAssetId);
+
+  Future<MediaAssetResult> completeMediaUpload(String mediaAssetId);
+
+  Future<void> cancelMediaUpload(String mediaAssetId);
+
+  Future<void> deleteMedia(String mediaAssetId);
+
+  Future<void> uploadMediaBytes({
+    required UploadDetailsResult upload,
+    required Uint8List bytes,
+    required String filename,
+    required String mimeType,
+    required ProgressCallback onProgress,
+    required CancelToken cancelToken,
+  });
+
   Future<void> logout();
 }
 
 class DioConnectApi implements ConnectApi {
-  DioConnectApi({required TokenStore tokenStore})
+  DioConnectApi({required TokenStore tokenStore, Dio? storageDio})
     : _tokenStore = tokenStore,
       _dio = Dio(
         BaseOptions(
@@ -96,10 +119,20 @@ class DioConnectApi implements ConnectApi {
           sendTimeout: const Duration(seconds: 20),
           headers: {'Content-Type': 'application/json'},
         ),
-      );
+      ),
+      _storageDio =
+          storageDio ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 12),
+              receiveTimeout: const Duration(seconds: 30),
+              sendTimeout: const Duration(seconds: 60),
+            ),
+          );
 
   final TokenStore _tokenStore;
   final Dio _dio;
+  final Dio _storageDio;
 
   @override
   Future<OtpRequestResult> requestOtp({required String mobile}) async {
@@ -232,6 +265,101 @@ class DioConnectApi implements ConnectApi {
   }
 
   @override
+  Future<UploadIntentResult> createMediaUploadIntent(
+    MediaUploadIntentRequest request,
+  ) {
+    return _mediaRequest(() async {
+      return _dio.post<Map<String, dynamic>>(
+        '/media/upload-intent',
+        data: request.toJson(),
+        options: await _authOptions(),
+      );
+    }).then(UploadIntentResult.fromJson);
+  }
+
+  @override
+  Future<UploadIntentResult> retryMediaUpload(String mediaAssetId) {
+    return _mediaRequest(() async {
+      return _dio.post<Map<String, dynamic>>(
+        '/media/$mediaAssetId/retry',
+        options: await _authOptions(),
+      );
+    }).then(UploadIntentResult.fromJson);
+  }
+
+  @override
+  Future<MediaAssetResult> completeMediaUpload(String mediaAssetId) {
+    return _mediaRequest(() async {
+      return _dio.post<Map<String, dynamic>>(
+        '/media/$mediaAssetId/complete',
+        options: await _authOptions(),
+      );
+    }).then(MediaAssetResult.fromJson);
+  }
+
+  @override
+  Future<void> cancelMediaUpload(String mediaAssetId) async {
+    try {
+      await _dio.post<void>(
+        '/media/$mediaAssetId/cancel',
+        options: await _authOptions(),
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<void> deleteMedia(String mediaAssetId) async {
+    try {
+      await _dio.delete<void>(
+        '/media/$mediaAssetId',
+        options: await _authOptions(),
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<void> uploadMediaBytes({
+    required UploadDetailsResult upload,
+    required Uint8List bytes,
+    required String filename,
+    required String mimeType,
+    required ProgressCallback onProgress,
+    required CancelToken cancelToken,
+  }) async {
+    try {
+      final form = FormData.fromMap({
+        upload.formField: MultipartFile.fromBytes(
+          bytes,
+          filename: filename,
+          contentType: DioMediaType.parse(mimeType),
+        ),
+      });
+      await _storageDio.put<void>(
+        upload.url,
+        data: form,
+        options: Options(
+          headers: upload.headers,
+          contentType: Headers.multipartFormDataContentType,
+        ),
+        onSendProgress: onProgress,
+        cancelToken: cancelToken,
+      );
+    } on DioException catch (error) {
+      if (CancelToken.isCancel(error)) {
+        rethrow;
+      }
+      throw const ApiFailure(
+        code: 'upload_failed',
+        message: 'Unable to upload, please retry',
+      );
+    }
+  }
+
+  @override
   Future<void> logout() async {
     try {
       await _dio.post<void>('/auth/logout', options: await _authOptions());
@@ -259,6 +387,16 @@ class DioConnectApi implements ConnectApi {
     try {
       final response = await request();
       return OwnerProfileResult.fromJson(_body(response));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  Future<Map<String, dynamic>> _mediaRequest(
+    Future<Response<Map<String, dynamic>>> Function() request,
+  ) async {
+    try {
+      return _body(await request());
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }
@@ -456,6 +594,7 @@ class OwnerProfileResult {
     required this.editableFields,
     required this.lockedFields,
     required this.roleSpecific,
+    this.media = const [],
   });
 
   factory OwnerProfileResult.fromJson(Map<String, dynamic> json) {
@@ -470,6 +609,11 @@ class OwnerProfileResult {
       roleSpecific: Map<String, dynamic>.from(
         json['role_specific'] as Map<String, dynamic>? ?? {},
       ),
+      media: (json['media'] as List<dynamic>? ?? [])
+          .map(
+            (value) => MediaAssetResult.fromJson(value as Map<String, dynamic>),
+          )
+          .toList(growable: false),
     );
   }
 
@@ -477,6 +621,123 @@ class OwnerProfileResult {
   final List<String> editableFields;
   final List<String> lockedFields;
   final Map<String, dynamic> roleSpecific;
+  final List<MediaAssetResult> media;
+}
+
+class MediaUploadIntentRequest {
+  const MediaUploadIntentRequest({
+    required this.entityType,
+    required this.entityId,
+    required this.mediaKind,
+    required this.visibility,
+    required this.documentType,
+    required this.filename,
+    required this.mimeType,
+    required this.byteSize,
+  });
+
+  final String entityType;
+  final String entityId;
+  final String mediaKind;
+  final String visibility;
+  final String documentType;
+  final String filename;
+  final String mimeType;
+  final int byteSize;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'entity_type': entityType,
+      'entity_id': entityId,
+      'media_kind': mediaKind,
+      'visibility': visibility,
+      'document_type': documentType,
+      'filename': filename,
+      'mime_type': mimeType,
+      'byte_size': byteSize,
+    };
+  }
+}
+
+class UploadIntentResult {
+  const UploadIntentResult({required this.mediaAsset, required this.upload});
+
+  factory UploadIntentResult.fromJson(Map<String, dynamic> json) {
+    return UploadIntentResult(
+      mediaAsset: MediaAssetResult.fromJson(
+        json['media_asset'] as Map<String, dynamic>,
+      ),
+      upload: UploadDetailsResult.fromJson(
+        json['upload'] as Map<String, dynamic>,
+      ),
+    );
+  }
+
+  final MediaAssetResult mediaAsset;
+  final UploadDetailsResult upload;
+}
+
+class UploadDetailsResult {
+  const UploadDetailsResult({
+    required this.url,
+    required this.formField,
+    required this.headers,
+    required this.expiresAt,
+  });
+
+  factory UploadDetailsResult.fromJson(Map<String, dynamic> json) {
+    return UploadDetailsResult(
+      url: json['url'] as String,
+      formField: json['form_field'] as String? ?? 'file',
+      headers: (json['headers'] as Map<String, dynamic>? ?? {}).map(
+        (key, value) => MapEntry(key, value.toString()),
+      ),
+      expiresAt: DateTime.parse(json['expires_at'] as String),
+    );
+  }
+
+  final String url;
+  final String formField;
+  final Map<String, String> headers;
+  final DateTime expiresAt;
+}
+
+class MediaAssetResult {
+  const MediaAssetResult({
+    required this.id,
+    required this.mediaKind,
+    required this.visibility,
+    required this.uploadStatus,
+    required this.sortOrder,
+    this.url,
+    this.thumbnailUrl,
+    this.documentType,
+    this.safeDisplayName,
+  });
+
+  factory MediaAssetResult.fromJson(Map<String, dynamic> json) {
+    return MediaAssetResult(
+      id: json['id'] as String,
+      mediaKind: json['media_kind'] as String,
+      visibility: json['visibility'] as String,
+      uploadStatus: json['upload_status'] as String,
+      sortOrder: json['sort_order'] as int? ?? 0,
+      url: json['url'] as String?,
+      thumbnailUrl: json['thumbnail_url'] as String?,
+      documentType: json['document_type'] as String?,
+      safeDisplayName: json['safe_display_name'] as String?,
+    );
+  }
+
+  final String id;
+  final String mediaKind;
+  final String visibility;
+  final String uploadStatus;
+  final int sortOrder;
+  final String? url;
+  final String? thumbnailUrl;
+  final String? documentType;
+  final String? safeDisplayName;
 }
 
 class CategoryOption {

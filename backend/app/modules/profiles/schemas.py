@@ -98,6 +98,7 @@ class OwnerMediaResponse(BaseModel):
     sort_order: int
     document_type: str | None = None
     safe_display_name: str | None = None
+    url: str | None = None
 
 
 class OwnerProfileResponse(BaseModel):

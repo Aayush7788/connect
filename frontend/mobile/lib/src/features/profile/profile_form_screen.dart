@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:connect_app/src/data/connect_api.dart';
 import 'package:connect_app/src/features/auth/auth_controller.dart';
+import 'package:connect_app/src/features/media/media_upload_grid.dart';
+import 'package:connect_app/src/features/media/media_upload_service.dart';
 import 'package:connect_app/src/features/profile/profile_controller.dart';
 import 'package:connect_app/src/features/profile/profile_display.dart';
 import 'package:connect_app/src/ui/theme.dart';
@@ -40,6 +42,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   String? _skillCategoryId;
   final Set<String> _productTypeIds = {};
   bool _savedOnce = false;
+  MediaUploadSummary? _mediaSummary;
 
   @override
   void initState() {
@@ -118,14 +121,14 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
               child: Column(
                 children: [
                   LinearProgressIndicator(
-                    value: (_step + 1) / 3,
+                    value: (_step + 1) / 4,
                     minHeight: 8,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text('Step ${_step + 1} of 3'),
+                      Text('Step ${_step + 1} of 4'),
                       const Spacer(),
                       if (state.isSaving)
                         const Text('Saving...')
@@ -153,6 +156,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
                     state: state,
                   ),
                   1 => _addressStep(disabled: pending, state: state),
+                  2 => _photoStep(ownerProfile, disabled: pending),
                   _ => _reviewStep(ownerProfile),
                 },
               ),
@@ -175,11 +179,13 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
                     ),
                     const SizedBox(height: 10),
                   ],
-                  if (_step < 2)
+                  if (_step < 3)
                     PrimaryActionButton(
                       label: 'Next',
                       isLoading: state.isSaving,
-                      onPressed: pending ? null : _next,
+                      onPressed: pending || (_mediaSummary?.isBusy ?? false)
+                          ? null
+                          : _next,
                     )
                   else
                     PrimaryActionButton(
@@ -489,6 +495,41 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     );
   }
 
+  Widget _photoStep(OwnerProfileResult ownerProfile, {required bool disabled}) {
+    final role = ownerProfile.profile.role;
+    final minimumPhotos = role == 'skilled_worker' ? 0 : 3;
+    final documentType = switch (role) {
+      'business' => 'shop_photo',
+      'job_worker' => 'workplace_photo',
+      _ => 'other',
+    };
+    final title = switch (role) {
+      'business' => 'Shop photos',
+      'job_worker' => 'Workplace photos',
+      _ => 'Your photo',
+    };
+    return MediaUploadGrid(
+      target: MediaTargetConfig(
+        entityType: 'profile',
+        entityId: ownerProfile.profile.id,
+        documentType: documentType,
+        minimumPhotos: minimumPhotos,
+      ),
+      title: title,
+      existingMedia: ownerProfile.media,
+      disabled: disabled,
+      onSummaryChanged: (summary) {
+        if (!mounted) {
+          return;
+        }
+        setState(() => _mediaSummary = summary);
+      },
+      onMediaChanged: () {
+        return ref.read(profileControllerProvider.notifier).load(force: true);
+      },
+    );
+  }
+
   Widget _field({
     required String label,
     required String placeholder,
@@ -675,6 +716,12 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   }
 
   Future<void> _next() async {
+    if (_step == 2) {
+      final role = ref.read(profileControllerProvider).profile?.profile.role;
+      if (role != 'skilled_worker' && _mediaSummary?.meetsMinimum != true) {
+        return;
+      }
+    }
     if (await _saveDraft() && mounted) {
       setState(() => _step += 1);
     }
