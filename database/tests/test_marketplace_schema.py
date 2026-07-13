@@ -80,6 +80,7 @@ def test_marketplace_migration_renders_required_tables_constraints_and_indexes()
     ) in migration_sql
     assert "DEFAULT 'draft'" in migration_sql
     assert "photo_count >= 3" in migration_sql
+    assert "nullif(btrim(description), '') is not null" in migration_sql
     assert "nullif(btrim(title), '') is not null" in migration_sql
     assert "closed_at is null or status in" in migration_sql
     assert "CREATE INDEX idx_work_cards_profile_status" in migration_sql
@@ -92,6 +93,18 @@ def test_marketplace_migration_renders_required_tables_constraints_and_indexes()
     assert "CREATE INDEX idx_work_needed_posts_search_text_trgm" in migration_sql
     assert "CREATE INDEX idx_work_card_product_types_category" in migration_sql
     assert "CREATE INDEX idx_work_needed_post_product_types_category" in migration_sql
+    assert "CREATE UNIQUE INDEX uq_work_cards_creation_idempotency" in migration_sql
+
+
+def test_work_card_creation_idempotency_fields_are_constrained() -> None:
+    work_cards = Base.metadata.tables["work_cards"]
+
+    assert "creation_idempotency_key" in work_cards.columns
+    assert "creation_request_hash" in work_cards.columns
+
+    migration_sql = render_offline_sql()
+    assert "creation_idempotency_key is not null" in migration_sql
+    assert "creation_request_hash is not null" in migration_sql
 
 
 def test_product_type_rows_require_mapped_or_non_blank_custom_text() -> None:

@@ -21,6 +21,8 @@ abstract class _$WorkCardUpsertRequestCWProxy {
 
   WorkCardUpsertRequest description(String? description);
 
+  WorkCardUpsertRequest experienceYears(int? experienceYears);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `WorkCardUpsertRequest(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -35,6 +37,7 @@ abstract class _$WorkCardUpsertRequestCWProxy {
     List<String>? productTypeIds,
     List<String>? customProductTexts,
     String? description,
+    int? experienceYears,
   });
 }
 
@@ -74,6 +77,10 @@ class _$WorkCardUpsertRequestCWProxyImpl
       this(description: description);
 
   @override
+  WorkCardUpsertRequest experienceYears(int? experienceYears) =>
+      this(experienceYears: experienceYears);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `WorkCardUpsertRequest(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -88,6 +95,7 @@ class _$WorkCardUpsertRequestCWProxyImpl
     Object? productTypeIds = const $CopyWithPlaceholder(),
     Object? customProductTexts = const $CopyWithPlaceholder(),
     Object? description = const $CopyWithPlaceholder(),
+    Object? experienceYears = const $CopyWithPlaceholder(),
   }) {
     return WorkCardUpsertRequest(
       categoryId: categoryId == const $CopyWithPlaceholder()
@@ -118,6 +126,10 @@ class _$WorkCardUpsertRequestCWProxyImpl
           ? _value.description
           // ignore: cast_nullable_to_non_nullable
           : description as String?,
+      experienceYears: experienceYears == const $CopyWithPlaceholder()
+          ? _value.experienceYears
+          // ignore: cast_nullable_to_non_nullable
+          : experienceYears as int?,
     );
   }
 }
@@ -156,6 +168,10 @@ WorkCardUpsertRequest _$WorkCardUpsertRequestFromJson(
         (v) => (v as List<dynamic>?)?.map((e) => e as String).toList(),
       ),
       description: $checkedConvert('description', (v) => v as String?),
+      experienceYears: $checkedConvert(
+        'experience_years',
+        (v) => (v as num?)?.toInt(),
+      ),
     );
     return val;
   },
@@ -166,6 +182,7 @@ WorkCardUpsertRequest _$WorkCardUpsertRequestFromJson(
     'customWorkName': 'custom_work_name',
     'productTypeIds': 'product_type_ids',
     'customProductTexts': 'custom_product_texts',
+    'experienceYears': 'experience_years',
   },
 );
 
@@ -179,4 +196,5 @@ Map<String, dynamic> _$WorkCardUpsertRequestToJson(
   'product_type_ids': ?instance.productTypeIds,
   'custom_product_texts': ?instance.customProductTexts,
   'description': ?instance.description,
+  'experience_years': ?instance.experienceYears,
 };

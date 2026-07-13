@@ -10,6 +10,7 @@ from app.modules.me.router import router as me_router
 from app.modules.media.router import router as media_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.taxonomy.router import router as taxonomy_router
+from app.modules.work_cards.router import router as work_cards_router
 
 
 class HealthResponse(BaseModel):
@@ -66,6 +67,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(media_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(profiles_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(taxonomy_router, prefix=resolved_settings.api_v1_prefix)
+    app.include_router(work_cards_router, prefix=resolved_settings.api_v1_prefix)
 
     return app
 

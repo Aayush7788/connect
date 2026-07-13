@@ -465,6 +465,8 @@ Columns:
 | `title` | text not null | Display title |
 | `description` | text null |  |
 | `experience_years` | integer null | Optional per-work experience |
+| `creation_idempotency_key` | text null | Optional `Idempotency-Key` used to prevent duplicate draft creation on retries |
+| `creation_request_hash` | text null | Hash used to reject reuse of the same key with a different create payload |
 | `status` | text not null default 'draft' | `draft`, `published`, `hidden_by_user`, `removed_by_admin`, `deleted` |
 | `photo_count` | integer not null default 0 | Must be at least 3 before publish |
 | `last_activity_at` | timestamptz null | Ranking |
@@ -478,6 +480,8 @@ Columns:
 Constraints:
 
 - `status in ('draft', 'published', 'hidden_by_user', 'removed_by_admin', 'deleted')`
+- unique `(profile_id, creation_idempotency_key)` where the key is not null
+- idempotency key and request hash must either both be null or both be present
 
 Backend publish rules:
 

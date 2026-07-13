@@ -76,8 +76,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'double':
           return (value is double ? value : double.parse('$value')) as ReturnType;
         case 'AccountStatus':
-          
-          
+
+
         case 'AdminAnalyticsSummary':
           return AdminAnalyticsSummary.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'AdminApproveVerificationCaseRequest':
@@ -136,11 +136,11 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'MediaAsset':
           return MediaAsset.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'MediaKind':
-          
-          
+
+
         case 'MediaVisibility':
-          
-          
+
+
         case 'Notification':
           return Notification.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'NotificationsResponse':
@@ -158,8 +158,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'ProfileUpdateRequest':
           return ProfileUpdateRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ProfileVisibilityStatus':
-          
-          
+
+
         case 'PublicAddress':
           return PublicAddress.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'PublicContact':
@@ -171,11 +171,11 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'Report':
           return Report.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ReportReason':
-          
-          
+
+
         case 'ReportStatus':
-          
-          
+
+
         case 'SaveItemRequest':
           return SaveItemRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'SavedItem':
@@ -183,15 +183,15 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'SavedItemsResponse':
           return SavedItemsResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'SavedTargetType':
-          
-          
+
+
         case 'SearchResponse':
           return SearchResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'SearchResult':
           return SearchResult.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'SearchTarget':
-          
-          
+
+
         case 'ShareLinkResponse':
           return ShareLinkResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'UpdateSettingsRequest':
@@ -203,21 +203,21 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'UploadIntentResponse':
           return UploadIntentResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'UploadStatus':
-          
-          
+
+
         case 'User':
           return User.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'UserRole':
-          
-          
+
+
         case 'UserSettings':
           return UserSettings.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'VerificationCaseStatus':
-          
-          
+
+
         case 'VerificationStatus':
-          
-          
+
+
         case 'VerificationSummary':
           return VerificationSummary.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'VerificationSummarySafeDocumentsInner':
@@ -225,15 +225,15 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'WorkCard':
           return WorkCard.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'WorkCardStatus':
-          
-          
+
+
         case 'WorkCardUpsertRequest':
           return WorkCardUpsertRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'WorkNeededPost':
           return WorkNeededPost.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'WorkNeededPostStatus':
-          
-          
+
+
         case 'WorkNeededPostUpsertRequest':
           return WorkNeededPostUpsertRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         default:
