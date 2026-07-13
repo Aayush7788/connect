@@ -24,27 +24,47 @@ class WorkCard {
 
     required  this.id,
 
+    required  this.profileId,
+
     required  this.status,
 
-    required  this.workName,
-
-     this.customWorkName,
+    required  this.title,
 
      this.categoryId,
 
-    required  this.categoryName,
+     this.categoryName,
+
+     this.customCategoryText,
+
+     this.workNameId,
+
+     this.workName,
+
+     this.customWorkName,
+
+    required  this.productTypeIds,
+
+    required  this.customProductTexts,
 
     required  this.productTypes,
 
      this.description,
 
+     this.experienceYears,
+
     required  this.photoCount,
 
-     this.photos,
+    required  this.photos,
+
+     this.lastActivityAt,
+
+    required  this.createdAt,
+
+    required  this.updatedAt,
   });
 
   @JsonKey(
-    
+
     name: r'id',
     required: true,
     includeIfNull: false,
@@ -56,7 +76,19 @@ class WorkCard {
 
 
   @JsonKey(
-    
+
+    name: r'profile_id',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final String profileId;
+
+
+
+  @JsonKey(
+
     name: r'status',
     required: true,
     includeIfNull: false,
@@ -68,31 +100,19 @@ class WorkCard {
 
 
   @JsonKey(
-    
-    name: r'work_name',
+
+    name: r'title',
     required: true,
     includeIfNull: false,
   )
 
 
-  final String workName;
+  final String title;
 
 
 
   @JsonKey(
-    
-    name: r'custom_work_name',
-    required: false,
-    includeIfNull: false,
-  )
 
-
-  final String? customWorkName;
-
-
-
-  @JsonKey(
-    
     name: r'category_id',
     required: false,
     includeIfNull: false,
@@ -104,19 +124,91 @@ class WorkCard {
 
 
   @JsonKey(
-    
+
     name: r'category_name',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? categoryName;
+
+
+
+  @JsonKey(
+
+    name: r'custom_category_text',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? customCategoryText;
+
+
+
+  @JsonKey(
+
+    name: r'work_name_id',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? workNameId;
+
+
+
+  @JsonKey(
+
+    name: r'work_name',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? workName;
+
+
+
+  @JsonKey(
+
+    name: r'custom_work_name',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? customWorkName;
+
+
+
+  @JsonKey(
+
+    name: r'product_type_ids',
     required: true,
     includeIfNull: false,
   )
 
 
-  final String categoryName;
+  final List<String> productTypeIds;
 
 
 
   @JsonKey(
-    
+
+    name: r'custom_product_texts',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final List<String> customProductTexts;
+
+
+
+  @JsonKey(
+
     name: r'product_types',
     required: true,
     includeIfNull: false,
@@ -128,7 +220,7 @@ class WorkCard {
 
 
   @JsonKey(
-    
+
     name: r'description',
     required: false,
     includeIfNull: false,
@@ -139,8 +231,23 @@ class WorkCard {
 
 
 
+          // minimum: 0
+          // maximum: 100
   @JsonKey(
-    
+
+    name: r'experience_years',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final int? experienceYears;
+
+
+
+          // minimum: 0
+  @JsonKey(
+
     name: r'photo_count',
     required: true,
     includeIfNull: false,
@@ -152,14 +259,50 @@ class WorkCard {
 
 
   @JsonKey(
-    
+
     name: r'photos',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final List<MediaAsset> photos;
+
+
+
+  @JsonKey(
+
+    name: r'last_activity_at',
     required: false,
     includeIfNull: false,
   )
 
 
-  final List<MediaAsset>? photos;
+  final DateTime? lastActivityAt;
+
+
+
+  @JsonKey(
+
+    name: r'created_at',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final DateTime createdAt;
+
+
+
+  @JsonKey(
+
+    name: r'updated_at',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final DateTime updatedAt;
 
 
 
@@ -168,28 +311,48 @@ class WorkCard {
     @override
     bool operator ==(Object other) => identical(this, other) || other is WorkCard &&
       other.id == id &&
+      other.profileId == profileId &&
       other.status == status &&
-      other.workName == workName &&
-      other.customWorkName == customWorkName &&
+      other.title == title &&
       other.categoryId == categoryId &&
       other.categoryName == categoryName &&
+      other.customCategoryText == customCategoryText &&
+      other.workNameId == workNameId &&
+      other.workName == workName &&
+      other.customWorkName == customWorkName &&
+      other.productTypeIds == productTypeIds &&
+      other.customProductTexts == customProductTexts &&
       other.productTypes == productTypes &&
       other.description == description &&
+      other.experienceYears == experienceYears &&
       other.photoCount == photoCount &&
-      other.photos == photos;
+      other.photos == photos &&
+      other.lastActivityAt == lastActivityAt &&
+      other.createdAt == createdAt &&
+      other.updatedAt == updatedAt;
 
     @override
     int get hashCode =>
         id.hashCode +
+        profileId.hashCode +
         status.hashCode +
-        workName.hashCode +
-        customWorkName.hashCode +
+        title.hashCode +
         categoryId.hashCode +
         categoryName.hashCode +
+        customCategoryText.hashCode +
+        workNameId.hashCode +
+        workName.hashCode +
+        customWorkName.hashCode +
+        productTypeIds.hashCode +
+        customProductTexts.hashCode +
         productTypes.hashCode +
         description.hashCode +
+        experienceYears.hashCode +
         photoCount.hashCode +
-        photos.hashCode;
+        photos.hashCode +
+        lastActivityAt.hashCode +
+        createdAt.hashCode +
+        updatedAt.hashCode;
 
   factory WorkCard.fromJson(Map<String, dynamic> json) => _$WorkCardFromJson(json);
 
@@ -201,4 +364,3 @@ class WorkCard {
   }
 
 }
-

@@ -1119,27 +1119,43 @@ export interface components {
         WorkCard: {
             /** Format: uuid */
             id: string;
-            status: components["schemas"]["WorkCardStatus"];
-            work_name: string;
-            custom_work_name?: string;
             /** Format: uuid */
-            category_id?: string;
-            category_name: string;
+            profile_id: string;
+            status: components["schemas"]["WorkCardStatus"];
+            title: string;
+            /** Format: uuid */
+            category_id?: string | null;
+            category_name?: string | null;
+            custom_category_text?: string | null;
+            /** Format: uuid */
+            work_name_id?: string | null;
+            work_name?: string | null;
+            custom_work_name?: string | null;
+            product_type_ids: string[];
+            custom_product_texts: string[];
             product_types: string[];
-            description?: string;
+            description?: string | null;
+            experience_years?: number | null;
             photo_count: number;
-            photos?: components["schemas"]["MediaAsset"][];
+            photos: components["schemas"]["MediaAsset"][];
+            /** Format: date-time */
+            last_activity_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         WorkCardUpsertRequest: {
             /** Format: uuid */
-            category_id?: string;
-            custom_category_text?: string;
+            category_id?: string | null;
+            custom_category_text?: string | null;
             /** Format: uuid */
-            work_name_id?: string;
-            custom_work_name?: string;
-            product_type_ids?: string[];
-            custom_product_texts?: string[];
-            description?: string;
+            work_name_id?: string | null;
+            custom_work_name?: string | null;
+            product_type_ids?: string[] | null;
+            custom_product_texts?: string[] | null;
+            description?: string | null;
+            experience_years?: number | null;
         };
         WorkNeededPost: {
             /** Format: uuid */
@@ -1875,9 +1891,7 @@ export interface operations {
     publishWorkCard: {
         parameters: {
             query?: never;
-            header?: {
-                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
-            };
+            header?: never;
             path: {
                 work_card_id: components["parameters"]["WorkCardId"];
             };

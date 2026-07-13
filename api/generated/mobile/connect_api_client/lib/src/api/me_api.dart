@@ -21,10 +21,10 @@ class MeApi {
   const MeApi(this._dio);
 
   /// Complete and publish own profile
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [idempotencyKey] 
+  /// * [idempotencyKey]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -34,7 +34,7 @@ class MeApi {
   ///
   /// Returns a [Future] containing a [Response] with a [OwnerProfileResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<OwnerProfileResponse>> completeMyProfile({ 
+  Future<Response<OwnerProfileResponse>> completeMyProfile({
     String? idempotencyKey,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -100,7 +100,7 @@ _responseData = rawData == null ? null : deserialize<OwnerProfileResponse, Owner
   }
 
   /// Bootstrap current user app state
-  /// 
+  ///
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -112,7 +112,7 @@ _responseData = rawData == null ? null : deserialize<OwnerProfileResponse, Owner
   ///
   /// Returns a [Future] containing a [Response] with a [MeResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<MeResponse>> getMe({ 
+  Future<Response<MeResponse>> getMe({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -176,7 +176,7 @@ _responseData = rawData == null ? null : deserialize<MeResponse, MeResponse>(raw
   }
 
   /// Get owner profile with private owner state
-  /// 
+  ///
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -188,7 +188,7 @@ _responseData = rawData == null ? null : deserialize<MeResponse, MeResponse>(raw
   ///
   /// Returns a [Future] containing a [Response] with a [OwnerProfileResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<OwnerProfileResponse>> getMyProfile({ 
+  Future<Response<OwnerProfileResponse>> getMyProfile({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -252,7 +252,7 @@ _responseData = rawData == null ? null : deserialize<OwnerProfileResponse, Owner
   }
 
   /// Hide own profile from discovery
-  /// 
+  ///
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -264,7 +264,7 @@ _responseData = rawData == null ? null : deserialize<OwnerProfileResponse, Owner
   ///
   /// Returns a [Future] containing a [Response] with a [OwnerProfileResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<OwnerProfileResponse>> hideMyProfile({ 
+  Future<Response<OwnerProfileResponse>> hideMyProfile({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -328,7 +328,7 @@ _responseData = rawData == null ? null : deserialize<OwnerProfileResponse, Owner
   }
 
   /// Restore own profile to discovery if eligible
-  /// 
+  ///
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -340,7 +340,7 @@ _responseData = rawData == null ? null : deserialize<OwnerProfileResponse, Owner
   ///
   /// Returns a [Future] containing a [Response] with a [OwnerProfileResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<OwnerProfileResponse>> showMyProfile({ 
+  Future<Response<OwnerProfileResponse>> showMyProfile({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -404,7 +404,7 @@ _responseData = rawData == null ? null : deserialize<OwnerProfileResponse, Owner
   }
 
   /// Update owner profile fields
-  /// 
+  ///
   ///
   /// Parameters:
   /// * [profileUpdateRequest]
@@ -417,7 +417,7 @@ _responseData = rawData == null ? null : deserialize<OwnerProfileResponse, Owner
   ///
   /// Returns a [Future] containing a [Response] with a [OwnerProfileResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<OwnerProfileResponse>> updateMyProfile({ 
+  Future<Response<OwnerProfileResponse>> updateMyProfile({
     required ProfileUpdateRequest profileUpdateRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,

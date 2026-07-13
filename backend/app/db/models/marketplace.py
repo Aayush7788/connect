@@ -45,8 +45,20 @@ class WorkCard(TimestampMixin, Base):
             name="title_non_empty",
         ),
         CheckConstraint(
+            "(creation_idempotency_key is null and creation_request_hash is null) "
+            "or (creation_idempotency_key is not null and "
+            "creation_request_hash is not null)",
+            name="idempotency_fields_together",
+        ),
+        CheckConstraint(
+            "creation_idempotency_key is null or "
+            "char_length(creation_idempotency_key) between 1 and 128",
+            name="idempotency_key_length",
+        ),
+        CheckConstraint(
             "status not in ('published', 'hidden_by_user') or "
             "(photo_count >= 3 and "
+            "nullif(btrim(description), '') is not null and "
             "(work_category_id is not null or "
             "nullif(btrim(custom_work_category_text), '') is not null) and "
             "(work_name_category_id is not null or "
@@ -73,6 +85,13 @@ class WorkCard(TimestampMixin, Base):
             postgresql_using="gin",
             postgresql_ops={"search_text": "gin_trgm_ops"},
         ),
+        Index(
+            "uq_work_cards_creation_idempotency",
+            "profile_id",
+            "creation_idempotency_key",
+            unique=True,
+            postgresql_where=text("creation_idempotency_key is not null"),
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(
@@ -97,6 +116,8 @@ class WorkCard(TimestampMixin, Base):
     title: Mapped[str] = mapped_column(Text)
     description: Mapped[str | None] = mapped_column(Text)
     experience_years: Mapped[int | None] = mapped_column(Integer)
+    creation_idempotency_key: Mapped[str | None] = mapped_column(Text)
+    creation_request_hash: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(
         Text,
         server_default=text("'draft'"),

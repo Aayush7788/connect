@@ -42,6 +42,13 @@ def test_required_mvp_operations_are_named() -> None:
         "showMyProfile",
         "searchMarketplace",
         "getProfileDetail",
+        "listMyWorkCards",
+        "createWorkCard",
+        "updateWorkCard",
+        "publishWorkCard",
+        "hideWorkCard",
+        "showWorkCard",
+        "deleteWorkCard",
         "createUploadIntent",
         "submitVerification",
         "createReport",
@@ -88,3 +95,17 @@ def test_media_contract_uses_scoped_multipart_upload_without_private_url() -> No
     assert upload["properties"]["http_method"]["enum"] == ["PUT"]
     assert upload["properties"]["form_field"]["enum"] == ["file"]
     assert media["properties"]["url"]["nullable"] is True
+
+
+def test_work_card_contract_supports_drafts_without_exposing_internal_fields() -> None:
+    spec = load_openapi()
+    work_card = spec["components"]["schemas"]["WorkCard"]
+    request = spec["components"]["schemas"]["WorkCardUpsertRequest"]
+
+    assert request["additionalProperties"] is False
+    assert not request.get("required")
+    assert "experience_years" in request["properties"]
+    assert "product_type_ids" in work_card["properties"]
+    assert "custom_product_texts" in work_card["properties"]
+    assert "creation_idempotency_key" not in work_card["properties"]
+    assert "search_text" not in work_card["properties"]
