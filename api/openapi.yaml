@@ -287,6 +287,20 @@ paths:
           required: false
           schema:
             type: boolean
+        - name: min_experience_years
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+        - name: max_experience_years
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
         - name: sort
           in: query
           required: false
@@ -1605,7 +1619,7 @@ components:
           type: string
     SearchResponse:
       type: object
-      required: [items, result_count]
+      required: [items, result_count, search_log_id]
       properties:
         items:
           type: array
@@ -1621,7 +1635,7 @@ components:
           format: uuid
     SearchResult:
       type: object
-      required: [result_type, id, title]
+      required: [result_type, id, profile_id, title, is_verified, photo_count]
       properties:
         result_type:
           type: string
@@ -1642,12 +1656,30 @@ components:
           type: array
           items:
             type: string
+        description:
+          type: string
+          nullable: true
+        locality:
+          type: string
+          nullable: true
+        experience_years:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
         is_verified:
           type: boolean
+        photo_count:
+          type: integer
+          minimum: 0
         photos:
           type: array
           items:
             $ref: '#/components/schemas/MediaAsset'
+        last_activity_at:
+          type: string
+          format: date-time
+          nullable: true
     WorkCard:
       type: object
       required:

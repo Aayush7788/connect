@@ -1,11 +1,16 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from collections.abc import Callable
-from typing import Any
+from decimal import Decimal
+import re
+from typing import Any, cast
+import unicodedata
 from uuid import UUID
 
 from app.core.auth_context import CurrentUser
 from app.core.errors import ApiError, ErrorCode
+from app.db.models.profile import BusinessProfile, JobWorkerProfile
+from app.db.models.profile import SkilledWorkerProfile
 from app.modules.auth.schemas import ProfileSummaryResponse
 from app.modules.auth.service import normalize_mobile
 from app.modules.profiles.repository import OwnerProfileBundle
@@ -80,6 +85,11 @@ def has_text(value: str | None) -> bool:
     return bool(value and value.strip())
 
 
+def normalize_search_text(value: str | None) -> str:
+    normalized = unicodedata.normalize("NFKC", value or "").casefold()
+    return " ".join(re.sub(r"[^\w]+", " ", normalized, flags=re.UNICODE).split())
+
+
 def json_value(value: Any) -> Any:
     if isinstance(value, UUID):
         return str(value)
@@ -120,6 +130,7 @@ class ProfileService:
         bundle.profile.photo_count = self.repository.completion_evidence(
             bundle.profile
         ).public_photo_count
+        self._refresh_search_projection(bundle, completion)
         return completion
 
     def update_owner_profile(
@@ -161,6 +172,7 @@ class ProfileService:
         refreshed.profile.photo_count = self.repository.completion_evidence(
             refreshed.profile
         ).public_photo_count
+        self._refresh_search_projection(refreshed, completion)
 
         if (
             refreshed.profile.visibility_status == "public"
@@ -211,6 +223,7 @@ class ProfileService:
         bundle.profile.completion_score = completion.score
         bundle.profile.completion_flags = completion.flags
         bundle.profile.photo_count = evidence.public_photo_count
+        self._refresh_search_projection(bundle, completion)
         if not completion.is_complete:
             self.repository.commit()
             raise ApiError(
@@ -257,6 +270,7 @@ class ProfileService:
         bundle.profile.visibility_status = "public"
         bundle.profile.completion_score = completion.score
         bundle.profile.completion_flags = completion.flags
+        self._refresh_search_projection(bundle, completion)
         bundle.profile.last_activity_at = datetime.now(timezone.utc)
         self.repository.commit()
         return self._response(bundle, completion)
@@ -336,6 +350,10 @@ class ProfileService:
                         },
                     ) from exc
             self._set_changed(bundle.profile, field, value, before, after)
+            if field == "locality":
+                bundle.profile.normalized_locality = (
+                    normalize_search_text(value) or None
+                )
 
     def _apply_role_fields(
         self,
@@ -504,6 +522,77 @@ class ProfileService:
         if complete_count == len(flags):
             score = 100
         return CompletionResult(score=score, flags=flags)
+
+    def _refresh_search_projection(
+        self,
+        bundle: OwnerProfileBundle,
+        completion: CompletionResult,
+    ) -> None:
+        profile = bundle.profile
+        role_profile = bundle.role_profile
+        category_ids: set[UUID] = set()
+        values = [
+            profile.public_name,
+            profile.owner_name,
+            profile.locality,
+            profile.city,
+            profile.state,
+        ]
+        if profile.role == "business":
+            business_profile = cast(BusinessProfile, role_profile)
+            if business_profile.business_category_id is not None:
+                category_ids.add(business_profile.business_category_id)
+            category_ids.update(
+                item.product_type_category_id
+                for item in bundle.product_types
+                if item.product_type_category_id is not None
+            )
+            values.extend(
+                [
+                    business_profile.business_name,
+                    business_profile.manufacture_sell_details,
+                    business_profile.product_notes,
+                    *(
+                        item.custom_product_type_text
+                        for item in bundle.product_types
+                        if item.custom_product_type_text
+                    ),
+                ]
+            )
+        elif profile.role == "job_worker":
+            job_worker_profile = cast(JobWorkerProfile, role_profile)
+            values.extend(
+                [
+                    job_worker_profile.workshop_name,
+                    job_worker_profile.work_summary,
+                ]
+            )
+        else:
+            skilled_worker_profile = cast(SkilledWorkerProfile, role_profile)
+            if skilled_worker_profile.primary_skill_category_id is not None:
+                category_ids.add(skilled_worker_profile.primary_skill_category_id)
+            values.extend(
+                [
+                    skilled_worker_profile.skill_mastery,
+                    skilled_worker_profile.bio,
+                ]
+            )
+        categories = self.repository.get_categories(category_ids)
+        values.extend(category.name for category in categories.values())
+        values.extend(self.repository.category_aliases(category_ids))
+        normalized_values: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            normalized = normalize_search_text(value)
+            if normalized and normalized not in seen:
+                normalized_values.append(normalized)
+                seen.add(normalized)
+        search_text = " ".join(normalized_values)
+        profile.search_text = search_text
+        self.repository.set_search_vector(profile, search_text)
+        profile.ranking_score = Decimal(profile.photo_count) + (
+            Decimal(completion.score) / Decimal("20")
+        )
 
     def _response(
         self,

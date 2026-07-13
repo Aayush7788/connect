@@ -84,6 +84,9 @@ def test_profile_migration_renders_required_tables_constraints_and_indexes() -> 
     assert "CREATE INDEX idx_profiles_ranking" in migration_sql
     assert "CREATE INDEX idx_profiles_search_vector" in migration_sql
     assert "CREATE INDEX idx_profiles_search_text_trgm" in migration_sql
+    assert "with profile_terms as" in migration_sql.lower()
+    assert "update profiles profile" in migration_sql.lower()
+    assert "to_tsvector('simple', profile_terms.search_text)" in migration_sql
 
 
 def test_profile_migration_enables_rls_and_updated_at_triggers() -> None:
