@@ -1,4 +1,5 @@
 import 'package:connect_app/src/features/auth/auth_controller.dart';
+import 'package:connect_app/src/features/engagement/saved_screen.dart';
 import 'package:connect_app/src/features/profile/profile_dashboard.dart';
 import 'package:connect_app/src/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -89,11 +90,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             title: 'Search',
             message: 'Search for profile/work',
           ),
-          const _PlaceholderTab(
-            icon: Icons.bookmark_border_outlined,
-            title: 'Saved',
-            message: 'No saved profiles',
-          ),
+          const SavedScreen(),
           MyProfileDashboard(
             onWorkListSelectionChanged: (selected) {
               if (_jobWorkerWorkListSelected != selected) {
@@ -137,7 +134,7 @@ class _HomeTab extends StatelessWidget {
             const Spacer(),
             IconButton(
               tooltip: 'Notifications',
-              onPressed: () {},
+              onPressed: () => context.push(AppRoute.notifications.path),
               icon: const Icon(Icons.notifications_none_outlined),
             ),
           ],

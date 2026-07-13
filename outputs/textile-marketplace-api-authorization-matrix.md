@@ -66,6 +66,7 @@ Status: Draft v1 aligned with `textile-marketplace-mvp-api-contract.md`.
 | Notifications | mark read | No | Yes | Self | Own notification | N/A | No |
 | Device token | `POST /v1/me/device-tokens` | No | Yes | Self | Android MVP | N/A | No |
 | Settings | `PATCH /v1/me/settings` | No | Yes | Self | Any role | N/A | No |
+| Settings | `GET /v1/me/settings` | No | Yes | Self | Any role | N/A | No |
 | Contact action | `POST /v1/contact-actions` | No | Yes | Actor | Contact-visible target | Admin analytics read | No |
 | Share link | `POST /v1/share-links` | No | Yes | Actor | Shareable target | Admin analytics read | No |
 | Admin verification | `/v1/admin/verification-cases*` | No | No | N/A | N/A | Yes | N/A |
@@ -109,4 +110,3 @@ Status: Draft v1 aligned with `textile-marketplace-mvp-api-contract.md`.
 | Reject verification | Admin | Profile stays public but unverified |
 | Suspend account/profile | Admin | Blocks account and removes from discovery |
 | Export data | Admin | Audit logged |
-
