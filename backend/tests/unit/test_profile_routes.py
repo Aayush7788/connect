@@ -8,6 +8,8 @@ from app.modules.auth.dependencies import get_current_user_from_token
 from app.modules.auth.schemas import ProfileSummaryResponse
 from app.modules.profiles.dependencies import get_profile_service
 from app.modules.profiles.schemas import OwnerProfileResponse
+from app.modules.profiles.schemas import PublicAddressResponse, PublicContactResponse
+from app.modules.profiles.schemas import PublicProfileDetailResponse
 from app.main import create_app
 
 
@@ -15,6 +17,7 @@ class FakeProfileService:
     def __init__(self) -> None:
         self.visibility = "draft"
         self.updated_owner_name: str | None = None
+        self.public_profile_arguments: dict | None = None
 
     def response(self) -> OwnerProfileResponse:
         return OwnerProfileResponse(
@@ -51,6 +54,22 @@ class FakeProfileService:
     def show_owner_profile(self, current_user):
         self.visibility = "public"
         return self.response()
+
+    def get_public_profile(self, **arguments):
+        self.public_profile_arguments = arguments
+        return PublicProfileDetailResponse(
+            profile=self.response().profile,
+            role_specific={"business_name": "Connect Textiles"},
+            contact=PublicContactResponse(
+                mobile="+919999999999",
+                whatsapp_number="+919999999999",
+            ),
+            address=PublicAddressResponse(
+                locality="Ring Road",
+                city="Surat",
+                full_address="Ring Road, Surat",
+            ),
+        )
 
 
 def make_client() -> tuple[TestClient, FakeProfileService]:
@@ -95,3 +114,24 @@ def test_profile_update_rejects_unknown_fields() -> None:
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "validation_failed"
+
+
+def test_public_profile_detail_returns_contact_only_after_opening_profile() -> None:
+    client, service = make_client()
+    profile_id = uuid4()
+    source_id = uuid4()
+
+    response = client.get(
+        f"/v1/profiles/{profile_id}",
+        params={"source_type": "work_card", "source_id": str(source_id)},
+        headers={"x-device-id": "android-test"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["contact"]["mobile"] == "+919999999999"
+    assert response.json()["role_specific"]["business_name"] == "Connect Textiles"
+    assert service.public_profile_arguments is not None
+    assert service.public_profile_arguments["profile_id"] == profile_id
+    assert service.public_profile_arguments["source_type"] == "work_card"
+    assert service.public_profile_arguments["source_id"] == source_id
+    assert service.public_profile_arguments["device_id"] == "android-test"

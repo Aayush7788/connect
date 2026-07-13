@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:connect_app/src/data/media_models.dart';
+import 'package:connect_app/src/data/discovery_models.dart';
 import 'package:connect_app/src/data/work_card_models.dart';
 import 'package:connect_app/src/data/work_needed_post_models.dart';
 import 'package:dio/dio.dart';
@@ -85,6 +86,16 @@ abstract class ConnectApi {
   Future<OwnerProfileResult> showOwnerProfile();
 
   Future<List<CategoryOption>> categories({required String categoryType});
+
+  Future<MarketplaceSearchResponse> searchMarketplace(
+    MarketplaceSearchRequest request,
+  );
+
+  Future<PublicProfileDetailResult> publicProfile(
+    String profileId, {
+    String? sourceType,
+    String? sourceId,
+  });
 
   Future<List<WorkCardResult>> workCards();
 
@@ -306,6 +317,40 @@ class DioConnectApi implements ConnectApi {
       return items
           .map((item) => CategoryOption.fromJson(item as Map<String, dynamic>))
           .toList(growable: false);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<MarketplaceSearchResponse> searchMarketplace(
+    MarketplaceSearchRequest request,
+  ) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/search',
+        queryParameters: request.toQueryParameters(),
+        options: await _authOptions(),
+      );
+      return MarketplaceSearchResponse.fromJson(_body(response));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<PublicProfileDetailResult> publicProfile(
+    String profileId, {
+    String? sourceType,
+    String? sourceId,
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/profiles/$profileId',
+        queryParameters: {'source_type': ?sourceType, 'source_id': ?sourceId},
+        options: await _authOptions(),
+      );
+      return PublicProfileDetailResult.fromJson(_body(response));
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }

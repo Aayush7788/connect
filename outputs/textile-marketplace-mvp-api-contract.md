@@ -459,6 +459,7 @@ Search/saved cards must not expose contact/address.
 Public users see:
 
 - public profile fields
+- public role-specific fields needed by the business, job-worker, or karigar profile tab
 - media carousel
 - work cards or work-needed posts depending on profile type
 - blue tick if verified

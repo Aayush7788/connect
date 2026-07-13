@@ -74,6 +74,16 @@ def test_search_result_card_does_not_expose_contact_or_full_address() -> None:
     assert properties.isdisjoint(forbidden_public_card_fields)
 
 
+def test_profile_detail_contract_contains_public_role_and_contact_sections() -> None:
+    spec = load_openapi()
+    detail = spec["components"]["schemas"]["PublicProfileDetail"]
+    required = set(detail["required"])
+
+    assert {"profile", "role_specific", "contact", "address", "media"} <= required
+    assert "work_cards" in required
+    assert "work_needed_posts" in required
+
+
 def test_profile_update_contract_is_typed_and_role_is_not_editable() -> None:
     spec = load_openapi()
     profile_update = spec["components"]["schemas"]["ProfileUpdateRequest"]

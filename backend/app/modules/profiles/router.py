@@ -1,13 +1,41 @@
-from fastapi import APIRouter, Depends
+from typing import Literal
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.core.auth_context import CurrentUser
+from app.modules.auth.dependencies import get_active_current_user
 from app.modules.auth.dependencies import get_current_user_from_token
 from app.modules.profiles.dependencies import get_profile_service
 from app.modules.profiles.schemas import OwnerProfileResponse, ProfileUpdateRequest
+from app.modules.profiles.schemas import PublicProfileDetailResponse
 from app.modules.profiles.service import ProfileService
 
 
 router = APIRouter(prefix="/me/profile", tags=["Me"])
+public_router = APIRouter(prefix="/profiles", tags=["Profiles"])
+
+
+@public_router.get("/{profile_id}", response_model=PublicProfileDetailResponse)
+def get_public_profile(
+    profile_id: UUID,
+    request: Request,
+    source_type: Literal["work_card", "work_needed_post", "profile"] | None = Query(
+        default=None
+    ),
+    source_id: UUID | None = None,
+    current_user: CurrentUser = Depends(get_active_current_user),
+    profile_service: ProfileService = Depends(get_profile_service),
+) -> PublicProfileDetailResponse:
+    return profile_service.get_public_profile(
+        current_user=current_user,
+        profile_id=profile_id,
+        source_type=source_type,
+        source_id=source_id,
+        ip_address=request.client.host if request.client else None,
+        device_id=request.headers.get("x-device-id"),
+        user_agent=request.headers.get("user-agent"),
+    )
 
 
 @router.get("", response_model=OwnerProfileResponse)

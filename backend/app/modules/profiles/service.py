@@ -14,9 +14,18 @@ from app.db.models.profile import SkilledWorkerProfile
 from app.modules.auth.schemas import ProfileSummaryResponse
 from app.modules.auth.service import normalize_mobile
 from app.modules.profiles.repository import OwnerProfileBundle
+from app.modules.profiles.repository import PublicProfileBundle
+from app.modules.profiles.repository import PublicWorkCardBundle
+from app.modules.profiles.repository import PublicWorkNeededPostBundle
 from app.modules.profiles.repository import ProfileRepository
+from app.modules.media.schemas import MediaAssetResponse, MediaKind, MediaVisibility
 from app.modules.profiles.schemas import OwnerMediaResponse, OwnerProfileResponse
 from app.modules.profiles.schemas import ProfileUpdateRequest
+from app.modules.profiles.schemas import PublicAddressResponse, PublicContactResponse
+from app.modules.profiles.schemas import PublicProfileDetailResponse
+from app.modules.work_cards.schemas import WorkCardResponse, WorkCardStatus
+from app.modules.work_needed_posts.schemas import WorkNeededPostResponse
+from app.modules.work_needed_posts.schemas import WorkNeededPostStatus
 
 
 COMMON_FIELDS = {
@@ -112,6 +121,41 @@ class ProfileService:
         self._ensure_active(bundle.user.account_status)
         completion = self._calculate_completion(bundle)
         return self._response(bundle, completion)
+
+    def get_public_profile(
+        self,
+        *,
+        current_user: CurrentUser,
+        profile_id: UUID,
+        source_type: str | None,
+        source_id: UUID | None,
+        ip_address: str | None,
+        device_id: str | None,
+        user_agent: str | None,
+    ) -> PublicProfileDetailResponse:
+        bundle = self.repository.get_public_bundle(profile_id)
+        if bundle is None:
+            raise ApiError(
+                status_code=404,
+                code=ErrorCode.NOT_FOUND,
+                message="Profile not found.",
+            )
+        response = self._public_response(bundle)
+        try:
+            self.repository.record_contact_reveal(
+                viewer_user_id=current_user.user_id,
+                profile_id=profile_id,
+                source_type=source_type,
+                source_id=source_id,
+                ip_address=ip_address,
+                device_id=device_id,
+                user_agent=user_agent,
+            )
+            self.repository.commit()
+        except Exception:
+            self.repository.rollback()
+            raise
+        return response
 
     def refresh_completion(self, profile_id: UUID) -> CompletionResult:
         bundle = self.repository.get_bundle_by_profile_id(
@@ -656,6 +700,215 @@ class ProfileService:
                 for media in bundle.media
             ],
         )
+
+    def _public_response(
+        self, bundle: PublicProfileBundle
+    ) -> PublicProfileDetailResponse:
+        profile = bundle.profile
+        mobile = profile.alternate_contact_number or (
+            bundle.user.primary_mobile if bundle.user is not None else None
+        )
+        return PublicProfileDetailResponse(
+            profile=ProfileSummaryResponse(
+                id=profile.id,
+                role=profile.role,
+                display_name=profile.public_name,
+                visibility_status=profile.visibility_status,
+                completion_score=profile.completion_score,
+                completion_flags={},
+                verification_status=profile.verification_status,
+                is_verified=profile.is_verified,
+                reverification_required=profile.reverification_required,
+            ),
+            role_specific=self._public_role_data(bundle),
+            contact=PublicContactResponse(
+                mobile=mobile,
+                whatsapp_number=mobile,
+            ),
+            address=PublicAddressResponse(
+                locality=profile.locality,
+                city=profile.city,
+                state=profile.state,
+                pincode=profile.pincode,
+                full_address=profile.full_address,
+            ),
+            media=[self._public_media_response(media) for media in bundle.media],
+            work_cards=[
+                self._public_work_card_response(item) for item in bundle.work_cards
+            ],
+            work_needed_posts=[
+                self._public_work_needed_response(item)
+                for item in bundle.work_needed_posts
+            ],
+            similar_profiles=[],
+        )
+
+    def _public_role_data(self, bundle: PublicProfileBundle) -> dict[str, Any]:
+        profile = bundle.profile
+        role_profile = bundle.role_profile
+        if profile.role == "business":
+            category = bundle.categories.get(role_profile.business_category_id)
+            return {
+                "owner_name": profile.owner_name,
+                "business_name": role_profile.business_name,
+                "business_category": category.name if category else None,
+                "manufacture_sell_details": role_profile.manufacture_sell_details,
+                "product_notes": role_profile.product_notes,
+                "product_types": [
+                    (
+                        bundle.categories[item.product_type_category_id].name
+                        if item.product_type_category_id in bundle.categories
+                        else item.custom_product_type_text
+                    )
+                    for item in bundle.product_types
+                    if item.product_type_category_id in bundle.categories
+                    or has_text(item.custom_product_type_text)
+                ],
+            }
+        if profile.role == "job_worker":
+            return {
+                "owner_name": profile.owner_name,
+                "workshop_name": role_profile.workshop_name,
+                "work_summary": role_profile.work_summary,
+                "profile_experience_years": role_profile.profile_experience_years,
+            }
+        skill = bundle.categories.get(role_profile.primary_skill_category_id)
+        return {
+            "owner_name": profile.owner_name,
+            "primary_skill": skill.name if skill else None,
+            "skill_mastery": role_profile.skill_mastery,
+            "experience_years": role_profile.experience_years,
+            "bio": role_profile.bio,
+        }
+
+    def _public_work_card_response(
+        self, bundle: PublicWorkCardBundle
+    ) -> WorkCardResponse:
+        card = bundle.card
+        return WorkCardResponse(
+            id=card.id,
+            profile_id=card.profile_id,
+            status=cast(WorkCardStatus, card.status),
+            title=card.title,
+            category_id=card.work_category_id,
+            category_name=self._category_or_custom(
+                bundle.categories,
+                card.work_category_id,
+                card.custom_work_category_text,
+            ),
+            custom_category_text=card.custom_work_category_text,
+            work_name_id=card.work_name_category_id,
+            work_name=self._category_or_custom(
+                bundle.categories,
+                card.work_name_category_id,
+                card.custom_work_name,
+            ),
+            custom_work_name=card.custom_work_name,
+            product_type_ids=[
+                item.product_type_category_id
+                for item in bundle.product_types
+                if item.product_type_category_id is not None
+            ],
+            custom_product_texts=[
+                item.custom_product_type_text
+                for item in bundle.product_types
+                if item.custom_product_type_text is not None
+            ],
+            product_types=self._product_names(bundle.product_types, bundle.categories),
+            description=card.description,
+            experience_years=card.experience_years,
+            photo_count=card.photo_count,
+            photos=[self._public_media_response(media) for media in bundle.media],
+            last_activity_at=card.last_activity_at,
+            created_at=card.created_at,
+            updated_at=card.updated_at,
+        )
+
+    def _public_work_needed_response(
+        self, bundle: PublicWorkNeededPostBundle
+    ) -> WorkNeededPostResponse:
+        post = bundle.post
+        return WorkNeededPostResponse(
+            id=post.id,
+            profile_id=post.profile_id,
+            status=cast(WorkNeededPostStatus, post.status),
+            title=post.title,
+            category_id=post.work_category_id,
+            category_name=self._category_or_custom(
+                bundle.categories,
+                post.work_category_id,
+                post.custom_work_category_text,
+            ),
+            custom_category_text=post.custom_work_category_text,
+            work_name_id=post.work_name_category_id,
+            work_name=self._category_or_custom(
+                bundle.categories,
+                post.work_name_category_id,
+                post.custom_work_name,
+            ),
+            custom_work_name=post.custom_work_name,
+            product_type_ids=[
+                item.product_type_category_id
+                for item in bundle.product_types
+                if item.product_type_category_id is not None
+            ],
+            custom_product_texts=[
+                item.custom_product_type_text
+                for item in bundle.product_types
+                if item.custom_product_type_text is not None
+            ],
+            product_types=self._product_names(bundle.product_types, bundle.categories),
+            description=post.description,
+            photo_count=post.photo_count,
+            photos=[self._public_media_response(media) for media in bundle.media],
+            last_activity_at=post.last_activity_at,
+            closed_at=post.closed_at,
+            created_at=post.created_at,
+            updated_at=post.updated_at,
+        )
+
+    def _public_media_response(self, media: Any) -> MediaAssetResponse:
+        return MediaAssetResponse(
+            id=media.id,
+            media_kind=cast(MediaKind, media.media_kind),
+            visibility=cast(MediaVisibility, media.visibility),
+            upload_status=media.upload_status,
+            url=(
+                self.public_media_url(media.original_path)
+                if self.public_media_url is not None
+                else None
+            ),
+            thumbnail_url=(
+                self.public_media_url(media.thumbnail_path)
+                if self.public_media_url is not None and media.thumbnail_path
+                else None
+            ),
+            sort_order=media.sort_order,
+            document_type=media.document_type,
+            safe_display_name=self.repository.safe_media_name(media),
+        )
+
+    @staticmethod
+    def _category_or_custom(
+        categories: dict[UUID, Any],
+        category_id: UUID | None,
+        custom_text: str | None,
+    ) -> str | None:
+        category = categories.get(category_id)
+        return category.name if category is not None else custom_text
+
+    @staticmethod
+    def _product_names(products: list[Any], categories: dict[UUID, Any]) -> list[str]:
+        return [
+            (
+                categories[item.product_type_category_id].name
+                if item.product_type_category_id in categories
+                else item.custom_product_type_text
+            )
+            for item in products
+            if item.product_type_category_id in categories
+            or has_text(item.custom_product_type_text)
+        ]
 
     @staticmethod
     def _role_data(bundle: OwnerProfileBundle) -> dict[str, Any]:

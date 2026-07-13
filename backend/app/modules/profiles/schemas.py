@@ -5,6 +5,10 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from pydantic import field_validator, model_validator
 
 from app.modules.auth.schemas import ProfileSummaryResponse
+from app.modules.media.schemas import MediaAssetResponse
+from app.modules.search.schemas import SearchResultResponse
+from app.modules.work_cards.schemas import WorkCardResponse
+from app.modules.work_needed_posts.schemas import WorkNeededPostResponse
 
 
 class ProfileUpdateRequest(BaseModel):
@@ -107,3 +111,27 @@ class OwnerProfileResponse(BaseModel):
     locked_fields: list[str] = Field(default_factory=list)
     role_specific: dict[str, Any] = Field(default_factory=dict)
     media: list[OwnerMediaResponse] = Field(default_factory=list)
+
+
+class PublicContactResponse(BaseModel):
+    mobile: str | None = None
+    whatsapp_number: str | None = None
+
+
+class PublicAddressResponse(BaseModel):
+    locality: str | None = None
+    city: str | None = None
+    state: str | None = None
+    pincode: str | None = None
+    full_address: str | None = None
+
+
+class PublicProfileDetailResponse(BaseModel):
+    profile: ProfileSummaryResponse
+    role_specific: dict[str, Any] = Field(default_factory=dict)
+    contact: PublicContactResponse
+    address: PublicAddressResponse
+    media: list[MediaAssetResponse] = Field(default_factory=list)
+    work_cards: list[WorkCardResponse] = Field(default_factory=list)
+    work_needed_posts: list[WorkNeededPostResponse] = Field(default_factory=list)
+    similar_profiles: list[SearchResultResponse] = Field(default_factory=list)

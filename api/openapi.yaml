@@ -1573,10 +1573,22 @@ components:
           nullable: true
     PublicProfileDetail:
       type: object
-      required: [profile, contact, media]
+      required:
+        - profile
+        - role_specific
+        - contact
+        - address
+        - media
+        - work_cards
+        - work_needed_posts
+        - similar_profiles
       properties:
         profile:
           $ref: '#/components/schemas/ProfileSummary'
+        role_specific:
+          type: object
+          additionalProperties: true
+          description: Public role-specific business, workshop, or skill fields.
         contact:
           $ref: '#/components/schemas/PublicContact'
         address:

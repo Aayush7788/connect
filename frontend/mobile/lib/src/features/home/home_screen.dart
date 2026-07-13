@@ -43,8 +43,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (value) =>
-            setState(() => _selectedIndex = value),
+        onDestinationSelected: (value) {
+          if (value == 1) {
+            context.push(AppRoute.search.path);
+            return;
+          }
+          setState(() => _selectedIndex = value);
+        },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
@@ -74,6 +79,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           _HomeTab(
             displayName: state.displayName,
             profileComplete: state.me?.profile?.completionScore == 100,
+            onFind: (target) => context.push('/search?target=$target'),
+            onPopularSearch: (query) => context.push(
+              '/search?target=job_worker&q=${Uri.encodeQueryComponent(query)}',
+            ),
           ),
           const _PlaceholderTab(
             icon: Icons.search_outlined,
@@ -104,10 +113,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class _HomeTab extends StatelessWidget {
-  const _HomeTab({required this.displayName, required this.profileComplete});
+  const _HomeTab({
+    required this.displayName,
+    required this.profileComplete,
+    required this.onFind,
+    required this.onPopularSearch,
+  });
 
   final String displayName;
   final bool profileComplete;
+  final ValueChanged<String> onFind;
+  final ValueChanged<String> onPopularSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -143,21 +159,21 @@ class _HomeTab extends StatelessWidget {
           icon: Icons.storefront_outlined,
           title: 'Find Manufacturers, Traders, Wholesalers',
           subtitle: 'Find people who make or sell textile products',
-          onTap: () {},
+          onTap: () => onFind('business'),
         ),
         const SizedBox(height: 12),
         _FindCard(
           icon: Icons.handyman_outlined,
           title: 'Find Job Worker, Value Adder',
           subtitle: 'Find flat hemming, embroidery, print and more',
-          onTap: () {},
+          onTap: () => onFind('job_worker'),
         ),
         const SizedBox(height: 12),
         _FindCard(
           icon: Icons.person_search_outlined,
           title: 'Find Skilled Worker, Karigar',
           subtitle: 'Find skilled people for workshop work',
-          onTap: () {},
+          onTap: () => onFind('skilled_worker'),
         ),
         const SizedBox(height: 22),
         if (!profileComplete) ...[
@@ -196,10 +212,19 @@ class _HomeTab extends StatelessWidget {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: const [
-            _SearchChip(label: 'Flat hemming'),
-            _SearchChip(label: 'Digital print'),
-            _SearchChip(label: 'Embroidery'),
+          children: [
+            _SearchChip(
+              label: 'Flat hemming',
+              onPressed: () => onPopularSearch('Flat hemming'),
+            ),
+            _SearchChip(
+              label: 'Digital print',
+              onPressed: () => onPopularSearch('Digital print'),
+            ),
+            _SearchChip(
+              label: 'Embroidery',
+              onPressed: () => onPopularSearch('Embroidery'),
+            ),
           ],
         ),
       ],
@@ -254,15 +279,16 @@ class _FindCard extends StatelessWidget {
 }
 
 class _SearchChip extends StatelessWidget {
-  const _SearchChip({required this.label});
+  const _SearchChip({required this.label, required this.onPressed});
 
   final String label;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return ActionChip(
       label: Text(label),
-      onPressed: () {},
+      onPressed: onPressed,
       side: const BorderSide(color: connectLine),
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
