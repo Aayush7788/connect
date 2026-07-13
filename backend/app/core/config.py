@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_name: str = "Connect Textile Marketplace API"
     api_base_url: str = "http://127.0.0.1:8000"
+    share_base_url: str = "https://connect.example"
     api_v1_prefix: str = "/v1"
     log_level: str = "info"
     enable_debug_errors: bool = False

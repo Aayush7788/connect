@@ -1044,6 +1044,7 @@ Build scope:
 - `GET /v1/me/notifications`
 - `POST /v1/me/notifications/{notification_id}/read`
 - `POST /v1/me/device-tokens`
+- `GET /v1/me/settings`
 - `PATCH /v1/me/settings`
 - Saved screen.
 - Share sheet.

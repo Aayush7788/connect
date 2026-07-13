@@ -128,7 +128,7 @@ Analytics/share/contact failures must not block the visible user action, except 
 | Report Sheet | `POST /v1/reports` | Target can be profile, work card, or work-needed post. |
 | Notifications | `GET /v1/me/notifications` | Simple list with title, message, date/time. |
 | Mark Notification Read | `POST /v1/me/notifications/{id}/read` | `read_at` set server-side. |
-| Settings | `PATCH /v1/me/settings` | Push on/off; hide from search; logout. |
+| Settings | `GET /v1/me/settings`, `PATCH /v1/me/settings` | Load and change push on/off; hide from search; logout. |
 | Contact Support | Static support config or future API | Suspended users can access support. |
 
 ## 13. Admin Dashboard Traceability

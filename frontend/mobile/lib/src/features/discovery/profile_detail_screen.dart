@@ -4,10 +4,11 @@ import 'package:connect_app/src/data/work_card_models.dart';
 import 'package:connect_app/src/data/work_needed_post_models.dart';
 import 'package:connect_app/src/features/discovery/discovery_repository.dart';
 import 'package:connect_app/src/features/discovery/discovery_widgets.dart';
+import 'package:connect_app/src/features/engagement/engagement_controller.dart';
+import 'package:connect_app/src/features/engagement/profile_actions.dart';
 import 'package:connect_app/src/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ProfileDetailRequest {
   const ProfileDetailRequest({
@@ -46,7 +47,7 @@ final publicProfileDetailProvider =
           );
     });
 
-class ProfileDetailScreen extends ConsumerWidget {
+class ProfileDetailScreen extends ConsumerStatefulWidget {
   const ProfileDetailScreen({
     required this.profileId,
     super.key,
@@ -59,15 +60,49 @@ class ProfileDetailScreen extends ConsumerWidget {
   final String? sourceId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileDetailScreen> createState() =>
+      _ProfileDetailScreenState();
+}
+
+class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(engagementControllerProvider.notifier).loadSaved();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final request = ProfileDetailRequest(
-      profileId: profileId,
-      sourceType: sourceType,
-      sourceId: sourceId,
+      profileId: widget.profileId,
+      sourceType: widget.sourceType,
+      sourceId: widget.sourceId,
     );
     final detail = ref.watch(publicProfileDetailProvider(request));
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            tooltip: 'Share',
+            onPressed: () => shareProfile(context, ref, widget.profileId),
+            icon: const Icon(Icons.share_outlined),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'More actions',
+            onSelected: (value) {
+              if (value == 'report') {
+                reportProfile(context, ref, widget.profileId);
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'report', child: Text('Report')),
+            ],
+          ),
+        ],
+      ),
       body: detail.when(
         loading: () => const _ProfileDetailSkeleton(),
         error: (error, _) => _DetailError(
@@ -76,22 +111,37 @@ class ProfileDetailScreen extends ConsumerWidget {
               : "Can't access internet",
           onRetry: () => ref.invalidate(publicProfileDetailProvider(request)),
         ),
-        data: (value) => _ProfileDetailBody(detail: value),
+        data: (value) => _ProfileDetailBody(
+          detail: value,
+          sourceType: widget.sourceType,
+          sourceId: widget.sourceId,
+        ),
       ),
     );
   }
 }
 
-class _ProfileDetailBody extends StatelessWidget {
-  const _ProfileDetailBody({required this.detail});
+class _ProfileDetailBody extends ConsumerWidget {
+  const _ProfileDetailBody({
+    required this.detail,
+    this.sourceType,
+    this.sourceId,
+  });
 
   final PublicProfileDetailResult detail;
+  final String? sourceType;
+  final String? sourceId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final role = detail.profile.role;
     if (role == 'skilled_worker') {
-      return _ProfileTab(detail: detail, isKarigar: true);
+      return _ProfileTab(
+        detail: detail,
+        isKarigar: true,
+        sourceType: sourceType,
+        sourceId: sourceId,
+      );
     }
     final isBusiness = role == 'business';
     return DefaultTabController(
@@ -119,7 +169,11 @@ class _ProfileDetailBody extends StatelessWidget {
                 isBusiness
                     ? _WorkNeededList(posts: detail.workNeededPosts)
                     : _WorkCardList(cards: detail.workCards),
-                _ProfileTab(detail: detail),
+                _ProfileTab(
+                  detail: detail,
+                  sourceType: sourceType,
+                  sourceId: sourceId,
+                ),
               ],
             ),
           ),
@@ -246,14 +300,21 @@ class _PublicWorkCard extends StatelessWidget {
       value != null && value.trim().isNotEmpty;
 }
 
-class _ProfileTab extends StatelessWidget {
-  const _ProfileTab({required this.detail, this.isKarigar = false});
+class _ProfileTab extends ConsumerWidget {
+  const _ProfileTab({
+    required this.detail,
+    this.isKarigar = false,
+    this.sourceType,
+    this.sourceId,
+  });
 
   final PublicProfileDetailResult detail;
   final bool isKarigar;
+  final String? sourceType;
+  final String? sourceId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final data = detail.roleSpecific;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
@@ -354,7 +415,48 @@ class _ProfileTab extends StatelessWidget {
           value: detail.contact.mobile,
         ),
         const SizedBox(height: 4),
-        _ContactActions(contact: detail.contact),
+        _ContactActions(
+          profileId: detail.profile.id,
+          contact: detail.contact,
+          sourceType: sourceType,
+          sourceId: sourceId,
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: ref.watch(engagementControllerProvider).isSaving
+              ? null
+              : () async {
+                  final changed = await ref
+                      .read(engagementControllerProvider.notifier)
+                      .toggleProfile(detail.profile.id);
+                  if (!changed && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          ref.read(engagementControllerProvider).errorMessage ??
+                              'Unable to update saved profiles',
+                        ),
+                      ),
+                    );
+                  }
+                },
+          icon: Icon(
+            ref
+                        .watch(engagementControllerProvider.notifier)
+                        .savedProfile(detail.profile.id) ==
+                    null
+                ? Icons.bookmark_border_outlined
+                : Icons.bookmark,
+          ),
+          label: Text(
+            ref
+                        .watch(engagementControllerProvider.notifier)
+                        .savedProfile(detail.profile.id) ==
+                    null
+                ? 'Save'
+                : 'Saved',
+          ),
+        ),
       ],
     );
   }
@@ -373,13 +475,21 @@ class _ProfileTab extends StatelessWidget {
   }
 }
 
-class _ContactActions extends StatelessWidget {
-  const _ContactActions({required this.contact});
+class _ContactActions extends ConsumerWidget {
+  const _ContactActions({
+    required this.profileId,
+    required this.contact,
+    this.sourceType,
+    this.sourceId,
+  });
 
+  final String profileId;
   final PublicContactResult contact;
+  final String? sourceType;
+  final String? sourceId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final mobile = contact.mobile;
     final whatsapp = contact.whatsappNumber ?? mobile;
     return Row(
@@ -388,7 +498,15 @@ class _ContactActions extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: mobile == null
                 ? null
-                : () => _launch(context, Uri(scheme: 'tel', path: mobile)),
+                : () => logThenLaunchContact(
+                    context: context,
+                    ref: ref,
+                    profileId: profileId,
+                    actionType: 'call',
+                    sourceType: sourceType,
+                    sourceId: sourceId,
+                    uri: Uri(scheme: 'tel', path: mobile),
+                  ),
             icon: const Icon(Icons.call_outlined),
             label: const Text('Call'),
           ),
@@ -398,9 +516,14 @@ class _ContactActions extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: whatsapp == null
                 ? null
-                : () => _launch(
-                    context,
-                    Uri.parse(
+                : () => logThenLaunchContact(
+                    context: context,
+                    ref: ref,
+                    profileId: profileId,
+                    actionType: 'whatsapp',
+                    sourceType: sourceType,
+                    sourceId: sourceId,
+                    uri: Uri.parse(
                       'https://wa.me/${whatsapp.replaceAll(RegExp(r'\D'), '')}',
                     ),
                   ),
@@ -410,20 +533,6 @@ class _ContactActions extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  static Future<void> _launch(BuildContext context, Uri uri) async {
-    var opened = false;
-    try {
-      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } on Object {
-      opened = false;
-    }
-    if (!opened && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open this action')),
-      );
-    }
   }
 }
 

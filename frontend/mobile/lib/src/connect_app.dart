@@ -2,6 +2,7 @@ import 'package:connect_app/src/features/auth/auth_controller.dart';
 import 'package:connect_app/src/features/auth/auth_screens.dart';
 import 'package:connect_app/src/features/discovery/profile_detail_screen.dart';
 import 'package:connect_app/src/features/discovery/search_screen.dart';
+import 'package:connect_app/src/features/engagement/notifications_screen.dart';
 import 'package:connect_app/src/features/home/home_screen.dart';
 import 'package:connect_app/src/features/profile/profile_form_screen.dart';
 import 'package:connect_app/src/features/profile/profile_settings_screen.dart';
@@ -77,6 +78,10 @@ final GoRouter _router = GoRouter(
               : null,
         );
       },
+    ),
+    GoRoute(
+      path: AppRoute.notifications.path,
+      builder: (context, state) => const NotificationsScreen(),
     ),
     GoRoute(
       path: AppRoute.completeProfile.path,

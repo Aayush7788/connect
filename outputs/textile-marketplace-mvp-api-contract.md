@@ -586,6 +586,9 @@ Saved target types:
 
 Saved create/remove are idempotent.
 
+Each saved-item response includes `profile_role` so the mobile app can group
+privacy-safe cards into Business, Job Worker, and Karigar tabs without guessing.
+
 ### 13.2 Reports
 
 `POST /v1/reports`
@@ -618,7 +621,8 @@ In-app notifications are always stored. Push can be disabled by user settings.
 
 ### 13.4 Settings
 
-`PATCH /v1/me/settings`
+- `GET /v1/me/settings`
+- `PATCH /v1/me/settings`
 
 Settings:
 

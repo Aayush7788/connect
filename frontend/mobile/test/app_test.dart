@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:connect_app/src/connect_app.dart';
 import 'package:connect_app/src/data/connect_api.dart';
 import 'package:connect_app/src/data/discovery_models.dart';
+import 'package:connect_app/src/data/engagement_models.dart';
 import 'package:connect_app/src/data/work_card_models.dart';
 import 'package:connect_app/src/data/work_needed_post_models.dart';
 import 'package:connect_app/src/features/media/media_upload_service.dart';
@@ -283,6 +284,137 @@ void main() {
     expect(find.text('Call'), findsOneWidget);
     expect(find.text('WhatsApp'), findsOneWidget);
   });
+
+  testWidgets('profile can be saved and appears in persona saved tab', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final api = _FakeConnectApi();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(
+            _MemoryTokenStore(initialAccessToken: 'access-token'),
+          ),
+          connectApiProvider.overrideWithValue(api),
+        ],
+        child: const ConnectApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    GoRouter.of(
+      tester.element(find.byType(Navigator).first),
+    ).go('/profiles/profile-1');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(Tab, 'Profile'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.widgetWithText(OutlinedButton, 'Save'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(OutlinedButton, 'Saved'), findsOneWidget);
+    expect(api.saved, hasLength(1));
+
+    GoRouter.of(tester.element(find.byType(Navigator).first)).go('/home');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Saved').last);
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(Tab, 'Job Worker'), findsOneWidget);
+    await tester.tap(find.widgetWithText(Tab, 'Job Worker'));
+    await tester.pumpAndSettle();
+    expect(find.text('Surat Hemming Works'), findsOneWidget);
+  });
+
+  testWidgets('notification bell opens list and marks a row read', (
+    tester,
+  ) async {
+    final api = _FakeConnectApi();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(
+            _MemoryTokenStore(initialAccessToken: 'access-token'),
+          ),
+          connectApiProvider.overrideWithValue(api),
+        ],
+        child: const ConnectApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(Navigator).first)).go('/home');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Notifications'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Profile approved'), findsOneWidget);
+    await tester.tap(find.text('Profile approved'));
+    await tester.pumpAndSettle();
+    expect(api.notificationRead, isTrue);
+  });
+
+  testWidgets('settings updates push preference through backend API', (
+    tester,
+  ) async {
+    final api = _FakeConnectApi();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(
+            _MemoryTokenStore(initialAccessToken: 'access-token'),
+          ),
+          connectApiProvider.overrideWithValue(api),
+        ],
+        child: const ConnectApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(Navigator).first)).go('/settings');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(SwitchListTile, 'Push notifications'));
+    await tester.pumpAndSettle();
+
+    expect(api.pushNotificationsEnabled, isFalse);
+  });
+
+  testWidgets('profile report requires a reason and submits', (tester) async {
+    final api = _FakeConnectApi();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(
+            _MemoryTokenStore(initialAccessToken: 'access-token'),
+          ),
+          connectApiProvider.overrideWithValue(api),
+        ],
+        child: const ConnectApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    GoRouter.of(
+      tester.element(find.byType(Navigator).first),
+    ).go('/profiles/profile-1');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('More actions'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Report'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Wrong contact'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Submit report'));
+    await tester.pumpAndSettle();
+
+    expect(api.reportCount, 1);
+    expect(find.text('Report submitted'), findsOneWidget);
+  });
 }
 
 class _NoopMediaPicker implements MediaPickerGateway {
@@ -324,6 +456,10 @@ class _FakeConnectApi implements ConnectApi {
   final List<WorkNeededPostResult> ownerWorkNeededPosts = [];
   Map<String, dynamic>? lastProfileUpdate;
   int mediaSequence = 0;
+  final List<SavedItemResult> saved = [];
+  bool notificationRead = false;
+  bool pushNotificationsEnabled = true;
+  int reportCount = 0;
 
   @override
   Future<List<CategoryOption>> categories({
@@ -604,6 +740,112 @@ class _FakeConnectApi implements ConnectApi {
       ],
       workNeededPosts: const [],
       similarProfiles: const [],
+    );
+  }
+
+  @override
+  Future<List<SavedItemResult>> savedItems() async => saved;
+
+  @override
+  Future<SavedItemResult> saveItem({
+    required String targetType,
+    required String targetId,
+  }) async {
+    final item = SavedItemResult(
+      id: 'saved-${saved.length + 1}',
+      targetType: targetType,
+      targetId: targetId,
+      profileRole: 'job_worker',
+      card: MarketplaceSearchResult(
+        resultType: 'profile',
+        id: targetId,
+        profileId: targetId,
+        title: 'Surat Hemming Works',
+        isVerified: true,
+        photoCount: 3,
+      ),
+    );
+    saved.add(item);
+    return item;
+  }
+
+  @override
+  Future<void> removeSavedItem(String savedItemId) async {
+    saved.removeWhere((item) => item.id == savedItemId);
+  }
+
+  @override
+  Future<void> createReport({
+    required String targetType,
+    required String targetId,
+    required String reason,
+  }) async {
+    reportCount += 1;
+  }
+
+  @override
+  Future<List<NotificationResult>> notifications() async => [
+    NotificationResult(
+      id: 'notification-1',
+      title: 'Profile approved',
+      message: 'Your profile is now verified.',
+      createdAt: DateTime(2026, 7, 13, 10, 30),
+      readAt: notificationRead ? DateTime(2026, 7, 13, 10, 31) : null,
+    ),
+  ];
+
+  @override
+  Future<NotificationResult> markNotificationRead(String notificationId) async {
+    notificationRead = true;
+    final now = DateTime.now();
+    return NotificationResult(
+      id: notificationId,
+      title: 'Profile approved',
+      message: 'Your profile is now verified.',
+      createdAt: now,
+      readAt: now,
+    );
+  }
+
+  @override
+  Future<UserSettingsResult> updateSettings({
+    bool? pushNotificationsEnabled,
+    bool? hiddenFromSearch,
+  }) async {
+    if (pushNotificationsEnabled != null) {
+      this.pushNotificationsEnabled = pushNotificationsEnabled;
+    }
+    return UserSettingsResult(
+      pushNotificationsEnabled: this.pushNotificationsEnabled,
+      hiddenFromSearch: hiddenFromSearch ?? false,
+    );
+  }
+
+  @override
+  Future<UserSettingsResult> userSettings() async {
+    return UserSettingsResult(
+      pushNotificationsEnabled: pushNotificationsEnabled,
+      hiddenFromSearch: false,
+    );
+  }
+
+  @override
+  Future<void> logContactAction({
+    required String profileId,
+    required String actionType,
+    String? sourceType,
+    String? sourceId,
+  }) async {}
+
+  @override
+  Future<ShareLinkResult> createShareLink({
+    required String targetType,
+    required String targetId,
+    String? channel,
+  }) async {
+    return ShareLinkResult(
+      url: 'https://connect.example/profiles/$targetId',
+      shareText: 'View this profile on Connect',
     );
   }
 

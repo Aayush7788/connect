@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:connect_app/src/data/media_models.dart';
 import 'package:connect_app/src/data/discovery_models.dart';
+import 'package:connect_app/src/data/engagement_models.dart';
 import 'package:connect_app/src/data/work_card_models.dart';
 import 'package:connect_app/src/data/work_needed_post_models.dart';
 import 'package:dio/dio.dart';
@@ -108,6 +109,45 @@ abstract class ConnectApi {
     String workCardId,
     WorkCardUpsert fields,
   );
+
+  Future<List<SavedItemResult>> savedItems();
+
+  Future<SavedItemResult> saveItem({
+    required String targetType,
+    required String targetId,
+  });
+
+  Future<void> removeSavedItem(String savedItemId);
+
+  Future<void> createReport({
+    required String targetType,
+    required String targetId,
+    required String reason,
+  });
+
+  Future<List<NotificationResult>> notifications();
+
+  Future<NotificationResult> markNotificationRead(String notificationId);
+
+  Future<UserSettingsResult> updateSettings({
+    bool? pushNotificationsEnabled,
+    bool? hiddenFromSearch,
+  });
+
+  Future<UserSettingsResult> userSettings();
+
+  Future<void> logContactAction({
+    required String profileId,
+    required String actionType,
+    String? sourceType,
+    String? sourceId,
+  });
+
+  Future<ShareLinkResult> createShareLink({
+    required String targetType,
+    required String targetId,
+    String? channel,
+  });
 
   Future<WorkCardResult> publishWorkCard(String workCardId);
 
@@ -351,6 +391,181 @@ class DioConnectApi implements ConnectApi {
         options: await _authOptions(),
       );
       return PublicProfileDetailResult.fromJson(_body(response));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<List<SavedItemResult>> savedItems() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/me/saved-items',
+        options: await _authOptions(),
+      );
+      final items = _body(response)['items'] as List<dynamic>? ?? [];
+      return items
+          .map((item) => SavedItemResult.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<SavedItemResult> saveItem({
+    required String targetType,
+    required String targetId,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/me/saved-items',
+        data: {'target_type': targetType, 'target_id': targetId},
+        options: await _authOptions(),
+      );
+      return SavedItemResult.fromJson(_body(response));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<void> removeSavedItem(String savedItemId) async {
+    try {
+      await _dio.delete<void>(
+        '/me/saved-items/$savedItemId',
+        options: await _authOptions(),
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<void> createReport({
+    required String targetType,
+    required String targetId,
+    required String reason,
+  }) async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        '/reports',
+        data: {
+          'reported_entity_type': targetType,
+          'reported_entity_id': targetId,
+          'reason': reason,
+        },
+        options: await _authOptions(),
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<List<NotificationResult>> notifications() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/me/notifications',
+        options: await _authOptions(),
+      );
+      final items = _body(response)['items'] as List<dynamic>? ?? [];
+      return items
+          .map(
+            (item) => NotificationResult.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(growable: false);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<NotificationResult> markNotificationRead(String notificationId) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/me/notifications/$notificationId/read',
+        options: await _authOptions(),
+      );
+      return NotificationResult.fromJson(_body(response));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<UserSettingsResult> updateSettings({
+    bool? pushNotificationsEnabled,
+    bool? hiddenFromSearch,
+  }) async {
+    try {
+      final response = await _dio.patch<Map<String, dynamic>>(
+        '/me/settings',
+        data: {
+          'push_notifications_enabled': ?pushNotificationsEnabled,
+          'hidden_from_search': ?hiddenFromSearch,
+        },
+        options: await _authOptions(),
+      );
+      return UserSettingsResult.fromJson(_body(response));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<UserSettingsResult> userSettings() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/me/settings',
+        options: await _authOptions(),
+      );
+      return UserSettingsResult.fromJson(_body(response));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<void> logContactAction({
+    required String profileId,
+    required String actionType,
+    String? sourceType,
+    String? sourceId,
+  }) async {
+    try {
+      await _dio.post<void>(
+        '/contact-actions',
+        data: {
+          'profile_id': profileId,
+          'action_type': actionType,
+          'source_type': ?sourceType,
+          'source_id': ?sourceId,
+        },
+        options: await _authOptionsWithTimeout(const Duration(seconds: 2)),
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<ShareLinkResult> createShareLink({
+    required String targetType,
+    required String targetId,
+    String? channel,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/share-links',
+        data: {
+          'target_type': targetType,
+          'target_id': targetId,
+          'channel': ?channel,
+        },
+        options: await _authOptionsWithTimeout(const Duration(seconds: 3)),
+      );
+      return ShareLinkResult.fromJson(_body(response));
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }
@@ -626,6 +841,15 @@ class DioConnectApi implements ConnectApi {
   Future<Options> _authOptionsWithHeaders(Map<String, String> headers) async {
     final token = await _tokenStore.readAccessToken();
     return Options(headers: {'Authorization': 'Bearer $token', ...headers});
+  }
+
+  Future<Options> _authOptionsWithTimeout(Duration timeout) async {
+    final token = await _tokenStore.readAccessToken();
+    return Options(
+      headers: {'Authorization': 'Bearer $token'},
+      sendTimeout: timeout,
+      receiveTimeout: timeout,
+    );
   }
 
   Map<String, dynamic> _body(Response<Map<String, dynamic>> response) {

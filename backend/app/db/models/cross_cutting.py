@@ -521,7 +521,7 @@ class ContactActionEvent(Base):
     __tablename__ = "contact_action_events"
     __table_args__ = (
         CheckConstraint(
-            "action_type in ('call', 'whatsapp', 'show_contact')",
+            "action_type in ('call', 'whatsapp', 'address', 'show_contact')",
             name="action_type_valid",
         ),
         CheckConstraint(
@@ -580,7 +580,8 @@ class ShareEvent(Base):
         ),
         CheckConstraint(
             "share_channel is null or share_channel in "
-            "('whatsapp', 'sms', 'x', 'email', 'linkedin', 'system_share')",
+            "('copy_link', 'whatsapp', 'sms', 'x', 'email', 'linkedin', "
+            "'native_other', 'system_share')",
             name="share_channel_valid",
         ),
         Index("idx_share_events_user_created", "user_id", text("created_at desc")),
