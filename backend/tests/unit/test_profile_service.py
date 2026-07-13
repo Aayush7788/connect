@@ -30,6 +30,19 @@ class FakeProfileRepository:
     def category_ids_are_valid(self, category_ids, *, allowed_types):
         return True
 
+    def get_categories(self, category_ids):
+        return {
+            category_id: SimpleNamespace(name="Mapped category")
+            for category_id in category_ids
+        }
+
+    def category_aliases(self, category_ids):
+        return []
+
+    @staticmethod
+    def set_search_vector(profile, search_text):
+        profile.search_vector = search_text
+
     def replace_business_product_types(
         self,
         *,
@@ -185,6 +198,8 @@ def test_complete_business_profile_publishes_and_locks_owner_name() -> None:
     assert response.profile.visibility_status == "public"
     assert repository.bundle.user.profile_completed_at is not None
     assert "owner_name" in response.locked_fields
+    assert "connect textiles" in repository.bundle.profile.search_text
+    assert "mapped category" in repository.bundle.profile.search_text
 
 
 def test_owner_profile_returns_url_only_for_ready_public_media() -> None:
@@ -293,6 +308,7 @@ def test_sensitive_edit_removes_verification_and_writes_change_history() -> None
     assert response.profile.verification_status == "unverified"
     assert response.profile.is_verified is False
     assert response.profile.reverification_required is True
+    assert repository.bundle.profile.normalized_locality == "new textile market"
     assert repository.histories[0]["requires_reverification"] is True
 
 

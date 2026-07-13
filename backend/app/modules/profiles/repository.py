@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import PurePosixPath
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import delete, func, or_, select
@@ -11,7 +12,7 @@ from app.db.models.marketplace import WorkCard, WorkCardProductType
 from app.db.models.profile import BusinessProfile, BusinessProfileProductType
 from app.db.models.profile import JobWorkerProfile, Profile, ProfileChangeHistory
 from app.db.models.profile import SkilledWorkerProfile
-from app.db.models.taxonomy import Category, CategorySuggestion
+from app.db.models.taxonomy import Category, CategoryAlias, CategorySuggestion
 
 
 @dataclass
@@ -105,7 +106,10 @@ class ProfileRepository:
             "job_worker": JobWorkerProfile,
             "skilled_worker": SkilledWorkerProfile,
         }[profile.role]
-        return self.session.get(model, profile.id)
+        return cast(
+            BusinessProfile | JobWorkerProfile | SkilledWorkerProfile | None,
+            self.session.get(model, profile.id),
+        )
 
     def list_business_product_types(
         self,
@@ -202,6 +206,31 @@ class ProfileRepository:
             )
         )
         return int(count or 0) == len(category_ids)
+
+    def get_categories(self, category_ids: set[UUID]) -> dict[UUID, Category]:
+        if not category_ids:
+            return {}
+        return {
+            category.id: category
+            for category in self.session.scalars(
+                select(Category).where(Category.id.in_(category_ids))
+            )
+        }
+
+    def category_aliases(self, category_ids: set[UUID]) -> list[str]:
+        if not category_ids:
+            return []
+        return list(
+            self.session.scalars(
+                select(CategoryAlias.normalized_alias).where(
+                    CategoryAlias.category_id.in_(category_ids),
+                    CategoryAlias.is_active.is_(True),
+                )
+            )
+        )
+
+    def set_search_vector(self, profile: Profile, search_text: str) -> None:
+        profile.search_vector = func.to_tsvector("simple", search_text)
 
     def completion_evidence(self, profile: Profile) -> CompletionEvidence:
         public_photo_count = int(
