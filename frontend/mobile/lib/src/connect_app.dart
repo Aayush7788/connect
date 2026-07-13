@@ -1,5 +1,7 @@
 import 'package:connect_app/src/features/auth/auth_controller.dart';
 import 'package:connect_app/src/features/auth/auth_screens.dart';
+import 'package:connect_app/src/features/discovery/profile_detail_screen.dart';
+import 'package:connect_app/src/features/discovery/search_screen.dart';
 import 'package:connect_app/src/features/home/home_screen.dart';
 import 'package:connect_app/src/features/profile/profile_form_screen.dart';
 import 'package:connect_app/src/features/profile/profile_settings_screen.dart';
@@ -53,6 +55,28 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: AppRoute.home.path,
       builder: (context, state) => const HomeScreen(),
+    ),
+    GoRoute(
+      path: AppRoute.search.path,
+      builder: (context, state) => SearchScreen(
+        initialTarget: state.uri.queryParameters['target'] ?? 'job_worker',
+        initialQuery: state.uri.queryParameters['q'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/profiles/:profileId',
+      builder: (context, state) {
+        final routeExtra = state.extra;
+        return ProfileDetailScreen(
+          profileId: state.pathParameters['profileId']!,
+          sourceType: routeExtra is ProfileDetailRouteExtra
+              ? routeExtra.sourceType
+              : null,
+          sourceId: routeExtra is ProfileDetailRouteExtra
+              ? routeExtra.sourceId
+              : null,
+        );
+      },
     ),
     GoRoute(
       path: AppRoute.completeProfile.path,

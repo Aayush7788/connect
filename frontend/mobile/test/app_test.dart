@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:connect_app/src/connect_app.dart';
 import 'package:connect_app/src/data/connect_api.dart';
+import 'package:connect_app/src/data/discovery_models.dart';
 import 'package:connect_app/src/data/work_card_models.dart';
 import 'package:connect_app/src/data/work_needed_post_models.dart';
 import 'package:connect_app/src/features/media/media_upload_service.dart';
@@ -238,6 +239,49 @@ void main() {
     expect(api.ownerWorkNeededPosts, hasLength(1));
     expect(find.text('Add Work Needed'), findsOneWidget);
     expect(find.text('Save and Publish'), findsOneWidget);
+  });
+
+  testWidgets('search card hides contact and profile detail reveals it', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final api = _FakeConnectApi();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(
+            _MemoryTokenStore(initialAccessToken: 'access-token'),
+          ),
+          connectApiProvider.overrideWithValue(api),
+        ],
+        child: const ConnectApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    GoRouter.of(tester.element(find.byType(Navigator).first)).go('/home');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Find Job Worker, Value Adder'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Flat hemming'), findsOneWidget);
+    expect(find.text('+919999999999'), findsNothing);
+    expect(find.text('Ring Road, Surat'), findsNothing);
+
+    await tester.tap(find.text('Flat hemming'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(Tab, 'Profile'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('+919999999999'), findsOneWidget);
+    expect(find.text('Ring Road, Surat'), findsOneWidget);
+    expect(find.text('Call'), findsOneWidget);
+    expect(find.text('WhatsApp'), findsOneWidget);
   });
 }
 
@@ -487,6 +531,81 @@ class _FakeConnectApi implements ConnectApi {
 
   @override
   Future<OwnerProfileResult> ownerProfile() async => profile;
+
+  @override
+  Future<MarketplaceSearchResponse> searchMarketplace(
+    MarketplaceSearchRequest request,
+  ) async {
+    return const MarketplaceSearchResponse(
+      items: [
+        MarketplaceSearchResult(
+          resultType: 'work_card',
+          id: 'work-1',
+          profileId: 'profile-1',
+          title: 'Flat hemming',
+          subtitle: 'Aayush Hemming',
+          category: 'Stitching',
+          productTypes: ['Dupatta'],
+          locality: 'Ring Road',
+          isVerified: true,
+          photoCount: 3,
+        ),
+      ],
+      resultCount: 1,
+      searchLogId: 'search-log-1',
+    );
+  }
+
+  @override
+  Future<PublicProfileDetailResult> publicProfile(
+    String profileId, {
+    String? sourceType,
+    String? sourceId,
+  }) async {
+    return PublicProfileDetailResult(
+      profile: PublicProfileSummary(
+        id: profileId,
+        role: 'job_worker',
+        visibilityStatus: 'public',
+        completionScore: 100,
+        verificationStatus: 'verified',
+        isVerified: true,
+        displayName: 'Aayush Hemming',
+      ),
+      roleSpecific: const {
+        'owner_name': 'Aayush',
+        'work_summary': 'Flat hemming',
+      },
+      contact: const PublicContactResult(
+        mobile: '+919999999999',
+        whatsappNumber: '+919999999999',
+      ),
+      address: const PublicAddressResult(
+        locality: 'Ring Road',
+        fullAddress: 'Ring Road, Surat',
+      ),
+      media: const [],
+      workCards: [
+        WorkCardResult(
+          id: 'work-1',
+          profileId: profileId,
+          status: 'published',
+          title: 'Flat hemming',
+          categoryName: 'Stitching',
+          productTypeIds: const [],
+          customProductTexts: const ['Dupatta'],
+          productTypes: const ['Dupatta'],
+          description: 'Clean flat hemming for dupattas',
+          photoCount: 3,
+          photos: const [],
+          createdAt: DateTime(2026, 7, 13),
+          updatedAt: DateTime(2026, 7, 13),
+        ),
+      ],
+      workNeededPosts: const [],
+      similarProfiles: const [],
+    );
+  }
 
   @override
   Future<void> logout() async {}

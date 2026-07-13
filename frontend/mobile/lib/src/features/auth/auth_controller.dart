@@ -14,6 +14,7 @@ enum AppRoute {
   confirmRole('/confirm-role'),
   blocked('/blocked'),
   home('/home'),
+  search('/search'),
   completeProfile('/profile/complete'),
   addWorkCard('/work-cards/new'),
   addWorkNeededPost('/work-needed-posts/new'),
