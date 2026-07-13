@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:connect_app/src/data/media_models.dart';
 import 'package:connect_app/src/data/work_card_models.dart';
+import 'package:connect_app/src/data/work_needed_post_models.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -104,6 +105,28 @@ abstract class ConnectApi {
   Future<WorkCardResult> showWorkCard(String workCardId);
 
   Future<void> deleteWorkCard(String workCardId);
+
+  Future<List<WorkNeededPostResult>> workNeededPosts();
+
+  Future<WorkNeededPostResult> createWorkNeededPost(
+    WorkNeededPostUpsert fields, {
+    String? idempotencyKey,
+  });
+
+  Future<WorkNeededPostResult> updateWorkNeededPost(
+    String postId,
+    WorkNeededPostUpsert fields,
+  );
+
+  Future<WorkNeededPostResult> publishWorkNeededPost(String postId);
+
+  Future<WorkNeededPostResult> pauseWorkNeededPost(String postId);
+
+  Future<WorkNeededPostResult> resumeWorkNeededPost(String postId);
+
+  Future<WorkNeededPostResult> closeWorkNeededPost(String postId);
+
+  Future<void> deleteWorkNeededPost(String postId);
 
   Future<UploadIntentResult> createMediaUploadIntent(
     MediaUploadIntentRequest request,
@@ -364,6 +387,89 @@ class DioConnectApi implements ConnectApi {
   }
 
   @override
+  Future<List<WorkNeededPostResult>> workNeededPosts() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/me/work-needed-posts',
+        options: await _authOptions(),
+      );
+      final items = _body(response)['items'] as List<dynamic>? ?? [];
+      return items
+          .map(
+            (item) =>
+                WorkNeededPostResult.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(growable: false);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<WorkNeededPostResult> createWorkNeededPost(
+    WorkNeededPostUpsert fields, {
+    String? idempotencyKey,
+  }) {
+    return _workNeededPostRequest(() async {
+      return _dio.post<Map<String, dynamic>>(
+        '/me/work-needed-posts',
+        data: fields.toJson(),
+        options: await _authOptionsWithHeaders(
+          idempotencyKey == null
+              ? const {}
+              : {'Idempotency-Key': idempotencyKey},
+        ),
+      );
+    });
+  }
+
+  @override
+  Future<WorkNeededPostResult> updateWorkNeededPost(
+    String postId,
+    WorkNeededPostUpsert fields,
+  ) {
+    return _workNeededPostRequest(() async {
+      return _dio.patch<Map<String, dynamic>>(
+        '/me/work-needed-posts/$postId',
+        data: fields.toJson(),
+        options: await _authOptions(),
+      );
+    });
+  }
+
+  @override
+  Future<WorkNeededPostResult> publishWorkNeededPost(String postId) {
+    return _workNeededPostAction(postId, 'publish');
+  }
+
+  @override
+  Future<WorkNeededPostResult> pauseWorkNeededPost(String postId) {
+    return _workNeededPostAction(postId, 'pause');
+  }
+
+  @override
+  Future<WorkNeededPostResult> resumeWorkNeededPost(String postId) {
+    return _workNeededPostAction(postId, 'resume');
+  }
+
+  @override
+  Future<WorkNeededPostResult> closeWorkNeededPost(String postId) {
+    return _workNeededPostAction(postId, 'close');
+  }
+
+  @override
+  Future<void> deleteWorkNeededPost(String postId) async {
+    try {
+      await _dio.delete<void>(
+        '/me/work-needed-posts/$postId',
+        options: await _authOptions(),
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
   Future<UploadIntentResult> createMediaUploadIntent(
     MediaUploadIntentRequest request,
   ) {
@@ -520,6 +626,28 @@ class DioConnectApi implements ConnectApi {
   ) async {
     try {
       return WorkCardResult.fromJson(_body(await request()));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  Future<WorkNeededPostResult> _workNeededPostAction(
+    String postId,
+    String action,
+  ) {
+    return _workNeededPostRequest(() async {
+      return _dio.post<Map<String, dynamic>>(
+        '/me/work-needed-posts/$postId/$action',
+        options: await _authOptions(),
+      );
+    });
+  }
+
+  Future<WorkNeededPostResult> _workNeededPostRequest(
+    Future<Response<Map<String, dynamic>>> Function() request,
+  ) async {
+    try {
+      return WorkNeededPostResult.fromJson(_body(await request()));
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }

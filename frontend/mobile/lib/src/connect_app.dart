@@ -4,6 +4,7 @@ import 'package:connect_app/src/features/home/home_screen.dart';
 import 'package:connect_app/src/features/profile/profile_form_screen.dart';
 import 'package:connect_app/src/features/profile/profile_settings_screen.dart';
 import 'package:connect_app/src/features/work_cards/work_card_form_screen.dart';
+import 'package:connect_app/src/features/work_needed_posts/work_needed_post_form_screen.dart';
 import 'package:connect_app/src/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -69,6 +70,15 @@ final GoRouter _router = GoRouter(
       path: '/work-cards/:workCardId/edit',
       builder: (context, state) =>
           WorkCardFormScreen(workCardId: state.pathParameters['workCardId']),
+    ),
+    GoRoute(
+      path: AppRoute.addWorkNeededPost.path,
+      builder: (context, state) => const WorkNeededPostFormScreen(),
+    ),
+    GoRoute(
+      path: '/work-needed-posts/:postId/edit',
+      builder: (context, state) =>
+          WorkNeededPostFormScreen(postId: state.pathParameters['postId']),
     ),
   ],
 );

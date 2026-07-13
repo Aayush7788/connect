@@ -15,18 +15,29 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
   bool _jobWorkerWorkListSelected = true;
+  bool _businessWorkNeededSelected = true;
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
+    final role = state.me?.profile?.role;
+    final showJobWorkerAdd =
+        _selectedIndex == 3 &&
+        role == 'job_worker' &&
+        _jobWorkerWorkListSelected;
+    final showBusinessAdd =
+        _selectedIndex == 3 &&
+        role == 'business' &&
+        _businessWorkNeededSelected;
     return ScreenFrame(
-      floatingActionButton:
-          _selectedIndex == 3 &&
-              state.me?.profile?.role == 'job_worker' &&
-              _jobWorkerWorkListSelected
+      floatingActionButton: showJobWorkerAdd || showBusinessAdd
           ? FloatingActionButton(
-              tooltip: 'Add work',
-              onPressed: () => context.push('/work-cards/new'),
+              tooltip: showBusinessAdd ? 'Add work needed' : 'Add work',
+              onPressed: () => context.push(
+                showBusinessAdd
+                    ? AppRoute.addWorkNeededPost.path
+                    : AppRoute.addWorkCard.path,
+              ),
               child: const Icon(Icons.add),
             )
           : null,
@@ -78,6 +89,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onWorkListSelectionChanged: (selected) {
               if (_jobWorkerWorkListSelected != selected) {
                 setState(() => _jobWorkerWorkListSelected = selected);
+              }
+            },
+            onWorkNeededSelectionChanged: (selected) {
+              if (_businessWorkNeededSelected != selected) {
+                setState(() => _businessWorkNeededSelected = selected);
               }
             },
           ),
