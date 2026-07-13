@@ -14,11 +14,22 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
+  bool _jobWorkerWorkListSelected = true;
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
     return ScreenFrame(
+      floatingActionButton:
+          _selectedIndex == 3 &&
+              state.me?.profile?.role == 'job_worker' &&
+              _jobWorkerWorkListSelected
+          ? FloatingActionButton(
+              tooltip: 'Add work',
+              onPressed: () => context.push('/work-cards/new'),
+              child: const Icon(Icons.add),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (value) =>
@@ -63,7 +74,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             title: 'Saved',
             message: 'No saved profiles',
           ),
-          const MyProfileDashboard(),
+          MyProfileDashboard(
+            onWorkListSelectionChanged: (selected) {
+              if (_jobWorkerWorkListSelected != selected) {
+                setState(() => _jobWorkerWorkListSelected = selected);
+              }
+            },
+          ),
         ],
       ),
     );

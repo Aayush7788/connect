@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:connect_app/src/connect_app.dart';
 import 'package:connect_app/src/data/connect_api.dart';
+import 'package:connect_app/src/data/work_card_models.dart';
 import 'package:connect_app/src/features/media/media_upload_service.dart';
 import 'package:connect_app/src/features/profile/profile_controller.dart';
 import 'package:dio/dio.dart';
@@ -172,6 +173,8 @@ void main() {
 
     await tester.tap(find.text('My Profile'));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('job-worker-profile-tab')));
+    await tester.pumpAndSettle();
     expect(find.text('25% complete'), findsOneWidget);
 
     await tester.tap(find.text('Complete your profile to get business'));
@@ -227,6 +230,7 @@ class _MemoryTokenStore implements TokenStore {
 
 class _FakeConnectApi implements ConnectApi {
   OwnerProfileResult profile = _ownerProfile();
+  final List<WorkCardResult> ownerWorkCards = [];
   Map<String, dynamic>? lastProfileUpdate;
   int mediaSequence = 0;
 
@@ -278,6 +282,47 @@ class _FakeConnectApi implements ConnectApi {
 
   @override
   Future<void> deleteMedia(String mediaAssetId) async {}
+
+  @override
+  Future<void> deleteWorkCard(String workCardId) async {
+    ownerWorkCards.removeWhere((card) => card.id == workCardId);
+  }
+
+  @override
+  Future<WorkCardResult> createWorkCard(
+    WorkCardUpsert fields, {
+    String? idempotencyKey,
+  }) async {
+    final card = _workCard(id: 'work-${ownerWorkCards.length + 1}');
+    ownerWorkCards.insert(0, card);
+    return card;
+  }
+
+  @override
+  Future<WorkCardResult> updateWorkCard(
+    String workCardId,
+    WorkCardUpsert fields,
+  ) async {
+    return ownerWorkCards.firstWhere((card) => card.id == workCardId);
+  }
+
+  @override
+  Future<WorkCardResult> publishWorkCard(String workCardId) async {
+    return ownerWorkCards.firstWhere((card) => card.id == workCardId);
+  }
+
+  @override
+  Future<WorkCardResult> hideWorkCard(String workCardId) async {
+    return ownerWorkCards.firstWhere((card) => card.id == workCardId);
+  }
+
+  @override
+  Future<WorkCardResult> showWorkCard(String workCardId) async {
+    return ownerWorkCards.firstWhere((card) => card.id == workCardId);
+  }
+
+  @override
+  Future<List<WorkCardResult>> workCards() async => ownerWorkCards;
 
   @override
   Future<MeResult> confirmRole({required String role}) async {
@@ -427,6 +472,23 @@ class _FakeConnectApi implements ConnectApi {
       ),
     );
   }
+}
+
+WorkCardResult _workCard({required String id}) {
+  final now = DateTime(2026, 7, 13);
+  return WorkCardResult(
+    id: id,
+    profileId: 'profile-1',
+    status: 'draft',
+    title: '',
+    productTypeIds: const [],
+    customProductTexts: const [],
+    productTypes: const [],
+    photoCount: 0,
+    photos: const [],
+    createdAt: now,
+    updatedAt: now,
+  );
 }
 
 OwnerProfileResult _ownerProfile({

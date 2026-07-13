@@ -9,6 +9,7 @@ import 'package:connect_app/src/features/profile/profile_display.dart';
 import 'package:connect_app/src/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileFormScreen extends ConsumerStatefulWidget {
   const ProfileFormScreen({super.key});
@@ -481,6 +482,15 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
               ),
             ),
           ),
+          if (ownerProfile.profile.role == 'job_worker' &&
+              missing.contains('published_work_card')) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => context.push(AppRoute.addWorkCard.path),
+              icon: const Icon(Icons.add),
+              label: const Text('Add work'),
+            ),
+          ],
         ] else ...[
           const SizedBox(height: 20),
           const Row(

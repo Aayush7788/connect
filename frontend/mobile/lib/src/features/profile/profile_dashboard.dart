@@ -2,19 +2,24 @@ import 'package:connect_app/src/data/connect_api.dart';
 import 'package:connect_app/src/features/auth/auth_controller.dart';
 import 'package:connect_app/src/features/profile/profile_controller.dart';
 import 'package:connect_app/src/features/profile/profile_display.dart';
+import 'package:connect_app/src/features/work_cards/work_card_owner_list.dart';
 import 'package:connect_app/src/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class MyProfileDashboard extends ConsumerStatefulWidget {
-  const MyProfileDashboard({super.key});
+  const MyProfileDashboard({super.key, this.onWorkListSelectionChanged});
+
+  final ValueChanged<bool>? onWorkListSelectionChanged;
 
   @override
   ConsumerState<MyProfileDashboard> createState() => _MyProfileDashboardState();
 }
 
 class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
+  bool _showWorkList = true;
+
   @override
   void initState() {
     super.initState();
@@ -48,25 +53,50 @@ class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
         .toList(growable: false);
     final isPending = profile.verificationStatus == 'pending';
     final isHidden = profile.visibilityStatus == 'hidden_by_user';
+    final isJobWorker = profile.role == 'job_worker';
+    final header = Row(
+      children: [
+        Expanded(
+          child: Text(
+            'My Profile',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+        ),
+        IconButton(
+          tooltip: 'Settings',
+          onPressed: () => context.push('/settings'),
+          icon: const Icon(Icons.settings_outlined),
+        ),
+      ],
+    );
+
+    if (isJobWorker && _showWorkList) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          header,
+          const SizedBox(height: 14),
+          _JobWorkerProfileTabs(
+            showWorkList: true,
+            onChanged: _setWorkListSelected,
+          ),
+          const SizedBox(height: 18),
+          const WorkCardOwnerList(),
+        ],
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'My Profile',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-            ),
-            IconButton(
-              tooltip: 'Settings',
-              onPressed: () => context.push('/settings'),
-              icon: const Icon(Icons.settings_outlined),
-            ),
-          ],
-        ),
+        header,
+        if (isJobWorker) ...[
+          const SizedBox(height: 14),
+          _JobWorkerProfileTabs(
+            showWorkList: false,
+            onChanged: _setWorkListSelected,
+          ),
+        ],
         if (isHidden) ...[
           const SizedBox(height: 8),
           const _StatusBanner(
@@ -184,6 +214,45 @@ class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
           ),
         ),
       ],
+    );
+  }
+
+  void _setWorkListSelected(bool selected) {
+    setState(() => _showWorkList = selected);
+    widget.onWorkListSelectionChanged?.call(selected);
+  }
+}
+
+class _JobWorkerProfileTabs extends StatelessWidget {
+  const _JobWorkerProfileTabs({
+    required this.showWorkList,
+    required this.onChanged,
+  });
+
+  final bool showWorkList;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: SegmentedButton<bool>(
+        segments: const [
+          ButtonSegment(
+            value: true,
+            icon: Icon(Icons.view_list_outlined),
+            label: Text('Work List'),
+          ),
+          ButtonSegment(
+            value: false,
+            icon: Icon(Icons.person_outline),
+            label: Text('My Profile', key: Key('job-worker-profile-tab')),
+          ),
+        ],
+        selected: {showWorkList},
+        onSelectionChanged: (values) => onChanged(values.first),
+        showSelectedIcon: false,
+      ),
     );
   }
 }
