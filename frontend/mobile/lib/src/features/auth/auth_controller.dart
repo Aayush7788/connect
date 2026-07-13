@@ -15,6 +15,7 @@ enum AppRoute {
   blocked('/blocked'),
   home('/home'),
   completeProfile('/profile/complete'),
+  addWorkCard('/work-cards/new'),
   settings('/settings');
 
   const AppRoute(this.path);

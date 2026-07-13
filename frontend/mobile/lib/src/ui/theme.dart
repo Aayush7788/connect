@@ -95,10 +95,12 @@ class ScreenFrame extends StatelessWidget {
     super.key,
     this.appBar,
     this.bottomNavigationBar,
+    this.floatingActionButton,
   });
 
   final PreferredSizeWidget? appBar;
   final Widget? bottomNavigationBar;
+  final Widget? floatingActionButton;
   final Widget child;
 
   @override
@@ -106,6 +108,8 @@ class ScreenFrame extends StatelessWidget {
     return Scaffold(
       appBar: appBar,
       bottomNavigationBar: bottomNavigationBar,
+      floatingActionButton: floatingActionButton,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {

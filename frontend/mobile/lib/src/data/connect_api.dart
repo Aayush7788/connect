@@ -1,8 +1,12 @@
 import 'dart:typed_data';
 
+import 'package:connect_app/src/data/media_models.dart';
+import 'package:connect_app/src/data/work_card_models.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+export 'package:connect_app/src/data/media_models.dart';
 
 const termsVersion = '2026-07-12';
 const privacyVersion = '2026-07-12';
@@ -80,6 +84,26 @@ abstract class ConnectApi {
   Future<OwnerProfileResult> showOwnerProfile();
 
   Future<List<CategoryOption>> categories({required String categoryType});
+
+  Future<List<WorkCardResult>> workCards();
+
+  Future<WorkCardResult> createWorkCard(
+    WorkCardUpsert fields, {
+    String? idempotencyKey,
+  });
+
+  Future<WorkCardResult> updateWorkCard(
+    String workCardId,
+    WorkCardUpsert fields,
+  );
+
+  Future<WorkCardResult> publishWorkCard(String workCardId);
+
+  Future<WorkCardResult> hideWorkCard(String workCardId);
+
+  Future<WorkCardResult> showWorkCard(String workCardId);
+
+  Future<void> deleteWorkCard(String workCardId);
 
   Future<UploadIntentResult> createMediaUploadIntent(
     MediaUploadIntentRequest request,
@@ -265,6 +289,81 @@ class DioConnectApi implements ConnectApi {
   }
 
   @override
+  Future<List<WorkCardResult>> workCards() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/me/work-cards',
+        options: await _authOptions(),
+      );
+      final items = _body(response)['items'] as List<dynamic>? ?? [];
+      return items
+          .map((item) => WorkCardResult.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<WorkCardResult> createWorkCard(
+    WorkCardUpsert fields, {
+    String? idempotencyKey,
+  }) {
+    return _workCardRequest(() async {
+      return _dio.post<Map<String, dynamic>>(
+        '/me/work-cards',
+        data: fields.toJson(),
+        options: await _authOptionsWithHeaders(
+          idempotencyKey == null
+              ? const {}
+              : {'Idempotency-Key': idempotencyKey},
+        ),
+      );
+    });
+  }
+
+  @override
+  Future<WorkCardResult> updateWorkCard(
+    String workCardId,
+    WorkCardUpsert fields,
+  ) {
+    return _workCardRequest(() async {
+      return _dio.patch<Map<String, dynamic>>(
+        '/me/work-cards/$workCardId',
+        data: fields.toJson(),
+        options: await _authOptions(),
+      );
+    });
+  }
+
+  @override
+  Future<WorkCardResult> publishWorkCard(String workCardId) {
+    return _workCardAction(workCardId, 'publish');
+  }
+
+  @override
+  Future<WorkCardResult> hideWorkCard(String workCardId) {
+    return _workCardAction(workCardId, 'hide');
+  }
+
+  @override
+  Future<WorkCardResult> showWorkCard(String workCardId) {
+    return _workCardAction(workCardId, 'show');
+  }
+
+  @override
+  Future<void> deleteWorkCard(String workCardId) async {
+    try {
+      await _dio.delete<void>(
+        '/me/work-cards/$workCardId',
+        options: await _authOptions(),
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
   Future<UploadIntentResult> createMediaUploadIntent(
     MediaUploadIntentRequest request,
   ) {
@@ -373,6 +472,11 @@ class DioConnectApi implements ConnectApi {
     return Options(headers: {'Authorization': 'Bearer $token'});
   }
 
+  Future<Options> _authOptionsWithHeaders(Map<String, String> headers) async {
+    final token = await _tokenStore.readAccessToken();
+    return Options(headers: {'Authorization': 'Bearer $token', ...headers});
+  }
+
   Map<String, dynamic> _body(Response<Map<String, dynamic>> response) {
     final data = response.data;
     if (data == null) {
@@ -397,6 +501,25 @@ class DioConnectApi implements ConnectApi {
   ) async {
     try {
       return _body(await request());
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  Future<WorkCardResult> _workCardAction(String workCardId, String action) {
+    return _workCardRequest(() async {
+      return _dio.post<Map<String, dynamic>>(
+        '/me/work-cards/$workCardId/$action',
+        options: await _authOptions(),
+      );
+    });
+  }
+
+  Future<WorkCardResult> _workCardRequest(
+    Future<Response<Map<String, dynamic>>> Function() request,
+  ) async {
+    try {
+      return WorkCardResult.fromJson(_body(await request()));
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }
@@ -700,44 +823,6 @@ class UploadDetailsResult {
   final String formField;
   final Map<String, String> headers;
   final DateTime expiresAt;
-}
-
-class MediaAssetResult {
-  const MediaAssetResult({
-    required this.id,
-    required this.mediaKind,
-    required this.visibility,
-    required this.uploadStatus,
-    required this.sortOrder,
-    this.url,
-    this.thumbnailUrl,
-    this.documentType,
-    this.safeDisplayName,
-  });
-
-  factory MediaAssetResult.fromJson(Map<String, dynamic> json) {
-    return MediaAssetResult(
-      id: json['id'] as String,
-      mediaKind: json['media_kind'] as String,
-      visibility: json['visibility'] as String,
-      uploadStatus: json['upload_status'] as String,
-      sortOrder: json['sort_order'] as int? ?? 0,
-      url: json['url'] as String?,
-      thumbnailUrl: json['thumbnail_url'] as String?,
-      documentType: json['document_type'] as String?,
-      safeDisplayName: json['safe_display_name'] as String?,
-    );
-  }
-
-  final String id;
-  final String mediaKind;
-  final String visibility;
-  final String uploadStatus;
-  final int sortOrder;
-  final String? url;
-  final String? thumbnailUrl;
-  final String? documentType;
-  final String? safeDisplayName;
 }
 
 class CategoryOption {

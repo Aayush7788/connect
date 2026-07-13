@@ -3,6 +3,7 @@ import 'package:connect_app/src/features/auth/auth_screens.dart';
 import 'package:connect_app/src/features/home/home_screen.dart';
 import 'package:connect_app/src/features/profile/profile_form_screen.dart';
 import 'package:connect_app/src/features/profile/profile_settings_screen.dart';
+import 'package:connect_app/src/features/work_cards/work_card_form_screen.dart';
 import 'package:connect_app/src/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -59,6 +60,15 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: AppRoute.settings.path,
       builder: (context, state) => const ProfileSettingsScreen(),
+    ),
+    GoRoute(
+      path: AppRoute.addWorkCard.path,
+      builder: (context, state) => const WorkCardFormScreen(),
+    ),
+    GoRoute(
+      path: '/work-cards/:workCardId/edit',
+      builder: (context, state) =>
+          WorkCardFormScreen(workCardId: state.pathParameters['workCardId']),
     ),
   ],
 );
