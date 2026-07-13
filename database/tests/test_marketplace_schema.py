@@ -94,6 +94,10 @@ def test_marketplace_migration_renders_required_tables_constraints_and_indexes()
     assert "CREATE INDEX idx_work_card_product_types_category" in migration_sql
     assert "CREATE INDEX idx_work_needed_post_product_types_category" in migration_sql
     assert "CREATE UNIQUE INDEX uq_work_cards_creation_idempotency" in migration_sql
+    assert (
+        "CREATE UNIQUE INDEX uq_work_needed_posts_creation_idempotency"
+        in migration_sql
+    )
 
 
 def test_work_card_creation_idempotency_fields_are_constrained() -> None:
@@ -105,6 +109,21 @@ def test_work_card_creation_idempotency_fields_are_constrained() -> None:
     migration_sql = render_offline_sql()
     assert "creation_idempotency_key is not null" in migration_sql
     assert "creation_request_hash is not null" in migration_sql
+
+
+def test_work_needed_post_creation_idempotency_fields_are_constrained() -> None:
+    posts = Base.metadata.tables["work_needed_posts"]
+
+    assert "creation_idempotency_key" in posts.columns
+    assert "creation_request_hash" in posts.columns
+
+    migration_sql = render_offline_sql()
+    assert "uq_work_needed_posts_creation_idempotency" in migration_sql
+    assert "ck_work_needed_posts_idempotency_fields_together" in migration_sql
+    assert (
+        "set status = 'draft', closed_at = null" in migration_sql
+        and "nullif(btrim(description), '') is null" in migration_sql
+    )
 
 
 def test_product_type_rows_require_mapped_or_non_blank_custom_text() -> None:

@@ -21,10 +21,11 @@ class WorkNeededPostsApi {
   const WorkNeededPostsApi(this._dio);
 
   /// Close own work-needed post
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [postId] 
+  /// * [postId]
+  /// * [idempotencyKey]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -34,8 +35,9 @@ class WorkNeededPostsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [WorkNeededPost] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<WorkNeededPost>> closeWorkNeededPost({ 
+  Future<Response<WorkNeededPost>> closeWorkNeededPost({
     required String postId,
+    String? idempotencyKey,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -47,6 +49,7 @@ class WorkNeededPostsApi {
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
+        if (idempotencyKey != null) r'Idempotency-Key': idempotencyKey,
         ...?headers,
       },
       extra: <String, dynamic>{
@@ -99,11 +102,11 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   }
 
   /// Create own work-needed post draft
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [workNeededPostUpsertRequest] 
-  /// * [idempotencyKey] 
+  /// * [workNeededPostUpsertRequest]
+  /// * [idempotencyKey]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -113,7 +116,7 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   ///
   /// Returns a [Future] containing a [Response] with a [WorkNeededPost] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<WorkNeededPost>> createWorkNeededPost({ 
+  Future<Response<WorkNeededPost>> createWorkNeededPost({
     required WorkNeededPostUpsertRequest workNeededPostUpsertRequest,
     String? idempotencyKey,
     CancelToken? cancelToken,
@@ -199,10 +202,10 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   }
 
   /// Soft delete own work-needed post
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [postId] 
+  /// * [postId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -212,7 +215,7 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteWorkNeededPost({ 
+  Future<Response<void>> deleteWorkNeededPost({
     required String postId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -252,7 +255,7 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   }
 
   /// List own work-needed posts
-  /// 
+  ///
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -264,7 +267,7 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   ///
   /// Returns a [Future] containing a [Response] with a [ListMyWorkNeededPosts200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListMyWorkNeededPosts200Response>> listMyWorkNeededPosts({ 
+  Future<Response<ListMyWorkNeededPosts200Response>> listMyWorkNeededPosts({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -328,10 +331,10 @@ _responseData = rawData == null ? null : deserialize<ListMyWorkNeededPosts200Res
   }
 
   /// Pause own active work-needed post
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [postId] 
+  /// * [postId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -341,7 +344,7 @@ _responseData = rawData == null ? null : deserialize<ListMyWorkNeededPosts200Res
   ///
   /// Returns a [Future] containing a [Response] with a [WorkNeededPost] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<WorkNeededPost>> pauseWorkNeededPost({ 
+  Future<Response<WorkNeededPost>> pauseWorkNeededPost({
     required String postId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -406,11 +409,11 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   }
 
   /// Publish own work-needed post as active
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [postId] 
-  /// * [idempotencyKey] 
+  /// * [postId]
+  /// * [idempotencyKey]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -420,7 +423,7 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   ///
   /// Returns a [Future] containing a [Response] with a [WorkNeededPost] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<WorkNeededPost>> publishWorkNeededPost({ 
+  Future<Response<WorkNeededPost>> publishWorkNeededPost({
     required String postId,
     String? idempotencyKey,
     CancelToken? cancelToken,
@@ -487,10 +490,10 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   }
 
   /// Resume own paused work-needed post
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [postId] 
+  /// * [postId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -500,7 +503,7 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   ///
   /// Returns a [Future] containing a [Response] with a [WorkNeededPost] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<WorkNeededPost>> resumeWorkNeededPost({ 
+  Future<Response<WorkNeededPost>> resumeWorkNeededPost({
     required String postId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -565,11 +568,11 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   }
 
   /// Update own work-needed post
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [postId] 
-  /// * [workNeededPostUpsertRequest] 
+  /// * [postId]
+  /// * [workNeededPostUpsertRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -579,7 +582,7 @@ _responseData = rawData == null ? null : deserialize<WorkNeededPost, WorkNeededP
   ///
   /// Returns a [Future] containing a [Response] with a [WorkNeededPost] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<WorkNeededPost>> updateWorkNeededPost({ 
+  Future<Response<WorkNeededPost>> updateWorkNeededPost({
     required String postId,
     required WorkNeededPostUpsertRequest workNeededPostUpsertRequest,
     CancelToken? cancelToken,
