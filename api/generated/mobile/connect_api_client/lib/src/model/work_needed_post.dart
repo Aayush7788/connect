@@ -64,7 +64,7 @@ class WorkNeededPost {
   });
 
   @JsonKey(
-
+    
     name: r'id',
     required: true,
     includeIfNull: false,
@@ -76,7 +76,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'profile_id',
     required: true,
     includeIfNull: false,
@@ -88,7 +88,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'status',
     required: true,
     includeIfNull: false,
@@ -100,7 +100,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'title',
     required: true,
     includeIfNull: false,
@@ -112,7 +112,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'category_id',
     required: false,
     includeIfNull: false,
@@ -124,7 +124,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'category_name',
     required: false,
     includeIfNull: false,
@@ -136,7 +136,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'custom_category_text',
     required: false,
     includeIfNull: false,
@@ -148,7 +148,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'work_name_id',
     required: false,
     includeIfNull: false,
@@ -160,7 +160,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'work_name',
     required: false,
     includeIfNull: false,
@@ -172,7 +172,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'custom_work_name',
     required: false,
     includeIfNull: false,
@@ -184,7 +184,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'product_type_ids',
     required: true,
     includeIfNull: false,
@@ -196,7 +196,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'custom_product_texts',
     required: true,
     includeIfNull: false,
@@ -208,7 +208,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'product_types',
     required: true,
     includeIfNull: false,
@@ -220,7 +220,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'description',
     required: false,
     includeIfNull: false,
@@ -233,7 +233,7 @@ class WorkNeededPost {
 
           // minimum: 0
   @JsonKey(
-
+    
     name: r'photo_count',
     required: true,
     includeIfNull: false,
@@ -245,7 +245,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'photos',
     required: true,
     includeIfNull: false,
@@ -257,7 +257,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'last_activity_at',
     required: false,
     includeIfNull: false,
@@ -269,7 +269,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'closed_at',
     required: false,
     includeIfNull: false,
@@ -281,7 +281,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'created_at',
     required: true,
     includeIfNull: false,
@@ -293,7 +293,7 @@ class WorkNeededPost {
 
 
   @JsonKey(
-
+    
     name: r'updated_at',
     required: true,
     includeIfNull: false,

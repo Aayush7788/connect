@@ -4,6 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer
+from sqlalchemy import SmallInteger
 from sqlalchemy import Numeric, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR, UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -68,6 +69,11 @@ class Profile(TimestampMixin, Base):
             "('unclaimed', 'claimed', 'not_claimable')",
             name="claim_status_valid",
         ),
+        CheckConstraint(
+            "location_validation_status in "
+            "('unvalidated', 'valid', 'warning', 'invalid')",
+            name="location_validation_status_valid",
+        ),
         Index(
             "uq_profiles_owner_active",
             "owner_user_id",
@@ -95,6 +101,8 @@ class Profile(TimestampMixin, Base):
             text("last_activity_at desc"),
         ),
         Index("idx_profiles_owner", "owner_user_id"),
+        Index("idx_profiles_state_id", "state_id"),
+        Index("idx_profiles_district_id", "district_id"),
         Index("idx_profiles_created_by_admin", "created_by_admin_user_id"),
         Index("idx_profiles_search_vector", "search_vector", postgresql_using="gin"),
         Index(
@@ -126,6 +134,22 @@ class Profile(TimestampMixin, Base):
     city: Mapped[str | None] = mapped_column(Text)
     state: Mapped[str | None] = mapped_column(Text)
     pincode: Mapped[str | None] = mapped_column(Text)
+    state_id: Mapped[int | None] = mapped_column(
+        SmallInteger,
+        ForeignKey("location_states.id"),
+    )
+    district_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("location_districts.id"),
+    )
+    location_validation_status: Mapped[str] = mapped_column(
+        Text,
+        server_default=text("'unvalidated'"),
+        default="unvalidated",
+    )
+    location_validated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
     visibility_status: Mapped[str] = mapped_column(
         Text,
         server_default=text("'draft'"),

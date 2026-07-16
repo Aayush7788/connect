@@ -9,6 +9,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.engagement.router import router as engagement_router
 from app.modules.me.router import router as me_router
 from app.modules.media.router import router as media_router
+from app.modules.locations.router import router as locations_router
 from app.modules.profiles.router import public_router as public_profiles_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.search.router import router as search_router
@@ -70,6 +71,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(engagement_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(me_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(media_router, prefix=resolved_settings.api_v1_prefix)
+    app.include_router(locations_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(profiles_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(public_profiles_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(search_router, prefix=resolved_settings.api_v1_prefix)

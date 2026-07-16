@@ -22,10 +22,10 @@ class ProfileFormScreen extends ConsumerStatefulWidget {
 class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   final _ownerName = TextEditingController();
   final _alternateContact = TextEditingController();
-  final _fullAddress = TextEditingController();
+  final _addressLine1 = TextEditingController();
   final _locality = TextEditingController();
   final _city = TextEditingController();
-  final _state = TextEditingController(text: 'Gujarat');
+  final _state = TextEditingController();
   final _pincode = TextEditingController();
   final _businessName = TextEditingController();
   final _manufactureSell = TextEditingController();
@@ -37,6 +37,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   final _bio = TextEditingController();
 
   Timer? _autoSaveTimer;
+  Timer? _pincodeValidationTimer;
   bool _initialized = false;
   bool _hasWorkshop = true;
   int _step = 0;
@@ -48,22 +49,32 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   Future<bool>? _saveFuture;
   Map<String, dynamic> _lastPersistedPayload = const {};
   MediaUploadSummary? _mediaSummary;
+  List<LocationOption> _states = const [];
+  List<LocationOption> _districts = const [];
+  LocationOption? _selectedState;
+  LocationOption? _selectedDistrict;
+  AddressValidationResult? _addressValidation;
+  bool _loadingStates = false;
+  bool _loadingDistricts = false;
+  bool _validatingAddress = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(profileControllerProvider.notifier).load();
+      unawaited(_loadStates());
     });
   }
 
   @override
   void dispose() {
     _autoSaveTimer?.cancel();
+    _pincodeValidationTimer?.cancel();
     for (final controller in [
       _ownerName,
       _alternateContact,
-      _fullAddress,
+      _addressLine1,
       _locality,
       _city,
       _state,
@@ -383,45 +394,125 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Work address', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 18),
+        Text('Address', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        const Text('Select your location and confirm it with the PIN code.'),
+        const SizedBox(height: 20),
+        _locationAutocomplete(
+          key: const ValueKey('profile-state'),
+          label: 'State / Union Territory',
+          placeholder: _loadingStates ? 'Loading states...' : 'Type to search',
+          controller: _state,
+          options: _states,
+          selected: _selectedState,
+          disabled: disabled || _loadingStates,
+          errorText: state.fieldErrors['state_id'],
+          onChanged: (value) {
+            if (_selectedState?.name != value) {
+              setState(() {
+                _selectedState = null;
+                _selectedDistrict = null;
+                _districts = const [];
+                _city.clear();
+                _addressValidation = null;
+              });
+            }
+            _scheduleAutoSave();
+          },
+          onSelected: (option) {
+            setState(() {
+              _selectedState = option;
+              _state.text = option.name;
+              _selectedDistrict = null;
+              _city.clear();
+              _districts = const [];
+              _addressValidation = null;
+            });
+            _scheduleAutoSave();
+            unawaited(_loadDistricts(option.id));
+          },
+        ),
+        _locationAutocomplete(
+          key: ValueKey('profile-district-${_selectedState?.id}'),
+          label: 'City / District',
+          placeholder: _selectedState == null
+              ? 'Select state first'
+              : _loadingDistricts
+              ? 'Loading cities...'
+              : 'Type to search',
+          controller: _city,
+          options: _districts,
+          selected: _selectedDistrict,
+          disabled: disabled || _selectedState == null || _loadingDistricts,
+          errorText: state.fieldErrors['district_id'],
+          onChanged: (value) {
+            if (_selectedDistrict?.name != value) {
+              setState(() {
+                _selectedDistrict = null;
+                _addressValidation = null;
+              });
+            }
+            _scheduleAutoSave();
+          },
+          onSelected: (option) {
+            setState(() {
+              _selectedDistrict = option;
+              _city.text = option.name;
+              _addressValidation = null;
+            });
+            _scheduleAutoSave();
+            _schedulePincodeValidation();
+          },
+        ),
         _field(
-          label: 'Full address',
-          placeholder: 'Shop, building, street and landmark',
-          controller: _fullAddress,
+          label: 'House / shop / building / street',
+          placeholder: 'Shop 108, Millennium Textile Market',
+          controller: _addressLine1,
           disabled: disabled,
-          maxLines: 3,
-          errorText: state.fieldErrors['full_address'],
+          maxLines: 2,
+          errorText: state.fieldErrors['address_line1'],
         ),
         _field(
           label: 'Area / locality',
-          placeholder: 'Example: Ring Road',
+          placeholder: 'Ring Road, Varachha, Katargam',
           controller: _locality,
           disabled: disabled,
           errorText: state.fieldErrors['locality'],
+          onChanged: (_) {
+            _scheduleAutoSave();
+            _schedulePincodeValidation();
+          },
         ),
         _field(
-          label: 'City',
-          placeholder: 'Example: Surat',
-          controller: _city,
-          disabled: disabled,
-          errorText: state.fieldErrors['city'],
-        ),
-        _field(
-          label: 'State',
-          placeholder: 'Example: Gujarat',
-          controller: _state,
-          disabled: disabled,
-          errorText: state.fieldErrors['state'],
-        ),
-        _field(
-          label: 'Pincode',
-          placeholder: '6 digit pincode',
+          label: 'PIN code',
+          placeholder: 'Enter 6 digit PIN code',
           controller: _pincode,
           disabled: disabled,
           keyboardType: TextInputType.number,
           errorText: state.fieldErrors['pincode'],
+          maxLength: 6,
+          onChanged: (_) {
+            setState(() => _addressValidation = null);
+            _scheduleAutoSave();
+            _schedulePincodeValidation();
+          },
         ),
+        if (_validatingAddress)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 16),
+            child: Row(
+              children: [
+                SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 10),
+                Text('Checking PIN code...'),
+              ],
+            ),
+          ),
+        if (_addressValidation case final validation?)
+          _addressValidationPanel(validation),
       ],
     );
   }
@@ -553,6 +644,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     String? errorText,
     int maxLines = 1,
     TextInputType? keyboardType,
+    int? maxLength,
+    ValueChanged<String>? onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -571,13 +664,162 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
               controller: controller,
               enabled: !disabled,
               maxLines: maxLines,
+              maxLength: maxLength,
               keyboardType: keyboardType,
-              onChanged: (_) => _scheduleAutoSave(),
+              onChanged: onChanged ?? (_) => _scheduleAutoSave(),
               decoration: InputDecoration(
                 hintText: placeholder,
                 errorText: errorText,
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _locationAutocomplete({
+    required Key key,
+    required String label,
+    required String placeholder,
+    required TextEditingController controller,
+    required List<LocationOption> options,
+    required LocationOption? selected,
+    required bool disabled,
+    required ValueChanged<String> onChanged,
+    required ValueChanged<LocationOption> onSelected,
+    String? errorText,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 7),
+          Autocomplete<LocationOption>(
+            key: key,
+            initialValue: TextEditingValue(
+              text: selected?.name ?? controller.text,
+            ),
+            displayStringForOption: (option) => option.name,
+            optionsBuilder: (text) {
+              final query = text.text.trim().toLowerCase();
+              if (query.isEmpty) {
+                return options;
+              }
+              return options.where(
+                (option) => option.name.toLowerCase().startsWith(query),
+              );
+            },
+            onSelected: onSelected,
+            fieldViewBuilder:
+                (context, textController, focusNode, submitSelection) {
+                  return TextField(
+                    controller: textController,
+                    focusNode: focusNode,
+                    enabled: !disabled,
+                    onChanged: (value) {
+                      controller.text = value;
+                      onChanged(value);
+                    },
+                    decoration: InputDecoration(
+                      hintText: placeholder,
+                      errorText: errorText,
+                      suffixIcon: const Icon(Icons.arrow_drop_down),
+                    ),
+                  );
+                },
+            optionsViewBuilder: (context, select, matching) {
+              final values = matching.toList(growable: false);
+              return Align(
+                alignment: Alignment.topLeft,
+                child: Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(6),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxHeight: 260,
+                      maxWidth: 420,
+                    ),
+                    child: ListView.builder(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      itemCount: values.length,
+                      itemBuilder: (context, index) {
+                        final option = values[index];
+                        return ListTile(
+                          title: Text(option.name),
+                          onTap: () => select(option),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _addressValidationPanel(AddressValidationResult validation) {
+    final color = switch (validation.status) {
+      'valid' => connectTeal,
+      'warning' => connectAmber,
+      _ => Theme.of(context).colorScheme.error,
+    };
+    final icon = switch (validation.status) {
+      'valid' => Icons.verified_outlined,
+      'warning' => Icons.info_outline,
+      _ => Icons.error_outline,
+    };
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: color, size: 21),
+              const SizedBox(width: 10),
+              Expanded(child: Text(validation.message)),
+            ],
+          ),
+          if (validation.suggestedAreas.isNotEmpty &&
+              validation.areaMatches == false) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Postal areas for this PIN',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: validation.suggestedAreas
+                  .take(6)
+                  .map((area) {
+                    return ActionChip(
+                      label: Text(area),
+                      onPressed: () {
+                        _locality.text = area;
+                        _scheduleAutoSave();
+                        _schedulePincodeValidation();
+                      },
+                    );
+                  })
+                  .toList(growable: false),
+            ),
+          ],
         ],
       ),
     );
@@ -618,16 +860,129 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     );
   }
 
+  Future<void> _loadStates() async {
+    if (_loadingStates || _states.isNotEmpty) {
+      return;
+    }
+    setState(() => _loadingStates = true);
+    try {
+      final options = await ref.read(connectApiProvider).locationStates();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _states = options;
+        _loadingStates = false;
+        final selectedId = _selectedState?.id;
+        if (selectedId != null) {
+          _selectedState = options
+              .where((option) => option.id == selectedId)
+              .firstOrNull;
+        }
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loadingStates = false);
+      }
+    }
+  }
+
+  Future<void> _loadDistricts(int stateId) async {
+    setState(() => _loadingDistricts = true);
+    try {
+      final options = await ref
+          .read(connectApiProvider)
+          .locationDistricts(stateId: stateId);
+      if (!mounted || _selectedState?.id != stateId) {
+        return;
+      }
+      setState(() {
+        _districts = options;
+        _loadingDistricts = false;
+        final selectedId = _selectedDistrict?.id;
+        if (selectedId != null) {
+          _selectedDistrict = options
+              .where((option) => option.id == selectedId)
+              .firstOrNull;
+        }
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loadingDistricts = false);
+      }
+    }
+  }
+
+  void _schedulePincodeValidation() {
+    _pincodeValidationTimer?.cancel();
+    if (_pincode.text.trim().length != 6 ||
+        _selectedState == null ||
+        _selectedDistrict == null) {
+      return;
+    }
+    _pincodeValidationTimer = Timer(
+      const Duration(milliseconds: 450),
+      () => unawaited(_validateAddress()),
+    );
+  }
+
+  Future<bool> _validateAddress() async {
+    final state = _selectedState;
+    final district = _selectedDistrict;
+    final pincode = _pincode.text.trim();
+    if (state == null || district == null || pincode.length != 6) {
+      return false;
+    }
+    setState(() {
+      _validatingAddress = true;
+      _addressValidation = null;
+    });
+    try {
+      final result = await ref
+          .read(connectApiProvider)
+          .validateAddress(
+            stateId: state.id,
+            districtId: district.id,
+            pincode: pincode,
+            area: _value(_locality),
+          );
+      if (!mounted || _pincode.text.trim() != pincode) {
+        return false;
+      }
+      setState(() {
+        _addressValidation = result;
+        _validatingAddress = false;
+      });
+      return result.isAccepted;
+    } catch (_) {
+      if (mounted) {
+        setState(() => _validatingAddress = false);
+      }
+      return false;
+    }
+  }
+
   void _initialize(OwnerProfileResult ownerProfile) {
     final details = ownerProfile.roleSpecific;
     _ownerName.text = details['owner_name']?.toString() ?? '';
     _alternateContact.text =
         details['alternate_contact_number']?.toString() ?? '';
-    _fullAddress.text = details['full_address']?.toString() ?? '';
+    _addressLine1.text =
+        details['address_line1']?.toString() ??
+        details['full_address']?.toString() ??
+        '';
     _locality.text = details['locality']?.toString() ?? '';
     _city.text = details['city']?.toString() ?? '';
-    _state.text = details['state']?.toString() ?? 'Gujarat';
+    _state.text = details['state']?.toString() ?? '';
     _pincode.text = details['pincode']?.toString() ?? '';
+    final stateId = details['state_id'] as int?;
+    final districtId = details['district_id'] as int?;
+    if (stateId != null) {
+      _selectedState = LocationOption(id: stateId, name: _state.text);
+    }
+    if (districtId != null) {
+      _selectedDistrict = LocationOption(id: districtId, name: _city.text);
+    }
     _businessName.text = details['business_name']?.toString() ?? '';
     _businessCategoryId = details['business_category_id']?.toString();
     _manufactureSell.text =
@@ -653,6 +1008,12 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     }
     _initialized = true;
     _lastPersistedPayload = _payload();
+    if (stateId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_loadDistricts(stateId));
+        _schedulePincodeValidation();
+      });
+    }
   }
 
   Map<String, dynamic> _payload() {
@@ -661,11 +1022,13 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     final fields = <String, dynamic>{
       'owner_name': _value(_ownerName),
       'alternate_contact_number': _value(_alternateContact),
-      'full_address': _value(_fullAddress),
+      'address_line1': _value(_addressLine1),
       'locality': _value(_locality),
-      'city': _value(_city),
-      'state': _value(_state),
-      'pincode': _value(_pincode),
+      'city': _selectedDistrict?.name,
+      'state': _selectedState?.name,
+      'state_id': _selectedState?.id,
+      'district_id': _selectedDistrict?.id,
+      'pincode': _pincode.text.trim().length == 6 ? _value(_pincode) : null,
     };
     if (role == 'business') {
       fields.addAll({

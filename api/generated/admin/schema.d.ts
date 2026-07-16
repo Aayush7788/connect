@@ -123,6 +123,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/locations/states": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search India states and union territories */
+        get: operations["listLocationStates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/locations/districts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search cities or postal districts in a state */
+        get: operations["listLocationDistricts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/locations/validate-address": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate a PIN against state, city or district, and area */
+        post: operations["validateAddress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/profile": {
         parameters: {
             query?: never;
@@ -663,7 +714,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get own settings */
+        get: operations["getSettings"];
         put?: never;
         post?: never;
         delete?: never;
@@ -947,6 +999,31 @@ export interface components {
         CategoryListResponse: {
             items: components["schemas"]["Category"][];
         };
+        LocationOption: {
+            id: number;
+            name: string;
+        };
+        LocationOptionList: {
+            items: components["schemas"]["LocationOption"][];
+        };
+        AddressValidationRequest: {
+            state_id: number;
+            district_id: number;
+            pincode: string;
+            area?: string | null;
+        };
+        AddressValidationResponse: {
+            /** @enum {string} */
+            status: "valid" | "warning" | "invalid";
+            pincode: string;
+            state_matches: boolean;
+            district_matches: boolean;
+            area_matches?: boolean | null;
+            canonical_state?: components["schemas"]["LocationOption"] | null;
+            canonical_district?: components["schemas"]["LocationOption"] | null;
+            suggested_areas?: string[];
+            message: string;
+        };
         /** @enum {string} */
         AccountStatus: "active" | "suspended" | "terminated";
         /** @enum {string} */
@@ -1058,6 +1135,8 @@ export interface components {
             city?: string | null;
             state?: string | null;
             pincode?: string | null;
+            state_id?: number | null;
+            district_id?: number | null;
             business_name?: string | null;
             /** Format: uuid */
             business_category_id?: string | null;
@@ -1077,12 +1156,16 @@ export interface components {
         };
         PublicProfileDetail: {
             profile: components["schemas"]["ProfileSummary"];
+            /** @description Public role-specific business, workshop, or skill fields. */
+            role_specific: {
+                [key: string]: unknown;
+            };
             contact: components["schemas"]["PublicContact"];
-            address?: components["schemas"]["PublicAddress"];
+            address: components["schemas"]["PublicAddress"];
             media: components["schemas"]["MediaAsset"][];
-            work_cards?: components["schemas"]["WorkCard"][];
-            work_needed_posts?: components["schemas"]["WorkNeededPost"][];
-            similar_profiles?: components["schemas"]["SearchResult"][];
+            work_cards: components["schemas"]["WorkCard"][];
+            work_needed_posts: components["schemas"]["WorkNeededPost"][];
+            similar_profiles: components["schemas"]["SearchResult"][];
         };
         PublicContact: {
             mobile?: string;
@@ -1100,7 +1183,7 @@ export interface components {
             result_count: number;
             next_cursor?: string | null;
             /** Format: uuid */
-            search_log_id?: string;
+            search_log_id: string;
         };
         SearchResult: {
             /** @enum {string} */
@@ -1108,13 +1191,19 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            profile_id?: string;
+            profile_id: string;
             title: string;
             subtitle?: string;
             category?: string;
             product_types?: string[];
-            is_verified?: boolean;
+            description?: string | null;
+            locality?: string | null;
+            experience_years?: number | null;
+            is_verified: boolean;
+            photo_count: number;
             photos?: components["schemas"]["MediaAsset"][];
+            /** Format: date-time */
+            last_activity_at?: string | null;
         };
         WorkCard: {
             /** Format: uuid */
@@ -1276,6 +1365,7 @@ export interface components {
             target_type: components["schemas"]["SavedTargetType"];
             /** Format: uuid */
             target_id: string;
+            profile_role: components["schemas"]["UserRole"];
             card?: components["schemas"]["SearchResult"];
         };
         CreateReportRequest: {
@@ -1325,7 +1415,7 @@ export interface components {
             /** @enum {string} */
             action_type: "call" | "whatsapp" | "address";
             /** @enum {string} */
-            source_type?: "profile" | "work_card" | "work_needed_post";
+            source_type?: "search" | "saved" | "profile" | "work_card" | "work_needed_post";
             /** Format: uuid */
             source_id?: string;
         };
@@ -1640,6 +1730,80 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
+    listLocationStates: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matching states and union territories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationOptionList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listLocationDistricts: {
+        parameters: {
+            query: {
+                state_id: number;
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matching cities or postal districts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationOptionList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    validateAddress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddressValidationRequest"];
+            };
+        };
+        responses: {
+            /** @description Postal validation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddressValidationResponse"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
     getMyProfile: {
         parameters: {
             query?: never;
@@ -1761,6 +1925,8 @@ export interface operations {
                 product_type_id?: string;
                 locality?: string;
                 verified_only?: boolean;
+                min_experience_years?: number;
+                max_experience_years?: number;
                 sort?: "best" | "verified_first" | "nearby" | "most_photos" | "recent";
                 cursor?: components["parameters"]["Cursor"];
                 limit?: components["parameters"]["Limit"];
@@ -2516,6 +2682,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSettings"];
+                };
             };
             default: components["responses"]["Error"];
         };

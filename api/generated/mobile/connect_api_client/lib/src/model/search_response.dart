@@ -27,7 +27,7 @@ class SearchResponse {
 
      this.nextCursor,
 
-     this.searchLogId,
+    required  this.searchLogId,
   });
 
   @JsonKey(
@@ -69,12 +69,12 @@ class SearchResponse {
   @JsonKey(
     
     name: r'search_log_id',
-    required: false,
+    required: true,
     includeIfNull: false,
   )
 
 
-  final String? searchLogId;
+  final String searchLogId;
 
 
 

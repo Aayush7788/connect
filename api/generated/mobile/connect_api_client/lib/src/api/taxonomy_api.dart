@@ -20,11 +20,11 @@ class TaxonomyApi {
   const TaxonomyApi(this._dio);
 
   /// List active categories for profile and marketplace forms
-  ///
+  /// 
   ///
   /// Parameters:
-  /// * [categoryType]
-  /// * [parentId]
+  /// * [categoryType] 
+  /// * [parentId] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -34,7 +34,7 @@ class TaxonomyApi {
   ///
   /// Returns a [Future] containing a [Response] with a [CategoryListResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<CategoryListResponse>> listCategories({
+  Future<Response<CategoryListResponse>> listCategories({ 
     required CategoryType categoryType,
     String? parentId,
     CancelToken? cancelToken,

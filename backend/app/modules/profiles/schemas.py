@@ -23,6 +23,8 @@ class ProfileUpdateRequest(BaseModel):
     city: str | None = Field(default=None, max_length=120)
     state: str | None = Field(default=None, max_length=120)
     pincode: str | None = Field(default=None, max_length=6)
+    state_id: int | None = Field(default=None, gt=0)
+    district_id: int | None = Field(default=None, gt=0)
     business_name: str | None = Field(default=None, max_length=200)
     business_category_id: UUID | None = None
     manufacture_sell_details: str | None = Field(default=None, max_length=2000)

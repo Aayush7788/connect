@@ -34,7 +34,7 @@ class UploadDetails {
   });
 
   @JsonKey(
-
+    
     name: r'method',
     required: true,
     includeIfNull: false,
@@ -46,7 +46,7 @@ class UploadDetails {
 
 
   @JsonKey(
-
+    
     name: r'http_method',
     required: true,
     includeIfNull: false,
@@ -58,7 +58,7 @@ class UploadDetails {
 
 
   @JsonKey(
-
+    
     name: r'form_field',
     required: true,
     includeIfNull: false,
@@ -70,7 +70,7 @@ class UploadDetails {
 
 
   @JsonKey(
-
+    
     name: r'url',
     required: true,
     includeIfNull: false,
@@ -82,7 +82,7 @@ class UploadDetails {
 
 
   @JsonKey(
-
+    
     name: r'headers',
     required: true,
     includeIfNull: false,
@@ -94,7 +94,7 @@ class UploadDetails {
 
 
   @JsonKey(
-
+    
     name: r'expires_at',
     required: true,
     includeIfNull: false,
@@ -176,3 +176,5 @@ final String value;
 @override
 String toString() => value;
 }
+
+

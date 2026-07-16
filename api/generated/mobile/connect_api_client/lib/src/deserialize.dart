@@ -1,3 +1,5 @@
+import 'package:connect_api_client/src/model/address_validation_request.dart';
+import 'package:connect_api_client/src/model/address_validation_response.dart';
 import 'package:connect_api_client/src/model/admin_analytics_summary.dart';
 import 'package:connect_api_client/src/model/admin_approve_verification_case_request.dart';
 import 'package:connect_api_client/src/model/admin_profile.dart';
@@ -23,6 +25,8 @@ import 'package:connect_api_client/src/model/error_response_error.dart';
 import 'package:connect_api_client/src/model/export_job.dart';
 import 'package:connect_api_client/src/model/list_my_work_cards200_response.dart';
 import 'package:connect_api_client/src/model/list_my_work_needed_posts200_response.dart';
+import 'package:connect_api_client/src/model/location_option.dart';
+import 'package:connect_api_client/src/model/location_option_list.dart';
 import 'package:connect_api_client/src/model/me_response.dart';
 import 'package:connect_api_client/src/model/media_asset.dart';
 import 'package:connect_api_client/src/model/notification.dart';
@@ -76,8 +80,12 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'double':
           return (value is double ? value : double.parse('$value')) as ReturnType;
         case 'AccountStatus':
-
-
+          
+          
+        case 'AddressValidationRequest':
+          return AddressValidationRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'AddressValidationResponse':
+          return AddressValidationResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'AdminAnalyticsSummary':
           return AdminAnalyticsSummary.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'AdminApproveVerificationCaseRequest':
@@ -107,8 +115,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'CategoryListResponse':
           return CategoryListResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'CategoryType':
-
-
+          
+          
         case 'ConfirmRoleRequest':
           return ConfirmRoleRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ContactActionRequest':
@@ -131,16 +139,20 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return ListMyWorkCards200Response.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ListMyWorkNeededPosts200Response':
           return ListMyWorkNeededPosts200Response.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'LocationOption':
+          return LocationOption.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'LocationOptionList':
+          return LocationOptionList.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'MeResponse':
           return MeResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'MediaAsset':
           return MediaAsset.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'MediaKind':
-
-
+          
+          
         case 'MediaVisibility':
-
-
+          
+          
         case 'Notification':
           return Notification.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'NotificationsResponse':
@@ -158,8 +170,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'ProfileUpdateRequest':
           return ProfileUpdateRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ProfileVisibilityStatus':
-
-
+          
+          
         case 'PublicAddress':
           return PublicAddress.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'PublicContact':
@@ -171,11 +183,11 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'Report':
           return Report.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ReportReason':
-
-
+          
+          
         case 'ReportStatus':
-
-
+          
+          
         case 'SaveItemRequest':
           return SaveItemRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'SavedItem':
@@ -183,15 +195,15 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'SavedItemsResponse':
           return SavedItemsResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'SavedTargetType':
-
-
+          
+          
         case 'SearchResponse':
           return SearchResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'SearchResult':
           return SearchResult.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'SearchTarget':
-
-
+          
+          
         case 'ShareLinkResponse':
           return ShareLinkResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'UpdateSettingsRequest':
@@ -203,21 +215,21 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'UploadIntentResponse':
           return UploadIntentResponse.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'UploadStatus':
-
-
+          
+          
         case 'User':
           return User.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'UserRole':
-
-
+          
+          
         case 'UserSettings':
           return UserSettings.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'VerificationCaseStatus':
-
-
+          
+          
         case 'VerificationStatus':
-
-
+          
+          
         case 'VerificationSummary':
           return VerificationSummary.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'VerificationSummarySafeDocumentsInner':
@@ -225,15 +237,15 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'WorkCard':
           return WorkCard.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'WorkCardStatus':
-
-
+          
+          
         case 'WorkCardUpsertRequest':
           return WorkCardUpsertRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'WorkNeededPost':
           return WorkNeededPost.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'WorkNeededPostStatus':
-
-
+          
+          
         case 'WorkNeededPostUpsertRequest':
           return WorkNeededPostUpsertRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         default:

@@ -30,7 +30,7 @@ class DeviceInfo {
   });
 
   @JsonKey(
-
+    
     name: r'device_id',
     required: false,
     includeIfNull: false,
@@ -42,7 +42,7 @@ class DeviceInfo {
 
 
   @JsonKey(
-
+    
     name: r'platform',
     required: false,
     includeIfNull: false,
@@ -54,7 +54,7 @@ class DeviceInfo {
 
 
   @JsonKey(
-
+    
     name: r'app_version',
     required: false,
     includeIfNull: false,
@@ -66,7 +66,7 @@ class DeviceInfo {
 
 
   @JsonKey(
-
+    
     name: r'fcm_token',
     required: false,
     includeIfNull: false,
@@ -116,3 +116,5 @@ final String value;
 @override
 String toString() => value;
 }
+
+

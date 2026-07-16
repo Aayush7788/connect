@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:connect_app/src/data/media_models.dart';
+import 'package:connect_app/src/data/location_models.dart';
 import 'package:connect_app/src/data/discovery_models.dart';
 import 'package:connect_app/src/data/engagement_models.dart';
 import 'package:connect_app/src/data/work_card_models.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 export 'package:connect_app/src/data/media_models.dart';
+export 'package:connect_app/src/data/location_models.dart';
 
 const termsVersion = '2026-07-12';
 const privacyVersion = '2026-07-12';
@@ -87,6 +89,20 @@ abstract class ConnectApi {
   Future<OwnerProfileResult> showOwnerProfile();
 
   Future<List<CategoryOption>> categories({required String categoryType});
+
+  Future<List<LocationOption>> locationStates({String? query});
+
+  Future<List<LocationOption>> locationDistricts({
+    required int stateId,
+    String? query,
+  });
+
+  Future<AddressValidationResult> validateAddress({
+    required int stateId,
+    required int districtId,
+    required String pincode,
+    String? area,
+  });
 
   Future<MarketplaceSearchResponse> searchMarketplace(
     MarketplaceSearchRequest request, {
@@ -361,6 +377,66 @@ class DioConnectApi implements ConnectApi {
       final items = _body(response)['items'] as List<dynamic>? ?? [];
       return items
           .map((item) => CategoryOption.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  @override
+  Future<List<LocationOption>> locationStates({String? query}) {
+    return _locationOptions('/locations/states', {'q': query});
+  }
+
+  @override
+  Future<List<LocationOption>> locationDistricts({
+    required int stateId,
+    String? query,
+  }) {
+    return _locationOptions('/locations/districts', {
+      'state_id': stateId,
+      'q': query,
+    });
+  }
+
+  @override
+  Future<AddressValidationResult> validateAddress({
+    required int stateId,
+    required int districtId,
+    required String pincode,
+    String? area,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/locations/validate-address',
+        data: {
+          'state_id': stateId,
+          'district_id': districtId,
+          'pincode': pincode,
+          'area': area,
+        },
+        options: await _authOptions(),
+      );
+      return AddressValidationResult.fromJson(_body(response));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  Future<List<LocationOption>> _locationOptions(
+    String path,
+    Map<String, dynamic> query,
+  ) async {
+    try {
+      query.removeWhere((_, value) => value == null || value == '');
+      final response = await _dio.get<Map<String, dynamic>>(
+        path,
+        queryParameters: query,
+        options: await _authOptions(),
+      );
+      final items = _body(response)['items'] as List<dynamic>? ?? const [];
+      return items
+          .map((item) => LocationOption.fromJson(item as Map<String, dynamic>))
           .toList(growable: false);
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);

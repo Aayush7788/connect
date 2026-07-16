@@ -31,7 +31,7 @@ class Category {
   });
 
   @JsonKey(
-
+    
     name: r'id',
     required: true,
     includeIfNull: false,
@@ -43,7 +43,7 @@ class Category {
 
 
   @JsonKey(
-
+    
     name: r'parent_id',
     required: false,
     includeIfNull: false,
@@ -55,7 +55,7 @@ class Category {
 
 
   @JsonKey(
-
+    
     name: r'category_type',
     required: true,
     includeIfNull: false,
@@ -67,7 +67,7 @@ class Category {
 
 
   @JsonKey(
-
+    
     name: r'name',
     required: true,
     includeIfNull: false,
@@ -104,3 +104,4 @@ class Category {
   }
 
 }
+
