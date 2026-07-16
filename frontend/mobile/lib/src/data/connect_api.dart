@@ -210,7 +210,7 @@ class DioConnectApi implements ConnectApi {
         BaseOptions(
           baseUrl: const String.fromEnvironment(
             'API_BASE_URL',
-            defaultValue: 'http://10.0.2.2:8000/v1',
+            defaultValue: 'http://10.0.2.2:8001/v1',
           ),
           connectTimeout: const Duration(seconds: 12),
           receiveTimeout: const Duration(seconds: 20),
@@ -234,11 +234,15 @@ class DioConnectApi implements ConnectApi {
 
   @override
   Future<OtpRequestResult> requestOtp({required String mobile}) async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/auth/otp/request',
-      data: {'mobile': mobile},
-    );
-    return OtpRequestResult.fromJson(_body(response));
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/auth/otp/request',
+        data: {'mobile': mobile},
+      );
+      return OtpRequestResult.fromJson(_body(response));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
   }
 
   @override

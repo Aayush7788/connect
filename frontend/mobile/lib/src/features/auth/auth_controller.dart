@@ -118,6 +118,9 @@ class AuthController extends Notifier<AuthState> {
         isLoading: false,
         errorMessage: null,
       );
+    } on ApiFailure catch (error) {
+      state = state.copyWith(isLoading: false, errorMessage: error.message);
+      rethrow;
     } catch (_) {
       state = state.copyWith(
         isLoading: false,
