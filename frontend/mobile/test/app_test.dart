@@ -51,6 +51,36 @@ void main() {
     expect(find.text('Please enter the mobile number'), findsOneWidget);
   });
 
+  testWidgets('OTP connectivity failure shows the network error', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
+          connectApiProvider.overrideWithValue(
+            _FakeConnectApi(
+              otpFailure: const ApiFailure(
+                code: 'network_error',
+                message: "Can't access internet",
+              ),
+            ),
+          ),
+        ],
+        child: const ConnectApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(EditableText).first, 'Test User');
+    await tester.enterText(find.byType(EditableText).last, '9999999999');
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Can't access internet"), findsOneWidget);
+    expect(find.text('Unable to send OTP. Please retry.'), findsNothing);
+  });
+
   testWidgets('otp and role confirmation reaches home', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -451,6 +481,9 @@ class _MemoryTokenStore implements TokenStore {
 }
 
 class _FakeConnectApi implements ConnectApi {
+  _FakeConnectApi({this.otpFailure});
+
+  final ApiFailure? otpFailure;
   OwnerProfileResult profile = _ownerProfile();
   final List<WorkCardResult> ownerWorkCards = [];
   final List<WorkNeededPostResult> ownerWorkNeededPosts = [];
@@ -854,6 +887,9 @@ class _FakeConnectApi implements ConnectApi {
 
   @override
   Future<OtpRequestResult> requestOtp({required String mobile}) async {
+    if (otpFailure case final failure?) {
+      throw failure;
+    }
     return const OtpRequestResult(
       otpRequestId: '00000000-0000-0000-0000-000000000001',
       message: 'OTP sent',
