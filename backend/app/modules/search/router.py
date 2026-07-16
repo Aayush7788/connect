@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.core.auth_context import CurrentUser
 from app.modules.auth.dependencies import get_active_current_user
-from app.modules.search.dependencies import get_search_service
+from app.modules.search.dependencies import enqueue_search_log, get_search_service
 from app.modules.search.schemas import BusinessSearchMode, SearchResponse
 from app.modules.search.schemas import SearchSort, SearchTarget
 from app.modules.search.service import SearchService
@@ -31,7 +31,7 @@ def search_marketplace(
     current_user: CurrentUser = Depends(get_active_current_user),
     service: SearchService = Depends(get_search_service),
 ) -> SearchResponse:
-    return service.search(
+    response = service.search(
         current_user=current_user,
         target=target,
         query=q,
@@ -45,4 +45,9 @@ def search_marketplace(
         sort=sort,
         cursor=cursor,
         limit=limit,
+        defer_log=True,
     )
+    deferred_log = getattr(service, "deferred_log", None)
+    if deferred_log is not None:
+        enqueue_search_log(deferred_log)
+    return response

@@ -143,6 +143,8 @@ class MediaService:
 
         if media.visibility == "public":
             final_path = self._public_path(media, actual_mime)
+            thumbnail_path = self._thumbnail_path(media)
+            thumbnail = self._create_thumbnail(content)
             try:
                 self.storage.upload(
                     bucket=self.settings.supabase_public_media_bucket,
@@ -150,10 +152,25 @@ class MediaService:
                     content=content,
                     mime_type=actual_mime,
                 )
+                self.storage.upload(
+                    bucket=self.settings.supabase_public_media_bucket,
+                    path=thumbnail_path,
+                    content=thumbnail,
+                    mime_type="image/jpeg",
+                )
             except StorageProviderError as error:
+                self._remove_if_exists(
+                    bucket=self.settings.supabase_public_media_bucket,
+                    path=final_path,
+                )
+                self._remove_if_exists(
+                    bucket=self.settings.supabase_public_media_bucket,
+                    path=thumbnail_path,
+                )
                 raise self._provider_error() from error
             self._remove_if_exists(bucket=source_bucket, path=media.original_path)
             media.original_path = final_path
+            media.thumbnail_path = thumbnail_path
 
         media.file_size_bytes = len(content)
         media.mime_type = actual_mime
@@ -230,6 +247,8 @@ class MediaService:
             else self.settings.supabase_private_verification_bucket
         )
         self._remove_for_mutation(bucket=bucket, path=media.original_path)
+        if media.thumbnail_path is not None:
+            self._remove_if_exists(bucket=bucket, path=media.thumbnail_path)
         self._mark_deleted(media)
         self.repository.flush()
         self.repository.sync_target_photo_count(owned.target)
@@ -369,6 +388,16 @@ class MediaService:
         ):
             raise InvalidMediaContent("Uploaded image dimensions are too large.")
         return actual_mime, width, height
+
+    @staticmethod
+    def _create_thumbnail(content: bytes) -> bytes:
+        output = BytesIO()
+        with Image.open(BytesIO(content)) as image:
+            image.thumbnail((480, 480), Image.Resampling.LANCZOS)
+            if image.mode not in {"RGB", "L"}:
+                image = image.convert("RGB")
+            image.save(output, format="JPEG", quality=72, optimize=True)
+        return output.getvalue()
 
     def _ensure_target_mutable(self, target: MediaTarget, *, for_private: bool) -> None:
         if target.profile.verification_status == "pending":
@@ -537,6 +566,10 @@ class MediaService:
             f"{media.entity_type}/{media.entity_id}/{media.id}"
             f"{EXTENSION_BY_MIME[mime_type]}"
         )
+
+    @staticmethod
+    def _thumbnail_path(media: MediaAsset) -> str:
+        return f"{media.entity_type}/{media.entity_id}/{media.id}-thumbnail.jpg"
 
     @staticmethod
     def _mark_deleted(media: MediaAsset) -> None:

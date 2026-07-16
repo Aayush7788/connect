@@ -89,8 +89,9 @@ abstract class ConnectApi {
   Future<List<CategoryOption>> categories({required String categoryType});
 
   Future<MarketplaceSearchResponse> searchMarketplace(
-    MarketplaceSearchRequest request,
-  );
+    MarketplaceSearchRequest request, {
+    CancelToken? cancelToken,
+  });
 
   Future<PublicProfileDetailResult> publicProfile(
     String profileId, {
@@ -368,16 +369,21 @@ class DioConnectApi implements ConnectApi {
 
   @override
   Future<MarketplaceSearchResponse> searchMarketplace(
-    MarketplaceSearchRequest request,
-  ) async {
+    MarketplaceSearchRequest request, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/search',
         queryParameters: request.toQueryParameters(),
         options: await _authOptions(),
+        cancelToken: cancelToken,
       );
       return MarketplaceSearchResponse.fromJson(_body(response));
     } on DioException catch (error) {
+      if (CancelToken.isCancel(error)) {
+        rethrow;
+      }
       throw ApiFailure.fromDio(error);
     }
   }

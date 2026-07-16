@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import cast
 from uuid import UUID
 
 from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from app.db.models.cross_cutting import ContactReveal, MediaAsset
 from app.db.models.identity import User
@@ -73,8 +72,20 @@ class ProfileRepository:
         for_update: bool = False,
     ) -> OwnerProfileBundle | None:
         statement = (
-            select(User, Profile)
+            select(
+                User,
+                Profile,
+                BusinessProfile,
+                JobWorkerProfile,
+                SkilledWorkerProfile,
+            )
             .join(Profile, Profile.owner_user_id == User.id)
+            .outerjoin(BusinessProfile, BusinessProfile.profile_id == Profile.id)
+            .outerjoin(JobWorkerProfile, JobWorkerProfile.profile_id == Profile.id)
+            .outerjoin(
+                SkilledWorkerProfile,
+                SkilledWorkerProfile.profile_id == Profile.id,
+            )
             .where(
                 User.id == user_id,
                 User.deleted_at.is_(None),
@@ -86,11 +97,20 @@ class ProfileRepository:
         row = self.session.execute(statement).one_or_none()
         if row is None:
             return None
-        user, profile = row
-        role_profile = self._get_role_profile(profile)
+        user, profile, business, job_worker, skilled_worker = row
+        role_profile = self._joined_role_profile(
+            profile,
+            business=business,
+            job_worker=job_worker,
+            skilled_worker=skilled_worker,
+        )
         if role_profile is None:
             return None
-        product_types = self.list_business_product_types(profile.id)
+        product_types = (
+            self.list_business_product_types(profile.id)
+            if profile.role == "business"
+            else []
+        )
         media = list(
             self.session.scalars(
                 select(MediaAsset)
@@ -129,8 +149,20 @@ class ProfileRepository:
 
     def get_public_bundle(self, profile_id: UUID) -> PublicProfileBundle | None:
         row = self.session.execute(
-            select(Profile, User)
+            select(
+                Profile,
+                User,
+                BusinessProfile,
+                JobWorkerProfile,
+                SkilledWorkerProfile,
+            )
             .outerjoin(User, User.id == Profile.owner_user_id)
+            .outerjoin(BusinessProfile, BusinessProfile.profile_id == Profile.id)
+            .outerjoin(JobWorkerProfile, JobWorkerProfile.profile_id == Profile.id)
+            .outerjoin(
+                SkilledWorkerProfile,
+                SkilledWorkerProfile.profile_id == Profile.id,
+            )
             .where(
                 Profile.id == profile_id,
                 Profile.deleted_at.is_(None),
@@ -146,12 +178,21 @@ class ProfileRepository:
         ).one_or_none()
         if row is None:
             return None
-        profile, user = row
-        role_profile = self._get_role_profile(profile)
+        profile, user, business, job_worker, skilled_worker = row
+        role_profile = self._joined_role_profile(
+            profile,
+            business=business,
+            job_worker=job_worker,
+            skilled_worker=skilled_worker,
+        )
         if role_profile is None:
             return None
-        profile_media = self._public_media("profile", [profile.id]).get(profile.id, [])
-        product_types = self.list_business_product_types(profile.id)
+        profile_media, related_media = self._public_profile_media(profile)
+        product_types = (
+            self.list_business_product_types(profile.id)
+            if profile.role == "business"
+            else []
+        )
         category_ids = {
             item.product_type_category_id
             for item in product_types
@@ -168,8 +209,16 @@ class ProfileRepository:
             product_types=product_types,
             media=profile_media,
             categories=self.get_categories(category_ids),
-            work_cards=self._public_work_cards(profile.id),
-            work_needed_posts=self._public_work_needed_posts(profile.id),
+            work_cards=(
+                self._public_work_cards(profile.id, media=related_media)
+                if profile.role == "job_worker"
+                else []
+            ),
+            work_needed_posts=(
+                self._public_work_needed_posts(profile.id, media=related_media)
+                if profile.role == "business"
+                else []
+            ),
         )
 
     def record_contact_reveal(
@@ -211,19 +260,19 @@ class ProfileRepository:
             )
         )
 
-    def _get_role_profile(
-        self,
+    @staticmethod
+    def _joined_role_profile(
         profile: Profile,
+        *,
+        business: BusinessProfile | None,
+        job_worker: JobWorkerProfile | None,
+        skilled_worker: SkilledWorkerProfile | None,
     ) -> BusinessProfile | JobWorkerProfile | SkilledWorkerProfile | None:
-        model = {
-            "business": BusinessProfile,
-            "job_worker": JobWorkerProfile,
-            "skilled_worker": SkilledWorkerProfile,
+        return {
+            "business": business,
+            "job_worker": job_worker,
+            "skilled_worker": skilled_worker,
         }[profile.role]
-        return cast(
-            BusinessProfile | JobWorkerProfile | SkilledWorkerProfile | None,
-            self.session.get(model, profile.id),
-        )
 
     def list_business_product_types(
         self,
@@ -346,45 +395,64 @@ class ProfileRepository:
     def set_search_vector(self, profile: Profile, search_text: str) -> None:
         profile.search_vector = func.to_tsvector("simple", search_text)
 
-    def _public_work_cards(self, profile_id: UUID) -> list[PublicWorkCardBundle]:
-        cards = list(
-            self.session.scalars(
-                select(WorkCard)
-                .where(
-                    WorkCard.profile_id == profile_id,
-                    WorkCard.status == "published",
-                    WorkCard.deleted_at.is_(None),
-                )
-                .order_by(WorkCard.ranking_score.desc(), WorkCard.updated_at.desc())
-                .limit(50)
+    def _public_work_cards(
+        self,
+        profile_id: UUID,
+        *,
+        media: dict[UUID, list[MediaAsset]],
+    ) -> list[PublicWorkCardBundle]:
+        selected_ids = (
+            select(WorkCard.id)
+            .where(
+                WorkCard.profile_id == profile_id,
+                WorkCard.status == "published",
+                WorkCard.deleted_at.is_(None),
             )
+            .order_by(WorkCard.ranking_score.desc(), WorkCard.updated_at.desc())
+            .limit(50)
+            .subquery()
         )
-        if not cards:
+        work_category = aliased(Category)
+        work_name = aliased(Category)
+        product_category = aliased(Category)
+        rows = self.session.execute(
+            select(
+                WorkCard,
+                WorkCardProductType,
+                work_category,
+                work_name,
+                product_category,
+            )
+            .join(selected_ids, selected_ids.c.id == WorkCard.id)
+            .outerjoin(
+                WorkCardProductType,
+                WorkCardProductType.work_card_id == WorkCard.id,
+            )
+            .outerjoin(work_category, work_category.id == WorkCard.work_category_id)
+            .outerjoin(work_name, work_name.id == WorkCard.work_name_category_id)
+            .outerjoin(
+                product_category,
+                product_category.id
+                == WorkCardProductType.product_type_category_id,
+            )
+            .order_by(
+                WorkCard.ranking_score.desc(),
+                WorkCard.updated_at.desc(),
+                WorkCardProductType.created_at,
+            )
+        ).all()
+        if not rows:
             return []
-        card_ids = [card.id for card in cards]
-        products = list(
-            self.session.scalars(
-                select(WorkCardProductType)
-                .where(WorkCardProductType.work_card_id.in_(card_ids))
-                .order_by(WorkCardProductType.created_at)
-            )
-        )
+        cards: dict[UUID, WorkCard] = {}
         products_by_card: dict[UUID, list[WorkCardProductType]] = {}
-        for product in products:
-            products_by_card.setdefault(product.work_card_id, []).append(product)
-        category_ids = {
-            category_id
-            for card in cards
-            for category_id in (card.work_category_id, card.work_name_category_id)
-            if category_id is not None
-        }
-        category_ids.update(
-            product.product_type_category_id
-            for product in products
-            if product.product_type_category_id is not None
-        )
-        categories = self.get_categories(category_ids)
-        media = self._public_media("work_card", card_ids)
+        categories: dict[UUID, Category] = {}
+        for card, product, category, name, product_type in rows:
+            cards.setdefault(card.id, card)
+            if product is not None:
+                products_by_card.setdefault(card.id, []).append(product)
+            for value in (category, name, product_type):
+                if value is not None:
+                    categories[value.id] = value
         return [
             PublicWorkCardBundle(
                 card=card,
@@ -392,17 +460,125 @@ class ProfileRepository:
                 media=media.get(card.id, []),
                 categories=categories,
             )
-            for card in cards
+            for card in cards.values()
         ]
 
     def _public_work_needed_posts(
-        self, profile_id: UUID
+        self,
+        profile_id: UUID,
+        *,
+        media: dict[UUID, list[MediaAsset]],
     ) -> list[PublicWorkNeededPostBundle]:
-        posts = list(
-            self.session.scalars(
-                select(WorkNeededPost)
+        selected_ids = (
+            select(WorkNeededPost.id)
+            .where(
+                WorkNeededPost.profile_id == profile_id,
+                WorkNeededPost.status == "active",
+                WorkNeededPost.deleted_at.is_(None),
+            )
+            .order_by(
+                WorkNeededPost.ranking_score.desc(),
+                WorkNeededPost.updated_at.desc(),
+            )
+            .limit(50)
+            .subquery()
+        )
+        work_category = aliased(Category)
+        work_name = aliased(Category)
+        product_category = aliased(Category)
+        rows = self.session.execute(
+            select(
+                WorkNeededPost,
+                WorkNeededPostProductType,
+                work_category,
+                work_name,
+                product_category,
+            )
+            .join(selected_ids, selected_ids.c.id == WorkNeededPost.id)
+            .outerjoin(
+                WorkNeededPostProductType,
+                WorkNeededPostProductType.work_needed_post_id
+                == WorkNeededPost.id,
+            )
+            .outerjoin(
+                work_category,
+                work_category.id == WorkNeededPost.work_category_id,
+            )
+            .outerjoin(
+                work_name,
+                work_name.id == WorkNeededPost.work_name_category_id,
+            )
+            .outerjoin(
+                product_category,
+                product_category.id
+                == WorkNeededPostProductType.product_type_category_id,
+            )
+            .order_by(
+                WorkNeededPost.ranking_score.desc(),
+                WorkNeededPost.updated_at.desc(),
+                WorkNeededPostProductType.created_at,
+            )
+        ).all()
+        if not rows:
+            return []
+        posts: dict[UUID, WorkNeededPost] = {}
+        products_by_post: dict[UUID, list[WorkNeededPostProductType]] = {}
+        categories: dict[UUID, Category] = {}
+        for post, product, category, name, product_type in rows:
+            posts.setdefault(post.id, post)
+            if product is not None:
+                products_by_post.setdefault(post.id, []).append(product)
+            for value in (category, name, product_type):
+                if value is not None:
+                    categories[value.id] = value
+        return [
+            PublicWorkNeededPostBundle(
+                post=post,
+                product_types=products_by_post.get(post.id, []),
+                media=media.get(post.id, []),
+                categories=categories,
+            )
+            for post in posts.values()
+        ]
+
+    def _public_profile_media(
+        self,
+        profile: Profile,
+    ) -> tuple[list[MediaAsset], dict[UUID, list[MediaAsset]]]:
+        conditions = [
+            and_(
+                MediaAsset.entity_type == "profile",
+                MediaAsset.entity_id == profile.id,
+            )
+        ]
+        related_type: str | None = None
+        if profile.role == "job_worker":
+            related_type = "work_card"
+            related_ids = (
+                select(WorkCard.id)
                 .where(
-                    WorkNeededPost.profile_id == profile_id,
+                    WorkCard.profile_id == profile.id,
+                    WorkCard.status == "published",
+                    WorkCard.deleted_at.is_(None),
+                )
+                .order_by(
+                    WorkCard.ranking_score.desc(),
+                    WorkCard.updated_at.desc(),
+                )
+                .limit(50)
+            )
+            conditions.append(
+                and_(
+                    MediaAsset.entity_type == related_type,
+                    MediaAsset.entity_id.in_(related_ids),
+                )
+            )
+        elif profile.role == "business":
+            related_type = "work_needed_post"
+            related_ids = (
+                select(WorkNeededPost.id)
+                .where(
+                    WorkNeededPost.profile_id == profile.id,
                     WorkNeededPost.status == "active",
                     WorkNeededPost.deleted_at.is_(None),
                 )
@@ -412,42 +588,36 @@ class ProfileRepository:
                 )
                 .limit(50)
             )
-        )
-        if not posts:
-            return []
-        post_ids = [post.id for post in posts]
-        products = list(
-            self.session.scalars(
-                select(WorkNeededPostProductType)
-                .where(WorkNeededPostProductType.work_needed_post_id.in_(post_ids))
-                .order_by(WorkNeededPostProductType.created_at)
+            conditions.append(
+                and_(
+                    MediaAsset.entity_type == related_type,
+                    MediaAsset.entity_id.in_(related_ids),
+                )
+            )
+        rows = self.session.scalars(
+            select(MediaAsset)
+            .where(
+                or_(*conditions),
+                MediaAsset.media_kind == "image",
+                MediaAsset.visibility == "public",
+                MediaAsset.upload_status == "ready",
+                MediaAsset.deleted_at.is_(None),
+            )
+            .order_by(
+                MediaAsset.entity_type,
+                MediaAsset.entity_id,
+                MediaAsset.sort_order,
+                MediaAsset.created_at,
             )
         )
-        products_by_post: dict[UUID, list[WorkNeededPostProductType]] = {}
-        for product in products:
-            products_by_post.setdefault(product.work_needed_post_id, []).append(product)
-        category_ids = {
-            category_id
-            for post in posts
-            for category_id in (post.work_category_id, post.work_name_category_id)
-            if category_id is not None
-        }
-        category_ids.update(
-            product.product_type_category_id
-            for product in products
-            if product.product_type_category_id is not None
-        )
-        categories = self.get_categories(category_ids)
-        media = self._public_media("work_needed_post", post_ids)
-        return [
-            PublicWorkNeededPostBundle(
-                post=post,
-                product_types=products_by_post.get(post.id, []),
-                media=media.get(post.id, []),
-                categories=categories,
-            )
-            for post in posts
-        ]
+        profile_media: list[MediaAsset] = []
+        related_media: dict[UUID, list[MediaAsset]] = {}
+        for media_asset in rows:
+            if media_asset.entity_type == "profile":
+                profile_media.append(media_asset)
+            elif media_asset.entity_type == related_type:
+                related_media.setdefault(media_asset.entity_id, []).append(media_asset)
+        return profile_media, related_media
 
     def _public_media(
         self, entity_type: str, entity_ids: list[UUID]

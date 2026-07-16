@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:app_settings/app_settings.dart';
@@ -47,10 +48,12 @@ class MediaTargetConfig {
 }
 
 class SelectedMediaImage {
-  const SelectedMediaImage({required this.name, required this.bytes});
+  const SelectedMediaImage({required this.name, this.path, this.bytes})
+    : assert(path != null || bytes != null);
 
   final String name;
-  final Uint8List bytes;
+  final String? path;
+  final Uint8List? bytes;
 }
 
 class PreparedMediaImage {
@@ -126,13 +129,9 @@ class DeviceMediaPicker implements MediaPickerGateway {
   }
 
   Future<List<SelectedMediaImage>> _read(List<XFile> files) async {
-    final selected = <SelectedMediaImage>[];
-    for (final file in files) {
-      selected.add(
-        SelectedMediaImage(name: file.name, bytes: await file.readAsBytes()),
-      );
-    }
-    return selected;
+    return files
+        .map((file) => SelectedMediaImage(name: file.name, path: file.path))
+        .toList(growable: false);
   }
 
   MediaSelectionFailure _selectionFailure(PlatformException error) {
@@ -155,14 +154,16 @@ abstract class MediaCompressor {
 class DeviceMediaCompressor implements MediaCompressor {
   @override
   Future<PreparedMediaImage> compress(SelectedMediaImage image) async {
-    final bytes = await FlutterImageCompress.compressWithList(
-      image.bytes,
-      minWidth: 1920,
-      minHeight: 1920,
-      quality: 78,
-      format: CompressFormat.jpeg,
-      keepExif: false,
-    );
+    final bytes = image.path == null
+        ? await FlutterImageCompress.compressWithList(
+            image.bytes!,
+            minWidth: 1600,
+            minHeight: 1600,
+            quality: 74,
+            format: CompressFormat.jpeg,
+            keepExif: false,
+          )
+        : await _compressFile(image.path!);
     if (bytes.isEmpty || bytes.length > maxMediaUploadBytes) {
       throw const MediaSelectionFailure(
         'Photo is too large. Choose another photo.',
@@ -176,6 +177,31 @@ class DeviceMediaCompressor implements MediaCompressor {
       filename: '${safeStem.substring(0, safeStem.length.clamp(1, 80))}.jpg',
       bytes: bytes,
     );
+  }
+
+  Future<Uint8List> _compressFile(String sourcePath) async {
+    final targetPath =
+        '$sourcePath.connect-${DateTime.now().microsecondsSinceEpoch}.jpg';
+    final compressed = await FlutterImageCompress.compressAndGetFile(
+      sourcePath,
+      targetPath,
+      minWidth: 1600,
+      minHeight: 1600,
+      quality: 74,
+      format: CompressFormat.jpeg,
+      keepExif: false,
+    );
+    if (compressed == null) {
+      throw const MediaSelectionFailure('Unable to prepare photo.');
+    }
+    try {
+      return await compressed.readAsBytes();
+    } finally {
+      final file = File(compressed.path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    }
   }
 }
 

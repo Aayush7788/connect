@@ -1,5 +1,6 @@
 import 'package:connect_app/src/data/connect_api.dart';
 import 'package:connect_app/src/data/discovery_models.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final discoveryRepositoryProvider = Provider<DiscoveryRepository>((ref) {
@@ -7,7 +8,10 @@ final discoveryRepositoryProvider = Provider<DiscoveryRepository>((ref) {
 });
 
 abstract class DiscoveryRepository {
-  Future<MarketplaceSearchResponse> search(MarketplaceSearchRequest request);
+  Future<MarketplaceSearchResponse> search(
+    MarketplaceSearchRequest request, {
+    CancelToken? cancelToken,
+  });
 
   Future<PublicProfileDetailResult> profile(
     String profileId, {
@@ -24,8 +28,11 @@ class ApiDiscoveryRepository implements DiscoveryRepository {
   final ConnectApi _api;
 
   @override
-  Future<MarketplaceSearchResponse> search(MarketplaceSearchRequest request) {
-    return _api.searchMarketplace(request);
+  Future<MarketplaceSearchResponse> search(
+    MarketplaceSearchRequest request, {
+    CancelToken? cancelToken,
+  }) {
+    return _api.searchMarketplace(request, cancelToken: cancelToken);
   }
 
   @override

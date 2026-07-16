@@ -8,6 +8,7 @@ import 'package:connect_app/src/features/profile/profile_controller.dart';
 import 'package:connect_app/src/features/profile/profile_display.dart';
 import 'package:connect_app/src/ui/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -43,6 +44,9 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   String? _skillCategoryId;
   final Set<String> _productTypeIds = {};
   bool _savedOnce = false;
+  bool _isSubmitting = false;
+  Future<bool>? _saveFuture;
+  Map<String, dynamic> _lastPersistedPayload = const {};
   MediaUploadSummary? _mediaSummary;
 
   @override
@@ -183,16 +187,19 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
                   if (_step < 3)
                     PrimaryActionButton(
                       label: 'Next',
-                      isLoading: state.isSaving,
-                      onPressed: pending || (_mediaSummary?.isBusy ?? false)
+                      isLoading: _isSubmitting,
+                      onPressed:
+                          pending ||
+                              _isSubmitting ||
+                              (_mediaSummary?.isBusy ?? false)
                           ? null
                           : _next,
                     )
                   else
                     PrimaryActionButton(
                       label: 'Done',
-                      isLoading: state.isSaving,
-                      onPressed: pending ? null : _complete,
+                      isLoading: _isSubmitting,
+                      onPressed: pending || _isSubmitting ? null : _complete,
                     ),
                   const SizedBox(height: 8),
                   Row(
@@ -534,9 +541,6 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         }
         setState(() => _mediaSummary = summary);
       },
-      onMediaChanged: () {
-        return ref.read(profileControllerProvider.notifier).load(force: true);
-      },
     );
   }
 
@@ -648,6 +652,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       }
     }
     _initialized = true;
+    _lastPersistedPayload = _payload();
   }
 
   Map<String, dynamic> _payload() {
@@ -701,28 +706,49 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     if (!_initialized) {
       return;
     }
+    if (_savedOnce) {
+      setState(() => _savedOnce = false);
+    }
     _autoSaveTimer?.cancel();
-    _autoSaveTimer = Timer(const Duration(milliseconds: 900), () async {
+    _autoSaveTimer = Timer(const Duration(milliseconds: 2500), () {
       if (!mounted) {
         return;
       }
-      if (ref.read(profileControllerProvider).isSaving) {
-        _scheduleAutoSave();
-        return;
-      }
-      await _saveDraft();
+      unawaited(_saveDraft());
     });
   }
 
   Future<bool> _saveDraft() async {
     _autoSaveTimer?.cancel();
-    final saved = await ref
-        .read(profileControllerProvider.notifier)
-        .save(_payload());
-    if (mounted && saved) {
-      setState(() => _savedOnce = true);
+    final activeSave = _saveFuture;
+    if (activeSave != null) {
+      final saved = await activeSave;
+      return saved ? _saveDraft() : false;
     }
-    return saved;
+    final payload = _payload();
+    final changes = <String, dynamic>{};
+    for (final entry in payload.entries) {
+      if (!_sameFieldValue(_lastPersistedPayload[entry.key], entry.value)) {
+        changes[entry.key] = entry.value;
+      }
+    }
+    if (changes.isEmpty) {
+      return true;
+    }
+    final save = ref.read(profileControllerProvider.notifier).save(changes);
+    _saveFuture = save;
+    try {
+      final saved = await save;
+      if (saved) {
+        _lastPersistedPayload = {..._lastPersistedPayload, ...changes};
+      }
+      if (mounted && saved) {
+        setState(() => _savedOnce = true);
+      }
+      return saved;
+    } finally {
+      _saveFuture = null;
+    }
   }
 
   Future<void> _next() async {
@@ -732,27 +758,55 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         return;
       }
     }
-    if (await _saveDraft() && mounted) {
-      setState(() => _step += 1);
+    setState(() => _isSubmitting = true);
+    try {
+      if (await _saveDraft() && mounted) {
+        setState(() => _step += 1);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 
   Future<void> _saveAndExit() async {
-    if (await _saveDraft() && mounted) {
-      Navigator.of(context).pop();
+    setState(() => _isSubmitting = true);
+    try {
+      if (await _saveDraft() && mounted) {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 
   Future<void> _complete() async {
-    if (!await _saveDraft()) {
-      return;
+    setState(() => _isSubmitting = true);
+    try {
+      if (!await _saveDraft()) {
+        return;
+      }
+      final complete = await ref
+          .read(profileControllerProvider.notifier)
+          .complete();
+      if (complete && mounted) {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
-    final complete = await ref
-        .read(profileControllerProvider.notifier)
-        .complete();
-    if (complete && mounted) {
-      Navigator.of(context).pop();
+  }
+
+  bool _sameFieldValue(Object? left, Object? right) {
+    if (left is List<Object?> && right is List<Object?>) {
+      return listEquals(left, right);
     }
+    return left == right;
   }
 }
 

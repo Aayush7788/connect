@@ -1,11 +1,13 @@
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from time import perf_counter
 
 from app.core.auth_context import CurrentUser
 from app.core.errors import ApiError, ErrorCode
 from app.core.config import Settings, get_settings
 from app.core.security import bearer_scheme, require_bearer_token
+from app.core.logging import add_auth_duration
 from app.db.session import get_db_session
 from app.integrations.supabase_auth import SupabasePythonAuthGateway
 from app.modules.auth.repository import AuthRepository
@@ -21,10 +23,12 @@ def get_auth_gateway(
 def get_auth_service(
     session: Session = Depends(get_db_session),
     auth_gateway=Depends(get_auth_gateway),
+    settings: Settings = Depends(get_settings),
 ) -> AuthService:
     return AuthService(
         repository=AuthRepository(session),
         auth_gateway=auth_gateway,
+        auth_context_cache_seconds=settings.auth_context_cache_seconds,
     )
 
 
@@ -33,7 +37,11 @@ async def get_current_user_from_token(
     auth_service: AuthService = Depends(get_auth_service),
 ) -> CurrentUser:
     access_token = require_bearer_token(credentials)
-    return await auth_service.get_current_user_from_token(access_token)
+    started = perf_counter()
+    try:
+        return await auth_service.get_current_user_from_token(access_token)
+    finally:
+        add_auth_duration((perf_counter() - started) * 1000)
 
 
 async def get_active_current_user(

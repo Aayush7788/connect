@@ -54,6 +54,8 @@ class ProfileState {
 const Object _unchanged = Object();
 
 class ProfileController extends Notifier<ProfileState> {
+  final Map<String, List<CategoryOption>> _taxonomyCache = {};
+
   @override
   ProfileState build() => const ProfileState();
 
@@ -68,20 +70,13 @@ class ProfileController extends Notifier<ProfileState> {
     );
     try {
       final api = ref.read(connectApiProvider);
-      final profile = await api.ownerProfile();
-      final categories = <String, List<CategoryOption>>{};
-      if (profile.profile.role == 'business') {
-        categories['business_category'] = await api.categories(
-          categoryType: 'business_category',
-        );
-        categories['product_type'] = await api.categories(
-          categoryType: 'product_type',
-        );
-      } else if (profile.profile.role == 'skilled_worker') {
-        categories['work_name'] = await api.categories(
-          categoryType: 'work_name',
-        );
-      }
+      final knownRole = ref.read(authControllerProvider).me?.profile?.role;
+      final profileFuture = api.ownerProfile();
+      final knownCategoriesFuture = _categoriesForRole(api, knownRole);
+      final profile = await profileFuture;
+      final categories = knownRole == profile.profile.role
+          ? await knownCategoriesFuture
+          : await _categoriesForRole(api, profile.profile.role);
       _setProfile(profile, categories: categories);
     } on ApiFailure catch (error) {
       state = state.copyWith(
@@ -96,6 +91,27 @@ class ProfileController extends Notifier<ProfileState> {
         errorMessage: "Can't access internet",
       );
     }
+  }
+
+  Future<Map<String, List<CategoryOption>>> _categoriesForRole(
+    ConnectApi api,
+    String? role,
+  ) async {
+    final categoryTypes = switch (role) {
+      'business' => const ['business_category', 'product_type'],
+      'skilled_worker' => const ['work_name'],
+      _ => const <String>[],
+    };
+    final missingTypes = categoryTypes
+        .where((type) => !_taxonomyCache.containsKey(type))
+        .toList(growable: false);
+    final loaded = await Future.wait(
+      missingTypes.map((type) => api.categories(categoryType: type)),
+    );
+    for (var index = 0; index < missingTypes.length; index += 1) {
+      _taxonomyCache[missingTypes[index]] = loaded[index];
+    }
+    return {for (final type in categoryTypes) type: _taxonomyCache[type]!};
   }
 
   Future<bool> save(Map<String, dynamic> fields) async {

@@ -76,6 +76,9 @@ final GoRouter _router = GoRouter(
           sourceId: routeExtra is ProfileDetailRouteExtra
               ? routeExtra.sourceId
               : null,
+          preview: routeExtra is ProfileDetailRouteExtra
+              ? routeExtra.preview
+              : null,
         );
       },
     ),

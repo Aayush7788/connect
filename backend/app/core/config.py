@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     supabase_anon_key: SecretStr | None = None
     supabase_service_role_key: SecretStr | None = None
     supabase_jwt_secret: SecretStr | None = None
+    supabase_jwks_cache_seconds: int = Field(default=600, ge=60, le=3600)
+    supabase_jwt_leeway_seconds: int = Field(default=30, ge=0, le=120)
+    auth_context_cache_seconds: int = Field(default=15, ge=0, le=60)
     supabase_public_media_bucket: str = "public-media"
     supabase_private_verification_bucket: str = "verification-documents"
 

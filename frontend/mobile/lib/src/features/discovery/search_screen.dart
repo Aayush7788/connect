@@ -101,7 +101,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                         setState(() {});
                         _debounce?.cancel();
                         _debounce = Timer(
-                          const Duration(milliseconds: 350),
+                          const Duration(milliseconds: 550),
                           () {
                             ref
                                 .read(discoveryControllerProvider.notifier)
@@ -181,7 +181,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
     if (state.isLoading && !state.isInitialized) {
       return const _SearchSkeleton();
     }
-    if (state.errorMessage != null) {
+    if (state.errorMessage != null && state.results.isEmpty) {
       return _SearchMessage(
         icon: Icons.cloud_off_outlined,
         message: state.errorMessage!,
@@ -189,7 +189,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
         onAction: ref.read(discoveryControllerProvider.notifier).search,
       );
     }
-    if (state.isLoading) {
+    if (state.isLoading && state.results.isEmpty) {
       return const _SearchSkeleton();
     }
     if (state.results.isEmpty) {
@@ -206,26 +206,36 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
               ),
       );
     }
-    return RefreshIndicator(
-      onRefresh: ref.read(discoveryControllerProvider.notifier).search,
-      child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-        itemCount: state.results.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 14),
-        itemBuilder: (context, index) {
-          final result = state.results[index];
-          return _SearchResultCard(
-            result: result,
-            onTap: () => context.push(
-              '/profiles/${result.profileId}',
-              extra: ProfileDetailRouteExtra(
-                sourceType: result.resultType,
-                sourceId: result.id,
-              ),
-            ),
-          );
-        },
-      ),
+    return Stack(
+      children: [
+        RefreshIndicator(
+          onRefresh: ref.read(discoveryControllerProvider.notifier).search,
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+            itemCount: state.results.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 14),
+            itemBuilder: (context, index) {
+              final result = state.results[index];
+              return _SearchResultCard(
+                result: result,
+                onTap: () => context.push(
+                  '/profiles/${result.profileId}',
+                  extra: ProfileDetailRouteExtra(
+                    sourceType: result.resultType,
+                    sourceId: result.id,
+                    preview: result,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        if (state.isLoading)
+          const Align(
+            alignment: Alignment.topCenter,
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+      ],
     );
   }
 
@@ -246,10 +256,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
 }
 
 class ProfileDetailRouteExtra {
-  const ProfileDetailRouteExtra({this.sourceType, this.sourceId});
+  const ProfileDetailRouteExtra({this.sourceType, this.sourceId, this.preview});
 
   final String? sourceType;
   final String? sourceId;
+  final MarketplaceSearchResult? preview;
 }
 
 class _SearchResultCard extends StatelessWidget {

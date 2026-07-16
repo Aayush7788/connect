@@ -112,7 +112,7 @@ class _SavedList extends ConsumerWidget {
             onTap: () => context.push(
               '/profiles/${card.profileId}',
               extra: ProfileDetailRouteExtra(
-                sourceType: 'saved',
+                sourceType: 'profile',
                 sourceId: item.id,
               ),
             ),

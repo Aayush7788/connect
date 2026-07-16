@@ -95,7 +95,7 @@ class SupabaseStorageGateway:
                 file=content,
                 file_options={
                     "content-type": mime_type,
-                    "cache-control": "3600",
+                    "cache-control": "31536000",
                     "upsert": "false",
                 },
             )

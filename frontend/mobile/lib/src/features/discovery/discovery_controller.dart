@@ -1,6 +1,7 @@
 import 'package:connect_app/src/data/connect_api.dart';
 import 'package:connect_app/src/data/discovery_models.dart';
 import 'package:connect_app/src/features/discovery/discovery_repository.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final discoveryControllerProvider =
@@ -102,10 +103,18 @@ class DiscoveryState {
 const Object _unchanged = Object();
 
 class DiscoveryController extends Notifier<DiscoveryState> {
+  static const int _maximumCachedSearches = 30;
+
   int _requestSequence = 0;
+  CancelToken? _searchCancelToken;
+  final Map<String, List<CategoryOption>> _taxonomyCache = {};
+  final Map<String, MarketplaceSearchResponse> _searchCache = {};
 
   @override
-  DiscoveryState build() => const DiscoveryState();
+  DiscoveryState build() {
+    ref.onDispose(() => _searchCancelToken?.cancel('Controller disposed'));
+    return const DiscoveryState();
+  }
 
   Future<void> configure({
     required String target,
@@ -177,15 +186,22 @@ class DiscoveryController extends Notifier<DiscoveryState> {
       _ => 'work_category',
     };
     try {
-      final values = await Future.wait([
-        repository.taxonomy(categoryType),
-        repository.taxonomy('product_type'),
-      ]);
+      final types = [categoryType, 'product_type'];
+      final missing = types
+          .where((type) => !_taxonomyCache.containsKey(type))
+          .toList(growable: false);
+      final loaded = await Future.wait(missing.map(repository.taxonomy));
+      for (var index = 0; index < missing.length; index += 1) {
+        _taxonomyCache[missing[index]] = loaded[index];
+      }
       if (state.target != target || state.businessMode != businessMode) {
         return;
       }
       state = state.copyWith(
-        taxonomy: {'category': values[0], 'product_type': values[1]},
+        taxonomy: {
+          'category': _taxonomyCache[categoryType]!,
+          'product_type': _taxonomyCache['product_type']!,
+        },
       );
     } on Object {
       state = state.copyWith(taxonomy: const {});
@@ -194,37 +210,57 @@ class DiscoveryController extends Notifier<DiscoveryState> {
 
   Future<void> search() async {
     final sequence = ++_requestSequence;
+    _searchCancelToken?.cancel('Superseded by a newer search');
+    final cancelToken = CancelToken();
+    _searchCancelToken = cancelToken;
+    final request = MarketplaceSearchRequest(
+      target: state.target,
+      query: state.query,
+      businessMode: state.businessMode,
+      categoryId: state.categoryId,
+      productTypeId: state.productTypeId,
+      locality: state.locality,
+      minExperienceYears: state.target == 'business'
+          ? null
+          : state.minExperienceYears,
+      maxExperienceYears: state.target == 'business'
+          ? null
+          : state.maxExperienceYears,
+      verifiedOnly: state.verifiedOnly,
+      sort: state.sort,
+    );
+    final cacheKey = _cacheKey(request);
+    final cached = _searchCache[cacheKey];
     state = state.copyWith(isLoading: true, errorMessage: null);
+    if (cached != null) {
+      state = state.copyWith(results: cached.items, isInitialized: true);
+    }
     try {
       final response = await ref
           .read(discoveryRepositoryProvider)
-          .search(
-            MarketplaceSearchRequest(
-              target: state.target,
-              query: state.query,
-              businessMode: state.businessMode,
-              categoryId: state.categoryId,
-              productTypeId: state.productTypeId,
-              locality: state.locality,
-              minExperienceYears: state.target == 'business'
-                  ? null
-                  : state.minExperienceYears,
-              maxExperienceYears: state.target == 'business'
-                  ? null
-                  : state.maxExperienceYears,
-              verifiedOnly: state.verifiedOnly,
-              sort: state.sort,
-            ),
-          );
+          .search(request, cancelToken: cancelToken);
       if (sequence != _requestSequence) {
         return;
       }
+      if (!_searchCache.containsKey(cacheKey) &&
+          _searchCache.length >= _maximumCachedSearches) {
+        _searchCache.remove(_searchCache.keys.first);
+      }
+      _searchCache[cacheKey] = response;
       state = state.copyWith(
         results: response.items,
         isLoading: false,
         isInitialized: true,
         errorMessage: null,
       );
+    } on DioException catch (error) {
+      if (!CancelToken.isCancel(error) && sequence == _requestSequence) {
+        state = state.copyWith(
+          isLoading: false,
+          isInitialized: true,
+          errorMessage: "Can't access internet",
+        );
+      }
     } on ApiFailure catch (error) {
       if (sequence == _requestSequence) {
         state = state.copyWith(
@@ -242,5 +278,11 @@ class DiscoveryController extends Notifier<DiscoveryState> {
         );
       }
     }
+  }
+
+  String _cacheKey(MarketplaceSearchRequest request) {
+    final values = request.toQueryParameters().entries.toList()
+      ..sort((left, right) => left.key.compareTo(right.key));
+    return values.map((entry) => '${entry.key}=${entry.value}').join('&');
   }
 }

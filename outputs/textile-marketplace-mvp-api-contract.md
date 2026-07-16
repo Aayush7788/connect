@@ -100,6 +100,8 @@ Flutter calls backend auth endpoints. The backend talks to Supabase Auth.
 
 The client stores access/refresh tokens in Android secure storage and sends only the backend access token to the marketplace API.
 
+FastAPI verifies Supabase asymmetric access-token JWTs locally using the project's cached JWKS. It validates signature, issuer, audience, expiry, subject, and `session_id`, then enforces the local user/account/session state. OTP verification, refresh, and provider logout remain Supabase Auth operations. Current-device logout marks the local `user_auth_sessions` row revoked so server restarts do not restore access.
+
 ### 3.3 Error Envelope
 
 Every error response should follow:

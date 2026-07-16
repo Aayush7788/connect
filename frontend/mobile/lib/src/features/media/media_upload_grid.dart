@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:connect_app/src/data/connect_api.dart';
@@ -58,6 +59,7 @@ class _MediaTile {
     required this.localId,
     required this.phase,
     this.mediaAssetId,
+    this.localPath,
     this.previewBytes,
     this.url,
     this.prepared,
@@ -68,6 +70,7 @@ class _MediaTile {
 
   final String localId;
   final String? mediaAssetId;
+  final String? localPath;
   final _MediaPhase phase;
   final Uint8List? previewBytes;
   final String? url;
@@ -78,6 +81,7 @@ class _MediaTile {
 
   _MediaTile copyWith({
     String? mediaAssetId,
+    String? localPath,
     _MediaPhase? phase,
     Uint8List? previewBytes,
     String? url,
@@ -89,6 +93,7 @@ class _MediaTile {
     return _MediaTile(
       localId: localId,
       mediaAssetId: mediaAssetId ?? this.mediaAssetId,
+      localPath: localPath ?? this.localPath,
       phase: phase ?? this.phase,
       previewBytes: previewBytes ?? this.previewBytes,
       url: url ?? this.url,
@@ -320,6 +325,9 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
     if (tile.previewBytes != null) {
       return Image.memory(tile.previewBytes!, fit: BoxFit.cover);
     }
+    if (tile.localPath != null) {
+      return Image.file(File(tile.localPath!), fit: BoxFit.cover);
+    }
     if (tile.url != null) {
       return Image.network(
         tile.url!,
@@ -340,7 +348,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
       final selected = await ref
           .read(mediaPickerProvider)
           .pickImages(limit: widget.target.maximumPhotos - _tiles.length);
-      await _queueSelected(selected);
+      unawaited(_queueSelected(selected));
     } on MediaSelectionFailure catch (error) {
       if (mounted) {
         setState(() {
@@ -363,7 +371,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
     try {
       final images = await ref.read(mediaPickerProvider).recoverLostImages();
       final remaining = widget.target.maximumPhotos - _tiles.length;
-      await _queueSelected(images.take(remaining).toList(growable: false));
+      unawaited(_queueSelected(images.take(remaining).toList(growable: false)));
     } on MediaSelectionFailure catch (error) {
       if (mounted) {
         setState(() {
@@ -383,6 +391,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
         _MediaTile(
           localId: localId,
           phase: _MediaPhase.preparing,
+          localPath: image.path,
           previewBytes: image.bytes,
         ),
       );
@@ -391,8 +400,19 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
       setState(() {});
       _notifySummary();
     }
-    for (final item in queued) {
-      await _startUpload(item.key, item.value);
+    var nextIndex = 0;
+    Future<void> worker() async {
+      while (nextIndex < queued.length) {
+        final item = queued[nextIndex];
+        nextIndex += 1;
+        await _startUpload(item.key, item.value);
+      }
+    }
+
+    final workerCount = queued.length.clamp(0, 2);
+    await Future.wait(List.generate(workerCount, (_) => worker()));
+    if (queued.isNotEmpty) {
+      await _notifyMediaChanged();
     }
   }
 
@@ -456,7 +476,6 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
           localId,
         )!.copyWith(phase: _MediaPhase.ready, progress: 1, url: ready.url),
       );
-      await widget.onMediaChanged?.call();
     } on DioException catch (error) {
       if (!CancelToken.isCancel(error)) {
         _markFailed(localId, intent?.mediaAsset.id);
@@ -516,7 +535,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
             tile.localId,
           )!.copyWith(phase: _MediaPhase.ready, progress: 1, url: ready.url),
         );
-        await widget.onMediaChanged?.call();
+        await _notifyMediaChanged();
       }
     } catch (_) {
       _markFailed(tile.localId, mediaAssetId);
@@ -533,7 +552,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
             .cancel(tile.mediaAssetId!);
       }
       _remove(tile.localId);
-      await widget.onMediaChanged?.call();
+      await _notifyMediaChanged();
     } on ApiFailure catch (error) {
       _markFailed(tile.localId, tile.mediaAssetId, message: error.message);
     }
@@ -547,7 +566,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
     try {
       await ref.read(mediaUploadCoordinatorProvider).delete(tile.mediaAssetId!);
       _remove(tile.localId);
-      await widget.onMediaChanged?.call();
+      await _notifyMediaChanged();
     } on ApiFailure catch (error) {
       _replace(tile.localId, tile.copyWith(phase: _MediaPhase.ready));
       if (mounted) {
@@ -663,6 +682,19 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
   }
 
   bool _contains(String localId) => _find(localId) != null;
+
+  Future<void> _notifyMediaChanged() async {
+    try {
+      await widget.onMediaChanged?.call();
+    } on Object {
+      if (mounted) {
+        setState(
+          () => _selectionError =
+              'Photos updated, but profile details could not refresh',
+        );
+      }
+    }
+  }
 
   int get _readyCount =>
       _tiles.where((tile) => tile.phase == _MediaPhase.ready).length;

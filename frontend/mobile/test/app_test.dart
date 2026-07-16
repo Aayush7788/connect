@@ -703,8 +703,9 @@ class _FakeConnectApi implements ConnectApi {
 
   @override
   Future<MarketplaceSearchResponse> searchMarketplace(
-    MarketplaceSearchRequest request,
-  ) async {
+    MarketplaceSearchRequest request, {
+    CancelToken? cancelToken,
+  }) async {
     return const MarketplaceSearchResponse(
       items: [
         MarketplaceSearchResult(

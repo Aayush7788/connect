@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from app.core.auth_context import CurrentUser
 from app.modules.auth.dependencies import get_active_current_user
 from app.modules.auth.dependencies import get_current_user_from_token
+from app.modules.profiles.dependencies import enqueue_contact_reveal
 from app.modules.profiles.dependencies import get_profile_service
 from app.modules.profiles.schemas import OwnerProfileResponse, ProfileUpdateRequest
 from app.modules.profiles.schemas import PublicProfileDetailResponse
@@ -27,7 +28,7 @@ def get_public_profile(
     current_user: CurrentUser = Depends(get_active_current_user),
     profile_service: ProfileService = Depends(get_profile_service),
 ) -> PublicProfileDetailResponse:
-    return profile_service.get_public_profile(
+    response = profile_service.get_public_profile(
         current_user=current_user,
         profile_id=profile_id,
         source_type=source_type,
@@ -35,7 +36,12 @@ def get_public_profile(
         ip_address=request.client.host if request.client else None,
         device_id=request.headers.get("x-device-id"),
         user_agent=request.headers.get("user-agent"),
+        defer_reveal=True,
     )
+    deferred_reveal = getattr(profile_service, "deferred_reveal", None)
+    if deferred_reveal is not None:
+        enqueue_contact_reveal(deferred_reveal)
+    return response
 
 
 @router.get("", response_model=OwnerProfileResponse)
