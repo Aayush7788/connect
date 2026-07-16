@@ -29,17 +29,19 @@ class PublicProfileDetail {
 
     required  this.profile,
 
+    required  this.roleSpecific,
+
     required  this.contact,
 
-     this.address,
+    required  this.address,
 
     required  this.media,
 
-     this.workCards,
+    required  this.workCards,
 
-     this.workNeededPosts,
+    required  this.workNeededPosts,
 
-     this.similarProfiles,
+    required  this.similarProfiles,
   });
 
   @JsonKey(
@@ -51,6 +53,19 @@ class PublicProfileDetail {
 
 
   final ProfileSummary profile;
+
+
+
+      /// Public role-specific business, workshop, or skill fields.
+  @JsonKey(
+    
+    name: r'role_specific',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final Map<String, Object> roleSpecific;
 
 
 
@@ -69,12 +84,12 @@ class PublicProfileDetail {
   @JsonKey(
     
     name: r'address',
-    required: false,
+    required: true,
     includeIfNull: false,
   )
 
 
-  final PublicAddress? address;
+  final PublicAddress address;
 
 
 
@@ -93,36 +108,36 @@ class PublicProfileDetail {
   @JsonKey(
     
     name: r'work_cards',
-    required: false,
+    required: true,
     includeIfNull: false,
   )
 
 
-  final List<WorkCard>? workCards;
+  final List<WorkCard> workCards;
 
 
 
   @JsonKey(
     
     name: r'work_needed_posts',
-    required: false,
+    required: true,
     includeIfNull: false,
   )
 
 
-  final List<WorkNeededPost>? workNeededPosts;
+  final List<WorkNeededPost> workNeededPosts;
 
 
 
   @JsonKey(
     
     name: r'similar_profiles',
-    required: false,
+    required: true,
     includeIfNull: false,
   )
 
 
-  final List<SearchResult>? similarProfiles;
+  final List<SearchResult> similarProfiles;
 
 
 
@@ -131,6 +146,7 @@ class PublicProfileDetail {
     @override
     bool operator ==(Object other) => identical(this, other) || other is PublicProfileDetail &&
       other.profile == profile &&
+      other.roleSpecific == roleSpecific &&
       other.contact == contact &&
       other.address == address &&
       other.media == media &&
@@ -141,6 +157,7 @@ class PublicProfileDetail {
     @override
     int get hashCode =>
         profile.hashCode +
+        roleSpecific.hashCode +
         contact.hashCode +
         address.hashCode +
         media.hashCode +

@@ -918,6 +918,20 @@ Controls:
 - `Next`
 - `Save and exit`
 
+### 9.4.1 Shared Professional Address Step
+
+Used unchanged for Business, Job Worker, and Karigar profiles.
+
+Field order:
+
+1. Searchable `State / Union Territory`; selecting an option is required.
+2. Searchable `City / District`; disabled until a state is selected and limited to that state.
+3. `House / shop / building / street` free-text field.
+4. `Area / locality` free-text field.
+5. Six-digit `PIN code` field.
+
+After six digits, show an inline checking state followed by valid, warning, or invalid feedback. A warning may show tappable postal-area suggestions. Changing state clears city/district and the previous PIN result. Draft saving remains available even before validation is complete.
+
 ### 9.5 `04.05 Complete Profile - Photo Upload`
 
 Purpose:

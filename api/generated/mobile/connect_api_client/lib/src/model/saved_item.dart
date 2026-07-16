@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:connect_api_client/src/model/user_role.dart';
 import 'package:connect_api_client/src/model/saved_target_type.dart';
 import 'package:connect_api_client/src/model/search_result.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
@@ -27,6 +28,8 @@ class SavedItem {
     required  this.targetType,
 
     required  this.targetId,
+
+    required  this.profileRole,
 
      this.card,
   });
@@ -69,6 +72,18 @@ class SavedItem {
 
   @JsonKey(
     
+    name: r'profile_role',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final UserRole profileRole;
+
+
+
+  @JsonKey(
+    
     name: r'card',
     required: false,
     includeIfNull: false,
@@ -86,6 +101,7 @@ class SavedItem {
       other.id == id &&
       other.targetType == targetType &&
       other.targetId == targetId &&
+      other.profileRole == profileRole &&
       other.card == card;
 
     @override
@@ -93,6 +109,7 @@ class SavedItem {
         id.hashCode +
         targetType.hashCode +
         targetId.hashCode +
+        profileRole.hashCode +
         card.hashCode;
 
   factory SavedItem.fromJson(Map<String, dynamic> json) => _$SavedItemFromJson(json);

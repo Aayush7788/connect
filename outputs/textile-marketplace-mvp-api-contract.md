@@ -419,6 +419,14 @@ forms. Supported types are `business_category`, `work_category`, `work_name`,
 `product_type`, and `skill`. The backend remains the only database access layer;
 mobile and admin clients do not read category tables directly.
 
+### 6.7 Address Location Options And Validation
+
+- `GET /v1/locations/states?q={optional_prefix}`
+- `GET /v1/locations/districts?state_id={id}&q={optional_prefix}`
+- `POST /v1/locations/validate-address`
+
+These authenticated endpoints use backend-owned India Post reference data. State and city/district IDs are canonical; profile text fields remain display snapshots. A state/PIN or district/PIN mismatch is rejected. An area that does not exactly match a postal-office name returns a warning and suggested areas instead of falsely rejecting the address.
+
 ## 7. Search APIs
 
 ### 7.1 Search

@@ -124,6 +124,10 @@ String toString() => value;
 
 
 enum ContactActionRequestSourceTypeEnum {
+@JsonValue(r'search')
+search(r'search'),
+@JsonValue(r'saved')
+saved(r'saved'),
 @JsonValue(r'profile')
 profile(r'profile'),
 @JsonValue(r'work_card')

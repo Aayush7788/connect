@@ -7,6 +7,7 @@ lib/src/api.dart
 lib/src/api/admin_api.dart
 lib/src/api/auth_api.dart
 lib/src/api/contact_api.dart
+lib/src/api/locations_api.dart
 lib/src/api/me_api.dart
 lib/src/api/media_api.dart
 lib/src/api/notifications_api.dart
@@ -27,6 +28,8 @@ lib/src/auth/bearer_auth.dart
 lib/src/auth/oauth.dart
 lib/src/deserialize.dart
 lib/src/model/account_status.dart
+lib/src/model/address_validation_request.dart
+lib/src/model/address_validation_response.dart
 lib/src/model/admin_analytics_summary.dart
 lib/src/model/admin_approve_verification_case_request.dart
 lib/src/model/admin_profile.dart
@@ -53,6 +56,8 @@ lib/src/model/error_response_error.dart
 lib/src/model/export_job.dart
 lib/src/model/list_my_work_cards200_response.dart
 lib/src/model/list_my_work_needed_posts200_response.dart
+lib/src/model/location_option.dart
+lib/src/model/location_option_list.dart
 lib/src/model/me_response.dart
 lib/src/model/media_asset.dart
 lib/src/model/media_kind.dart

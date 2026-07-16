@@ -84,6 +84,9 @@ Class | Method | HTTP request | Description
 [*AuthApi*](doc/AuthApi.md) | [**requestOtp**](doc/AuthApi.md#requestotp) | **POST** /auth/otp/request | Request mobile OTP
 [*AuthApi*](doc/AuthApi.md) | [**verifyOtp**](doc/AuthApi.md#verifyotp) | **POST** /auth/otp/verify | Verify OTP and create or resume session
 [*ContactApi*](doc/ContactApi.md) | [**createContactAction**](doc/ContactApi.md#createcontactaction) | **POST** /contact-actions | Log contact action
+[*LocationsApi*](doc/LocationsApi.md) | [**listLocationDistricts**](doc/LocationsApi.md#listlocationdistricts) | **GET** /locations/districts | Search cities or postal districts in a state
+[*LocationsApi*](doc/LocationsApi.md) | [**listLocationStates**](doc/LocationsApi.md#listlocationstates) | **GET** /locations/states | Search India states and union territories
+[*LocationsApi*](doc/LocationsApi.md) | [**validateAddress**](doc/LocationsApi.md#validateaddress) | **POST** /locations/validate-address | Validate a PIN against state, city or district, and area
 [*MeApi*](doc/MeApi.md) | [**completeMyProfile**](doc/MeApi.md#completemyprofile) | **POST** /me/profile/complete | Complete and publish own profile
 [*MeApi*](doc/MeApi.md) | [**getMe**](doc/MeApi.md#getme) | **GET** /me | Bootstrap current user app state
 [*MeApi*](doc/MeApi.md) | [**getMyProfile**](doc/MeApi.md#getmyprofile) | **GET** /me/profile | Get owner profile with private owner state
@@ -104,6 +107,7 @@ Class | Method | HTTP request | Description
 [*SavedApi*](doc/SavedApi.md) | [**removeSavedItem**](doc/SavedApi.md#removesaveditem) | **DELETE** /me/saved-items/{saved_item_id} | Remove saved item
 [*SavedApi*](doc/SavedApi.md) | [**saveItem**](doc/SavedApi.md#saveitem) | **POST** /me/saved-items | Save a profile, work card, or work-needed post
 [*SearchApi*](doc/SearchApi.md) | [**searchMarketplace**](doc/SearchApi.md#searchmarketplace) | **GET** /search | Search marketplace objects
+[*SettingsApi*](doc/SettingsApi.md) | [**getSettings**](doc/SettingsApi.md#getsettings) | **GET** /me/settings | Get own settings
 [*SettingsApi*](doc/SettingsApi.md) | [**updateSettings**](doc/SettingsApi.md#updatesettings) | **PATCH** /me/settings | Update own settings
 [*ShareApi*](doc/ShareApi.md) | [**createShareLink**](doc/ShareApi.md#createsharelink) | **POST** /share-links | Create canonical share link and log share event
 [*TaxonomyApi*](doc/TaxonomyApi.md) | [**listCategories**](doc/TaxonomyApi.md#listcategories) | **GET** /taxonomy/categories | List active categories for profile and marketplace forms
@@ -130,6 +134,8 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [AccountStatus](doc/AccountStatus.md)
+ - [AddressValidationRequest](doc/AddressValidationRequest.md)
+ - [AddressValidationResponse](doc/AddressValidationResponse.md)
  - [AdminAnalyticsSummary](doc/AdminAnalyticsSummary.md)
  - [AdminApproveVerificationCaseRequest](doc/AdminApproveVerificationCaseRequest.md)
  - [AdminProfile](doc/AdminProfile.md)
@@ -156,6 +162,8 @@ Class | Method | HTTP request | Description
  - [ExportJob](doc/ExportJob.md)
  - [ListMyWorkCards200Response](doc/ListMyWorkCards200Response.md)
  - [ListMyWorkNeededPosts200Response](doc/ListMyWorkNeededPosts200Response.md)
+ - [LocationOption](doc/LocationOption.md)
+ - [LocationOptionList](doc/LocationOptionList.md)
  - [MeResponse](doc/MeResponse.md)
  - [MediaAsset](doc/MediaAsset.md)
  - [MediaKind](doc/MediaKind.md)

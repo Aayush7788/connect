@@ -9,20 +9,24 @@ import 'dart:convert';
 import 'package:connect_api_client/src/deserialize.dart';
 import 'package:dio/dio.dart';
 
+import 'package:connect_api_client/src/model/address_validation_request.dart';
+import 'package:connect_api_client/src/model/address_validation_response.dart';
 import 'package:connect_api_client/src/model/error_response.dart';
-import 'package:connect_api_client/src/model/update_settings_request.dart';
-import 'package:connect_api_client/src/model/user_settings.dart';
+import 'package:connect_api_client/src/model/location_option_list.dart';
 
-class SettingsApi {
+class LocationsApi {
 
   final Dio _dio;
 
-  const SettingsApi(this._dio);
+  const LocationsApi(this._dio);
 
-  /// Get own settings
+  /// Search cities or postal districts in a state
   /// 
   ///
   /// Parameters:
+  /// * [stateId] 
+  /// * [q] 
+  /// * [limit] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -30,9 +34,12 @@ class SettingsApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [UserSettings] as data
+  /// Returns a [Future] containing a [Response] with a [LocationOptionList] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<UserSettings>> getSettings({ 
+  Future<Response<LocationOptionList>> listLocationDistricts({ 
+    required int stateId,
+    String? q,
+    int? limit = 100,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -40,7 +47,7 @@ class SettingsApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/me/settings';
+    final _path = r'/locations/districts';
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
@@ -59,19 +66,26 @@ class SettingsApi {
       validateStatus: validateStatus,
     );
 
+    final _queryParameters = <String, dynamic>{
+      r'state_id': stateId,
+      if (q != null) r'q': q,
+      if (limit != null) r'limit': limit,
+    };
+
     final _response = await _dio.request<Object>(
       _path,
       options: _options,
+      queryParameters: _queryParameters,
       cancelToken: cancelToken,
       onSendProgress: onSendProgress,
       onReceiveProgress: onReceiveProgress,
     );
 
-    UserSettings? _responseData;
+    LocationOptionList? _responseData;
 
     try {
 final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<UserSettings, UserSettings>(rawData, 'UserSettings', growable: true);
+_responseData = rawData == null ? null : deserialize<LocationOptionList, LocationOptionList>(rawData, 'LocationOptionList', growable: true);
 
     } catch (error, stackTrace) {
       throw DioException(
@@ -83,7 +97,7 @@ _responseData = rawData == null ? null : deserialize<UserSettings, UserSettings>
       );
     }
 
-    return Response<UserSettings>(
+    return Response<LocationOptionList>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -95,11 +109,12 @@ _responseData = rawData == null ? null : deserialize<UserSettings, UserSettings>
     );
   }
 
-  /// Update own settings
+  /// Search India states and union territories
   /// 
   ///
   /// Parameters:
-  /// * [updateSettingsRequest] 
+  /// * [q] 
+  /// * [limit] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -107,10 +122,11 @@ _responseData = rawData == null ? null : deserialize<UserSettings, UserSettings>
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [UserSettings] as data
+  /// Returns a [Future] containing a [Response] with a [LocationOptionList] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<UserSettings>> updateSettings({ 
-    required UpdateSettingsRequest updateSettingsRequest,
+  Future<Response<LocationOptionList>> listLocationStates({ 
+    String? q,
+    int? limit = 50,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -118,9 +134,93 @@ _responseData = rawData == null ? null : deserialize<UserSettings, UserSettings>
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/me/settings';
+    final _path = r'/locations/states';
     final _options = Options(
-      method: r'PATCH',
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearerAuth',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (q != null) r'q': q,
+      if (limit != null) r'limit': limit,
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    LocationOptionList? _responseData;
+
+    try {
+final rawData = _response.data;
+_responseData = rawData == null ? null : deserialize<LocationOptionList, LocationOptionList>(rawData, 'LocationOptionList', growable: true);
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<LocationOptionList>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Validate a PIN against state, city or district, and area
+  /// 
+  ///
+  /// Parameters:
+  /// * [addressValidationRequest] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [AddressValidationResponse] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<AddressValidationResponse>> validateAddress({ 
+    required AddressValidationRequest addressValidationRequest,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/locations/validate-address';
+    final _options = Options(
+      method: r'POST',
       headers: <String, dynamic>{
         ...?headers,
       },
@@ -141,7 +241,7 @@ _responseData = rawData == null ? null : deserialize<UserSettings, UserSettings>
     dynamic _bodyData;
 
     try {
-      _bodyData = jsonEncode(updateSettingsRequest);
+      _bodyData = jsonEncode(addressValidationRequest);
 
     } catch(error, stackTrace) {
       throw DioException(
@@ -164,11 +264,11 @@ _responseData = rawData == null ? null : deserialize<UserSettings, UserSettings>
       onReceiveProgress: onReceiveProgress,
     );
 
-    UserSettings? _responseData;
+    AddressValidationResponse? _responseData;
 
     try {
 final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<UserSettings, UserSettings>(rawData, 'UserSettings', growable: true);
+_responseData = rawData == null ? null : deserialize<AddressValidationResponse, AddressValidationResponse>(rawData, 'AddressValidationResponse', growable: true);
 
     } catch (error, stackTrace) {
       throw DioException(
@@ -180,7 +280,7 @@ _responseData = rawData == null ? null : deserialize<UserSettings, UserSettings>
       );
     }
 
-    return Response<UserSettings>(
+    return Response<AddressValidationResponse>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

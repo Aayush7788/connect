@@ -30,6 +30,8 @@ class SearchApi {
   /// * [productTypeId] 
   /// * [locality] 
   /// * [verifiedOnly] 
+  /// * [minExperienceYears] 
+  /// * [maxExperienceYears] 
   /// * [sort] 
   /// * [cursor] 
   /// * [limit] 
@@ -50,6 +52,8 @@ class SearchApi {
     String? productTypeId,
     String? locality,
     bool? verifiedOnly,
+    int? minExperienceYears,
+    int? maxExperienceYears,
     String? sort,
     String? cursor,
     int? limit = 20,
@@ -87,6 +91,8 @@ class SearchApi {
       if (productTypeId != null) r'product_type_id': productTypeId,
       if (locality != null) r'locality': locality,
       if (verifiedOnly != null) r'verified_only': verifiedOnly,
+      if (minExperienceYears != null) r'min_experience_years': minExperienceYears,
+      if (maxExperienceYears != null) r'max_experience_years': maxExperienceYears,
       if (sort != null) r'sort': sort,
       if (cursor != null) r'cursor': cursor,
       if (limit != null) r'limit': limit,

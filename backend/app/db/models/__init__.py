@@ -26,6 +26,10 @@ from app.db.models.marketplace import WorkCard
 from app.db.models.marketplace import WorkCardProductType
 from app.db.models.marketplace import WorkNeededPost
 from app.db.models.marketplace import WorkNeededPostProductType
+from app.db.models.location import LocationDistrict
+from app.db.models.location import LocationState
+from app.db.models.location import PostalArea
+from app.db.models.location import PostalCode
 from app.db.models.profile import BusinessProfile
 from app.db.models.profile import BusinessProfileProductType
 from app.db.models.profile import JobWorkerProfile
@@ -55,8 +59,12 @@ __all__ = [
     "ContactReveal",
     "JobWorkerProfile",
     "MediaAsset",
+    "LocationDistrict",
+    "LocationState",
     "Notification",
     "PaymentTransaction",
+    "PostalArea",
+    "PostalCode",
     "Profile",
     "ProfileBusinessSubtype",
     "ProfileChangeHistory",

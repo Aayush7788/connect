@@ -10,6 +10,8 @@ from app.db.session import create_session_factory, get_db_session
 from app.integrations.supabase_storage import SupabaseStorageGateway
 from app.modules.profiles.repository import ProfileRepository
 from app.modules.profiles.service import ContactRevealPayload, ProfileService
+from app.modules.locations.repository import LocationRepository
+from app.modules.locations.service import LocationService
 
 
 logger = logging.getLogger(__name__)
@@ -28,6 +30,7 @@ def get_profile_service(
             bucket=settings.supabase_public_media_bucket,
             path=path,
         ),
+        location_service=LocationService(LocationRepository(session)),
     )
 
 

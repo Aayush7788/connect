@@ -21,11 +21,11 @@ class WorkCardsApi {
   const WorkCardsApi(this._dio);
 
   /// Create own work card draft
-  ///
+  /// 
   ///
   /// Parameters:
-  /// * [workCardUpsertRequest]
-  /// * [idempotencyKey]
+  /// * [workCardUpsertRequest] 
+  /// * [idempotencyKey] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -35,7 +35,7 @@ class WorkCardsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [WorkCard] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<WorkCard>> createWorkCard({
+  Future<Response<WorkCard>> createWorkCard({ 
     required WorkCardUpsertRequest workCardUpsertRequest,
     String? idempotencyKey,
     CancelToken? cancelToken,
@@ -121,10 +121,10 @@ _responseData = rawData == null ? null : deserialize<WorkCard, WorkCard>(rawData
   }
 
   /// Soft delete own work card
-  ///
+  /// 
   ///
   /// Parameters:
-  /// * [workCardId]
+  /// * [workCardId] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -134,7 +134,7 @@ _responseData = rawData == null ? null : deserialize<WorkCard, WorkCard>(rawData
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteWorkCard({
+  Future<Response<void>> deleteWorkCard({ 
     required String workCardId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -174,10 +174,10 @@ _responseData = rawData == null ? null : deserialize<WorkCard, WorkCard>(rawData
   }
 
   /// Hide own work card
-  ///
+  /// 
   ///
   /// Parameters:
-  /// * [workCardId]
+  /// * [workCardId] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -187,7 +187,7 @@ _responseData = rawData == null ? null : deserialize<WorkCard, WorkCard>(rawData
   ///
   /// Returns a [Future] containing a [Response] with a [WorkCard] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<WorkCard>> hideWorkCard({
+  Future<Response<WorkCard>> hideWorkCard({ 
     required String workCardId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -252,7 +252,7 @@ _responseData = rawData == null ? null : deserialize<WorkCard, WorkCard>(rawData
   }
 
   /// List own work cards
-  ///
+  /// 
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -264,7 +264,7 @@ _responseData = rawData == null ? null : deserialize<WorkCard, WorkCard>(rawData
   ///
   /// Returns a [Future] containing a [Response] with a [ListMyWorkCards200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListMyWorkCards200Response>> listMyWorkCards({
+  Future<Response<ListMyWorkCards200Response>> listMyWorkCards({ 
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -328,10 +328,10 @@ _responseData = rawData == null ? null : deserialize<ListMyWorkCards200Response,
   }
 
   /// Publish own work card
-  ///
+  /// 
   ///
   /// Parameters:
-  /// * [workCardId]
+  /// * [workCardId] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -341,7 +341,7 @@ _responseData = rawData == null ? null : deserialize<ListMyWorkCards200Response,
   ///
   /// Returns a [Future] containing a [Response] with a [WorkCard] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<WorkCard>> publishWorkCard({
+  Future<Response<WorkCard>> publishWorkCard({ 
     required String workCardId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -406,10 +406,10 @@ _responseData = rawData == null ? null : deserialize<WorkCard, WorkCard>(rawData
   }
 
   /// Show own hidden work card
-  ///
+  /// 
   ///
   /// Parameters:
-  /// * [workCardId]
+  /// * [workCardId] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -419,7 +419,7 @@ _responseData = rawData == null ? null : deserialize<WorkCard, WorkCard>(rawData
   ///
   /// Returns a [Future] containing a [Response] with a [WorkCard] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<WorkCard>> showWorkCard({
+  Future<Response<WorkCard>> showWorkCard({ 
     required String workCardId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -484,11 +484,11 @@ _responseData = rawData == null ? null : deserialize<WorkCard, WorkCard>(rawData
   }
 
   /// Update own work card
-  ///
+  /// 
   ///
   /// Parameters:
-  /// * [workCardId]
-  /// * [workCardUpsertRequest]
+  /// * [workCardId] 
+  /// * [workCardUpsertRequest] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -498,7 +498,7 @@ _responseData = rawData == null ? null : deserialize<WorkCard, WorkCard>(rawData
   ///
   /// Returns a [Future] containing a [Response] with a [WorkCard] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<WorkCard>> updateWorkCard({
+  Future<Response<WorkCard>> updateWorkCard({ 
     required String workCardId,
     required WorkCardUpsertRequest workCardUpsertRequest,
     CancelToken? cancelToken,

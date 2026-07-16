@@ -224,6 +224,11 @@ void main() {
 
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
+    expect(find.text('State / Union Territory'), findsOneWidget);
+    expect(find.text('City / District'), findsOneWidget);
+    expect(find.text('House / shop / building / street'), findsOneWidget);
+    expect(find.text('Area / locality'), findsOneWidget);
+    expect(find.text('PIN code'), findsOneWidget);
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
 
@@ -499,6 +504,36 @@ class _FakeConnectApi implements ConnectApi {
     required String categoryType,
   }) async {
     return const [];
+  }
+
+  @override
+  Future<List<LocationOption>> locationStates({String? query}) async {
+    return const [LocationOption(id: 1, name: 'Gujarat')];
+  }
+
+  @override
+  Future<List<LocationOption>> locationDistricts({
+    required int stateId,
+    String? query,
+  }) async {
+    return const [LocationOption(id: 10, name: 'Surat')];
+  }
+
+  @override
+  Future<AddressValidationResult> validateAddress({
+    required int stateId,
+    required int districtId,
+    required String pincode,
+    String? area,
+  }) async {
+    return AddressValidationResult(
+      status: 'valid',
+      pincode: pincode,
+      stateMatches: true,
+      districtMatches: true,
+      areaMatches: true,
+      message: 'PIN code matches the selected state and city/district.',
+    );
   }
 
   @override

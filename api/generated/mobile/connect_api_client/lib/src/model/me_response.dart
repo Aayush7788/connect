@@ -34,7 +34,7 @@ class MeResponse {
   });
 
   @JsonKey(
-
+    
     name: r'user',
     required: true,
     includeIfNull: false,
@@ -46,7 +46,7 @@ class MeResponse {
 
 
   @JsonKey(
-
+    
     name: r'next_state',
     required: true,
     includeIfNull: false,
@@ -58,7 +58,7 @@ class MeResponse {
 
 
   @JsonKey(
-
+    
     name: r'profile',
     required: false,
     includeIfNull: false,
@@ -70,7 +70,7 @@ class MeResponse {
 
 
   @JsonKey(
-
+    
     name: r'unread_notification_count',
     required: false,
     includeIfNull: false,
@@ -82,7 +82,7 @@ class MeResponse {
 
 
   @JsonKey(
-
+    
     name: r'allowed_actions',
     required: false,
     includeIfNull: false,
@@ -140,3 +140,5 @@ final String value;
 @override
 String toString() => value;
 }
+
+

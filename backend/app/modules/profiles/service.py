@@ -19,6 +19,9 @@ from app.modules.profiles.repository import PublicWorkCardBundle
 from app.modules.profiles.repository import PublicWorkNeededPostBundle
 from app.modules.profiles.repository import ProfileRepository
 from app.modules.media.schemas import MediaAssetResponse, MediaKind, MediaVisibility
+from app.modules.locations.schemas import AddressValidationRequest
+from app.modules.locations.schemas import AddressValidationResponse
+from app.modules.locations.service import LocationService
 from app.modules.profiles.schemas import OwnerMediaResponse, OwnerProfileResponse
 from app.modules.profiles.schemas import ProfileUpdateRequest
 from app.modules.profiles.schemas import PublicAddressResponse, PublicContactResponse
@@ -38,6 +41,8 @@ COMMON_FIELDS = {
     "city",
     "state",
     "pincode",
+    "state_id",
+    "district_id",
 }
 ROLE_FIELDS = {
     "business": {
@@ -70,6 +75,8 @@ SENSITIVE_FIELDS = {
     "city",
     "state",
     "pincode",
+    "state_id",
+    "district_id",
     "business_name",
     "workshop_name",
     "has_workshop",
@@ -113,6 +120,8 @@ def normalize_search_text(value: str | None) -> str:
 def json_value(value: Any) -> Any:
     if isinstance(value, UUID):
         return str(value)
+    if isinstance(value, datetime):
+        return value.isoformat()
     if isinstance(value, list):
         return [json_value(item) for item in value]
     return value
@@ -123,9 +132,11 @@ class ProfileService:
         self,
         repository: ProfileRepository,
         public_media_url: Callable[[str], str] | None = None,
+        location_service: LocationService | None = None,
     ) -> None:
         self.repository = repository
         self.public_media_url = public_media_url
+        self.location_service = location_service
         self.deferred_reveal: ContactRevealPayload | None = None
 
     def get_owner_profile(self, current_user: CurrentUser) -> OwnerProfileResponse:
@@ -241,7 +252,15 @@ class ProfileService:
 
         before: dict[str, Any] = {}
         after: dict[str, Any] = {}
+        location_validation = self._validate_location_update(bundle, payload)
         self._apply_common_fields(bundle, payload, before, after)
+        self._apply_location_validation(
+            bundle,
+            payload,
+            location_validation,
+            before,
+            after,
+        )
         self._apply_role_fields(bundle, payload, before, after)
         if not after:
             return self._response(
@@ -445,6 +464,143 @@ class ProfileService:
                     normalize_search_text(value) or None
                 )
 
+    def _validate_location_update(
+        self,
+        bundle: OwnerProfileBundle,
+        payload: ProfileUpdateRequest,
+    ) -> AddressValidationResponse | None:
+        location_fields = {
+            "state_id",
+            "district_id",
+            "state",
+            "city",
+            "locality",
+            "pincode",
+            "address_line1",
+            "full_address",
+        }
+        if not (payload.model_fields_set & location_fields):
+            return None
+        state_id = payload.state_id or getattr(bundle.profile, "state_id", None)
+        district_id = payload.district_id or getattr(
+            bundle.profile, "district_id", None
+        )
+        pincode = payload.pincode or bundle.profile.pincode
+        area = payload.locality if "locality" in payload.model_fields_set else bundle.profile.locality
+        if not state_id or not district_id or not pincode or self.location_service is None:
+            return None
+        result = self.location_service.validate(
+            AddressValidationRequest(
+                state_id=state_id,
+                district_id=district_id,
+                pincode=pincode,
+                area=area,
+            )
+        )
+        if result.status == "invalid":
+            field_errors: dict[str, str] = {"pincode": result.message}
+            if not result.state_matches:
+                field_errors["state_id"] = "Select the state linked to this PIN code."
+            if not result.district_matches:
+                field_errors["district_id"] = (
+                    "Select the city/district linked to this PIN code."
+                )
+            raise ApiError(
+                status_code=422,
+                code=ErrorCode.VALIDATION_FAILED,
+                message="Please check the highlighted address fields.",
+                field_errors=field_errors,
+            )
+        return result
+
+    def _apply_location_validation(
+        self,
+        bundle: OwnerProfileBundle,
+        payload: ProfileUpdateRequest,
+        result: AddressValidationResponse | None,
+        before: dict[str, Any],
+        after: dict[str, Any],
+    ) -> None:
+        if result is not None:
+            state = result.canonical_state
+            district = result.canonical_district
+            self._set_changed(
+                bundle.profile, "state_id", state.id if state else None, before, after
+            )
+            self._set_changed(
+                bundle.profile,
+                "district_id",
+                district.id if district else None,
+                before,
+                after,
+            )
+            self._set_changed(
+                bundle.profile, "state", state.name if state else None, before, after
+            )
+            self._set_changed(
+                bundle.profile,
+                "city",
+                district.name if district else None,
+                before,
+                after,
+            )
+            self._set_changed(
+                bundle.profile,
+                "location_validation_status",
+                result.status,
+                before,
+                after,
+            )
+            self._set_changed(
+                bundle.profile,
+                "location_validated_at",
+                datetime.now(timezone.utc),
+                before,
+                after,
+            )
+        elif payload.model_fields_set & {
+            "state_id",
+            "district_id",
+            "state",
+            "city",
+            "locality",
+            "pincode",
+        }:
+            self._set_changed(
+                bundle.profile,
+                "location_validation_status",
+                "unvalidated",
+                before,
+                after,
+            )
+            self._set_changed(
+                bundle.profile,
+                "location_validated_at",
+                None,
+                before,
+                after,
+            )
+        if payload.model_fields_set & {
+            "address_line1",
+            "locality",
+            "city",
+            "state",
+            "pincode",
+            "state_id",
+            "district_id",
+        }:
+            parts = [
+                bundle.profile.address_line1,
+                bundle.profile.locality,
+                bundle.profile.city,
+                bundle.profile.state,
+                bundle.profile.pincode,
+            ]
+            full_address = ", ".join(part for part in parts if has_text(part)) or None
+            self._set_changed(
+                bundle.profile, "full_address", full_address, before, after
+            )
+
     def _apply_role_fields(
         self,
         bundle: OwnerProfileBundle,
@@ -578,6 +734,10 @@ class ProfileService:
             "city": has_text(profile.city),
             "state": has_text(profile.state),
             "pincode": bool(profile.pincode and len(profile.pincode) == 6),
+            "location_check": getattr(
+                profile, "location_validation_status", "valid"
+            )
+            in {"valid", "warning"},
         }
         if profile.role == "business":
             role_profile = bundle.role_profile
@@ -709,6 +869,11 @@ class ProfileService:
                 "city": profile.city,
                 "state": profile.state,
                 "pincode": profile.pincode,
+                "state_id": getattr(profile, "state_id", None),
+                "district_id": getattr(profile, "district_id", None),
+                "location_validation_status": getattr(
+                    profile, "location_validation_status", "unvalidated"
+                ),
             }
         )
         return OwnerProfileResponse(

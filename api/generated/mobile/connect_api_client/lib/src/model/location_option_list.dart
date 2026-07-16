@@ -3,11 +3,11 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:connect_api_client/src/model/category.dart';
+import 'package:connect_api_client/src/model/location_option.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-part 'category_list_response.g.dart';
+part 'location_option_list.g.dart';
 
 
 @CopyWith()
@@ -17,9 +17,9 @@ part 'category_list_response.g.dart';
   disallowUnrecognizedKeys: false,
   explicitToJson: true,
 )
-class CategoryListResponse {
-  /// Returns a new [CategoryListResponse] instance.
-  CategoryListResponse({
+class LocationOptionList {
+  /// Returns a new [LocationOptionList] instance.
+  LocationOptionList({
 
     required  this.items,
   });
@@ -32,23 +32,23 @@ class CategoryListResponse {
   )
 
 
-  final List<Category> items;
+  final List<LocationOption> items;
 
 
 
 
 
     @override
-    bool operator ==(Object other) => identical(this, other) || other is CategoryListResponse &&
+    bool operator ==(Object other) => identical(this, other) || other is LocationOptionList &&
       other.items == items;
 
     @override
     int get hashCode =>
         items.hashCode;
 
-  factory CategoryListResponse.fromJson(Map<String, dynamic> json) => _$CategoryListResponseFromJson(json);
+  factory LocationOptionList.fromJson(Map<String, dynamic> json) => _$LocationOptionListFromJson(json);
 
-  Map<String, dynamic> toJson() => _$CategoryListResponseToJson(this);
+  Map<String, dynamic> toJson() => _$LocationOptionListToJson(this);
 
   @override
   String toString() {

@@ -10,6 +10,7 @@ import 'package:connect_api_client/src/auth/oauth.dart';
 import 'package:connect_api_client/src/api/admin_api.dart';
 import 'package:connect_api_client/src/api/auth_api.dart';
 import 'package:connect_api_client/src/api/contact_api.dart';
+import 'package:connect_api_client/src/api/locations_api.dart';
 import 'package:connect_api_client/src/api/me_api.dart';
 import 'package:connect_api_client/src/api/media_api.dart';
 import 'package:connect_api_client/src/api/notifications_api.dart';
@@ -32,7 +33,7 @@ class ConnectApiClient {
     Dio? dio,
     String? basePathOverride,
     List<Interceptor>? interceptors,
-  })  :
+  })  : 
         this.dio = dio ??
             Dio(BaseOptions(
               baseUrl: basePathOverride ?? basePath,
@@ -131,6 +132,12 @@ class ConnectApiClient {
   /// by doing that all interceptors will not be executed
   ContactApi getContactApi() {
     return ContactApi(dio);
+  }
+
+  /// Get LocationsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  LocationsApi getLocationsApi() {
+    return LocationsApi(dio);
   }
 
   /// Get MeApi instance, base route and serializer can be overridden by a given but be careful,

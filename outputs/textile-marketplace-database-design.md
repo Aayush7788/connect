@@ -149,6 +149,10 @@ Columns:
 | `city` | text null | Required for location filtering |
 | `state` | text null |  |
 | `pincode` | text null |  |
+| `state_id` | smallint null fk location_states(id) | Canonical state/UT selected from backend options |
+| `district_id` | integer null fk location_districts(id) | Canonical city/postal district selected within state |
+| `location_validation_status` | text not null default 'unvalidated' | `unvalidated`, `valid`, `warning`, `invalid` |
+| `location_validated_at` | timestamptz null | Last successful backend postal check |
 | `visibility_status` | text not null | `draft`, `public`, `hidden_by_user`, `suspended_by_admin`, `deleted` |
 | `verification_status` | text not null | `unverified`, `pending`, `verified`, `changes_requested`, `rejected` |
 | `completion_score` | integer not null default 0 | 0-100 |
@@ -187,6 +191,18 @@ Backend rules:
 - Role cannot change after profile completion.
 - Admin-created profiles can exist with `owner_user_id is null`.
 - No `profile_claim_requests` table in MVP.
+- Complete profiles require a backend-accepted `valid` or `warning` postal check. State/PIN or district/PIN mismatches are invalid; uncertain area-name matches are warnings.
+
+### 4.3 India Location Reference Tables
+
+The backend imports and normalizes the Department of Posts public PIN directory. The raw CSV is not stored.
+
+- `location_states`: canonical state and Union Territory names.
+- `location_districts`: state-scoped city/postal-district options.
+- `postal_codes`: one canonical state/district mapping per six-digit PIN.
+- `postal_areas`: deduplicated post-office/area names per PIN.
+
+All four tables have RLS enabled and explicit `anon`/`authenticated` grants revoked. Flutter and admin access them only through FastAPI.
 
 ## 5. Role-Specific Profile Tables
 

@@ -166,6 +166,90 @@ paths:
                 $ref: '#/components/schemas/CategoryListResponse'
         default:
           $ref: '#/components/responses/Error'
+  /locations/states:
+    get:
+      tags: [Locations]
+      summary: Search India states and union territories
+      operationId: listLocationStates
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 80
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: Matching states and union territories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationOptionList'
+        default:
+          $ref: '#/components/responses/Error'
+  /locations/districts:
+    get:
+      tags: [Locations]
+      summary: Search cities or postal districts in a state
+      operationId: listLocationDistricts
+      parameters:
+        - name: state_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 80
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 100
+      responses:
+        '200':
+          description: Matching cities or postal districts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationOptionList'
+        default:
+          $ref: '#/components/responses/Error'
+  /locations/validate-address:
+    post:
+      tags: [Locations]
+      summary: Validate a PIN against state, city or district, and area
+      operationId: validateAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressValidationRequest'
+      responses:
+        '200':
+          description: Postal validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressValidationResponse'
+        default:
+          $ref: '#/components/responses/Error'
   /me/profile:
     get:
       tags: [Me]
@@ -1296,6 +1380,75 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Category'
+    LocationOption:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    LocationOptionList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationOption'
+    AddressValidationRequest:
+      type: object
+      additionalProperties: false
+      required: [state_id, district_id, pincode]
+      properties:
+        state_id:
+          type: integer
+          minimum: 1
+        district_id:
+          type: integer
+          minimum: 1
+        pincode:
+          type: string
+          pattern: '^\d{6}$'
+        area:
+          type: string
+          maxLength: 160
+          nullable: true
+    AddressValidationResponse:
+      type: object
+      required:
+        - status
+        - pincode
+        - state_matches
+        - district_matches
+        - message
+      properties:
+        status:
+          type: string
+          enum: [valid, warning, invalid]
+        pincode:
+          type: string
+        state_matches:
+          type: boolean
+        district_matches:
+          type: boolean
+        area_matches:
+          type: boolean
+          nullable: true
+        canonical_state:
+          allOf:
+            - $ref: '#/components/schemas/LocationOption'
+          nullable: true
+        canonical_district:
+          allOf:
+            - $ref: '#/components/schemas/LocationOption'
+          nullable: true
+        suggested_areas:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
     AccountStatus:
       type: string
       enum: [active, suspended, terminated]
@@ -1520,6 +1673,14 @@ components:
         pincode:
           type: string
           pattern: '^\d{6}$'
+          nullable: true
+        state_id:
+          type: integer
+          minimum: 1
+          nullable: true
+        district_id:
+          type: integer
+          minimum: 1
           nullable: true
         business_name:
           type: string
@@ -2096,7 +2257,7 @@ components:
           type: string
           format: uuid
         profile_role:
-          $ref: '#/components/schemas/ProfileRole'
+          $ref: '#/components/schemas/UserRole'
         card:
           $ref: '#/components/schemas/SearchResult'
     CreateReportRequest:

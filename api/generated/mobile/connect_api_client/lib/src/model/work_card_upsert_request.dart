@@ -38,7 +38,7 @@ class WorkCardUpsertRequest {
   });
 
   @JsonKey(
-
+    
     name: r'category_id',
     required: false,
     includeIfNull: false,
@@ -50,7 +50,7 @@ class WorkCardUpsertRequest {
 
 
   @JsonKey(
-
+    
     name: r'custom_category_text',
     required: false,
     includeIfNull: false,
@@ -62,7 +62,7 @@ class WorkCardUpsertRequest {
 
 
   @JsonKey(
-
+    
     name: r'work_name_id',
     required: false,
     includeIfNull: false,
@@ -74,7 +74,7 @@ class WorkCardUpsertRequest {
 
 
   @JsonKey(
-
+    
     name: r'custom_work_name',
     required: false,
     includeIfNull: false,
@@ -86,7 +86,7 @@ class WorkCardUpsertRequest {
 
 
   @JsonKey(
-
+    
     name: r'product_type_ids',
     required: false,
     includeIfNull: false,
@@ -98,7 +98,7 @@ class WorkCardUpsertRequest {
 
 
   @JsonKey(
-
+    
     name: r'custom_product_texts',
     required: false,
     includeIfNull: false,
@@ -110,7 +110,7 @@ class WorkCardUpsertRequest {
 
 
   @JsonKey(
-
+    
     name: r'description',
     required: false,
     includeIfNull: false,
@@ -124,7 +124,7 @@ class WorkCardUpsertRequest {
           // minimum: 0
           // maximum: 100
   @JsonKey(
-
+    
     name: r'experience_years',
     required: false,
     includeIfNull: false,
@@ -169,3 +169,4 @@ class WorkCardUpsertRequest {
   }
 
 }
+

@@ -38,6 +38,10 @@ class ProfileUpdateRequest {
 
      this.pincode,
 
+     this.stateId,
+
+     this.districtId,
+
      this.businessName,
 
      this.businessCategoryId,
@@ -68,7 +72,7 @@ class ProfileUpdateRequest {
   });
 
   @JsonKey(
-
+    
     name: r'owner_name',
     required: false,
     includeIfNull: false,
@@ -80,7 +84,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'alternate_contact_number',
     required: false,
     includeIfNull: false,
@@ -92,7 +96,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'full_address',
     required: false,
     includeIfNull: false,
@@ -104,7 +108,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'address_line1',
     required: false,
     includeIfNull: false,
@@ -116,7 +120,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'address_line2',
     required: false,
     includeIfNull: false,
@@ -128,7 +132,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'locality',
     required: false,
     includeIfNull: false,
@@ -140,7 +144,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'city',
     required: false,
     includeIfNull: false,
@@ -152,7 +156,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'state',
     required: false,
     includeIfNull: false,
@@ -164,7 +168,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'pincode',
     required: false,
     includeIfNull: false,
@@ -175,8 +179,34 @@ class ProfileUpdateRequest {
 
 
 
+          // minimum: 1
   @JsonKey(
+    
+    name: r'state_id',
+    required: false,
+    includeIfNull: false,
+  )
 
+
+  final int? stateId;
+
+
+
+          // minimum: 1
+  @JsonKey(
+    
+    name: r'district_id',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final int? districtId;
+
+
+
+  @JsonKey(
+    
     name: r'business_name',
     required: false,
     includeIfNull: false,
@@ -188,7 +218,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'business_category_id',
     required: false,
     includeIfNull: false,
@@ -200,7 +230,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'manufacture_sell_details',
     required: false,
     includeIfNull: false,
@@ -212,7 +242,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'product_notes',
     required: false,
     includeIfNull: false,
@@ -224,7 +254,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'product_type_ids',
     required: false,
     includeIfNull: false,
@@ -236,7 +266,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'custom_product_types',
     required: false,
     includeIfNull: false,
@@ -248,7 +278,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'workshop_name',
     required: false,
     includeIfNull: false,
@@ -260,7 +290,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'has_workshop',
     required: false,
     includeIfNull: false,
@@ -272,7 +302,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'work_summary',
     required: false,
     includeIfNull: false,
@@ -286,7 +316,7 @@ class ProfileUpdateRequest {
           // minimum: 0
           // maximum: 100
   @JsonKey(
-
+    
     name: r'profile_experience_years',
     required: false,
     includeIfNull: false,
@@ -298,7 +328,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'primary_skill_category_id',
     required: false,
     includeIfNull: false,
@@ -310,7 +340,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'skill_mastery',
     required: false,
     includeIfNull: false,
@@ -324,7 +354,7 @@ class ProfileUpdateRequest {
           // minimum: 0
           // maximum: 100
   @JsonKey(
-
+    
     name: r'experience_years',
     required: false,
     includeIfNull: false,
@@ -336,7 +366,7 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
-
+    
     name: r'bio',
     required: false,
     includeIfNull: false,
@@ -360,6 +390,8 @@ class ProfileUpdateRequest {
       other.city == city &&
       other.state == state &&
       other.pincode == pincode &&
+      other.stateId == stateId &&
+      other.districtId == districtId &&
       other.businessName == businessName &&
       other.businessCategoryId == businessCategoryId &&
       other.manufactureSellDetails == manufactureSellDetails &&
@@ -386,6 +418,8 @@ class ProfileUpdateRequest {
         city.hashCode +
         state.hashCode +
         pincode.hashCode +
+        stateId.hashCode +
+        districtId.hashCode +
         businessName.hashCode +
         businessCategoryId.hashCode +
         manufactureSellDetails.hashCode +
@@ -411,3 +445,4 @@ class ProfileUpdateRequest {
   }
 
 }
+

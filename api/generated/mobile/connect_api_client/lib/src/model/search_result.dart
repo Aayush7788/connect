@@ -25,7 +25,7 @@ class SearchResult {
 
     required  this.id,
 
-     this.profileId,
+    required  this.profileId,
 
     required  this.title,
 
@@ -35,9 +35,19 @@ class SearchResult {
 
      this.productTypes,
 
-     this.isVerified,
+     this.description,
+
+     this.locality,
+
+     this.experienceYears,
+
+    required  this.isVerified,
+
+    required  this.photoCount,
 
      this.photos,
+
+     this.lastActivityAt,
   });
 
   @JsonKey(
@@ -67,12 +77,12 @@ class SearchResult {
   @JsonKey(
     
     name: r'profile_id',
-    required: false,
+    required: true,
     includeIfNull: false,
   )
 
 
-  final String? profileId;
+  final String profileId;
 
 
 
@@ -126,13 +136,64 @@ class SearchResult {
 
   @JsonKey(
     
-    name: r'is_verified',
+    name: r'description',
     required: false,
     includeIfNull: false,
   )
 
 
-  final bool? isVerified;
+  final String? description;
+
+
+
+  @JsonKey(
+    
+    name: r'locality',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? locality;
+
+
+
+          // minimum: 0
+          // maximum: 100
+  @JsonKey(
+    
+    name: r'experience_years',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final int? experienceYears;
+
+
+
+  @JsonKey(
+    
+    name: r'is_verified',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final bool isVerified;
+
+
+
+          // minimum: 0
+  @JsonKey(
+    
+    name: r'photo_count',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final int photoCount;
 
 
 
@@ -148,6 +209,18 @@ class SearchResult {
 
 
 
+  @JsonKey(
+    
+    name: r'last_activity_at',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final DateTime? lastActivityAt;
+
+
+
 
 
     @override
@@ -159,8 +232,13 @@ class SearchResult {
       other.subtitle == subtitle &&
       other.category == category &&
       other.productTypes == productTypes &&
+      other.description == description &&
+      other.locality == locality &&
+      other.experienceYears == experienceYears &&
       other.isVerified == isVerified &&
-      other.photos == photos;
+      other.photoCount == photoCount &&
+      other.photos == photos &&
+      other.lastActivityAt == lastActivityAt;
 
     @override
     int get hashCode =>
@@ -171,8 +249,13 @@ class SearchResult {
         subtitle.hashCode +
         category.hashCode +
         productTypes.hashCode +
+        description.hashCode +
+        locality.hashCode +
+        experienceYears.hashCode +
         isVerified.hashCode +
-        photos.hashCode;
+        photoCount.hashCode +
+        photos.hashCode +
+        lastActivityAt.hashCode;
 
   factory SearchResult.fromJson(Map<String, dynamic> json) => _$SearchResultFromJson(json);
 
