@@ -130,6 +130,26 @@ class UserDevice(TimestampMixin, Base):
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class UserAuthSession(TimestampMixin, Base):
+    __tablename__ = "user_auth_sessions"
+    __table_args__ = (
+        CheckConstraint("status in ('active', 'revoked')", name="status_valid"),
+        Index("idx_user_auth_sessions_user_status", "user_id", "status"),
+        Index("idx_user_auth_sessions_expires_at", "expires_at"),
+    )
+
+    session_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), ForeignKey("users.id"))
+    device_id: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, server_default=text("'active'"))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=text("now()"),
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class AdminUser(TimestampMixin, Base):
     __tablename__ = "admin_users"
     __table_args__ = (

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from uuid import UUID, uuid4
 
@@ -5,6 +6,7 @@ import pytest
 
 from app.core.auth_context import CurrentUser
 from app.core.errors import ApiError, ErrorCode
+from app.integrations.supabase_auth import SupabaseAccessTokenClaims
 from app.integrations.supabase_auth import SupabaseAuthUser, SupabaseVerifiedSession
 from app.modules.auth.schemas import BasicAccountRequest
 from app.modules.auth.schemas import DeviceInfo
@@ -12,11 +14,14 @@ from app.modules.auth.schemas import OtpRequest
 from app.modules.auth.schemas import OtpVerifyRequest
 from app.modules.auth.schemas import RoleConfirmRequest
 from app.modules.auth.service import AuthService, normalize_mobile
+from app.modules.auth.session_cache import auth_context_cache
 
 
 class FakeGateway:
     def __init__(self) -> None:
         self.auth_user_id = uuid4()
+        self.session_id = uuid4()
+        self.token_expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
         self.requested_phone: str | None = None
         self.logged_out_token: str | None = None
 
@@ -29,12 +34,23 @@ class FakeGateway:
             phone=phone,
             access_token="access-token",
             refresh_token="refresh-token",
+            session_id=self.session_id,
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
 
     async def get_user(self, *, access_token: str) -> SupabaseAuthUser:
         return SupabaseAuthUser(
             auth_user_id=self.auth_user_id,
             phone="+919999999999",
+        )
+
+    async def verify_access_token(
+        self, *, access_token: str
+    ) -> SupabaseAccessTokenClaims:
+        return SupabaseAccessTokenClaims(
+            auth_user_id=self.auth_user_id,
+            session_id=self.session_id,
+            expires_at=self.token_expires_at,
         )
 
     async def logout(self, *, access_token: str) -> None:
@@ -49,6 +65,8 @@ class FakeRepository:
         self.commits = 0
         self.profile = None
         self.unread_count = 0
+        self.auth_sessions: dict[UUID, SimpleNamespace] = {}
+        self.auth_session_lookups = 0
 
     def get_user_by_auth_user_id(self, auth_user_id: UUID):
         return self.users_by_auth.get(auth_user_id)
@@ -77,6 +95,39 @@ class FakeRepository:
 
     def mark_login(self, user) -> None:
         user.last_login_marked = True
+
+    def get_user_and_auth_session(self, *, auth_user_id: UUID, session_id: UUID):
+        self.auth_session_lookups += 1
+        return self.users_by_auth.get(auth_user_id), self.auth_sessions.get(session_id)
+
+    def register_auth_session(
+        self, *, user, session_id: UUID, expires_at: datetime, device: DeviceInfo | None
+    ):
+        session = self.auth_sessions.get(session_id)
+        if session is None:
+            session = SimpleNamespace(
+                session_id=session_id,
+                user_id=user.id,
+                status="active",
+                expires_at=expires_at,
+                device_id=device.device_id if device else None,
+            )
+            self.auth_sessions[session_id] = session
+        return session
+
+    def revoke_auth_session(self, *, user_id: UUID, session_id: UUID) -> bool:
+        session = self.auth_sessions.get(session_id)
+        if session is None or session.user_id != user_id:
+            return False
+        session.status = "revoked"
+        return True
+
+    @staticmethod
+    def extend_auth_session_expiry(session, expires_at: datetime) -> bool:
+        if expires_at <= session.expires_at:
+            return False
+        session.expires_at = expires_at
+        return True
 
     def update_basic_account(
         self,
@@ -112,11 +163,25 @@ class FakeRepository:
     def unread_notification_count(self, user_id: UUID) -> int:
         return self.unread_count
 
+    def get_me_snapshot(self, user_id: UUID):
+        user = next(
+            (
+                candidate
+                for candidate in self.users_by_auth.values()
+                if candidate.id == user_id
+            ),
+            None,
+        )
+        if user is None:
+            return None
+        return user, self.profile, self.unread_count
+
     def commit(self) -> None:
         self.commits += 1
 
 
 def make_service() -> tuple[AuthService, FakeRepository, FakeGateway]:
+    auth_context_cache.clear()
     repository = FakeRepository()
     gateway = FakeGateway()
     service = AuthService(repository=repository, auth_gateway=gateway)
@@ -168,6 +233,7 @@ async def test_verify_otp_creates_app_user_only_after_success_and_captures_devic
     assert response.user.primary_mobile == "+919999999999"
     assert gateway.auth_user_id in repository.users_by_auth
     assert repository.devices[0][1] == request.device
+    assert gateway.session_id in repository.auth_sessions
     assert repository.commits == 1
 
 
@@ -323,8 +389,91 @@ async def test_suspended_user_gets_blocked_state_and_cannot_complete_account() -
 
 @pytest.mark.asyncio
 async def test_logout_delegates_current_access_token_to_provider() -> None:
-    service, _, gateway = make_service()
+    service, repository, gateway = make_service()
+    user = repository.create_user_after_otp(
+        auth_user_id=gateway.auth_user_id,
+        mobile="+919999999999",
+    )
+    repository.register_auth_session(
+        user=user,
+        session_id=gateway.session_id,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        device=None,
+    )
+    current_user = CurrentUser(
+        user_id=user.id,
+        auth_user_id=user.auth_user_id,
+        mobile=user.primary_mobile,
+        role=None,
+        account_status="active",
+        session_id=gateway.session_id,
+    )
 
-    await service.logout("access-token")
+    await service.logout(current_user=current_user, access_token="access-token")
 
     assert gateway.logged_out_token == "access-token"
+    assert repository.auth_sessions[gateway.session_id].status == "revoked"
+
+
+@pytest.mark.asyncio
+async def test_revoked_local_session_is_rejected_without_provider_lookup() -> None:
+    service, repository, gateway = make_service()
+    user = repository.create_user_after_otp(
+        auth_user_id=gateway.auth_user_id,
+        mobile="+919999999999",
+    )
+    session = repository.register_auth_session(
+        user=user,
+        session_id=gateway.session_id,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        device=None,
+    )
+    session.status = "revoked"
+
+    with pytest.raises(ApiError) as exc_info:
+        await service.get_current_user_from_token("access-token")
+
+    assert exc_info.value.code == ErrorCode.UNAUTHORIZED
+
+
+@pytest.mark.asyncio
+async def test_verified_auth_context_is_reused_for_a_short_period() -> None:
+    service, repository, gateway = make_service()
+    user = repository.create_user_after_otp(
+        auth_user_id=gateway.auth_user_id,
+        mobile="+919999999999",
+    )
+    repository.register_auth_session(
+        user=user,
+        session_id=gateway.session_id,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        device=None,
+    )
+
+    first = await service.get_current_user_from_token("access-token")
+    second = await service.get_current_user_from_token("access-token")
+
+    assert first == second
+    assert repository.auth_session_lookups == 1
+
+
+@pytest.mark.asyncio
+async def test_refreshed_access_token_extends_active_local_session() -> None:
+    service, repository, gateway = make_service()
+    user = repository.create_user_after_otp(
+        auth_user_id=gateway.auth_user_id,
+        mobile="+919999999999",
+    )
+    session = repository.register_auth_session(
+        user=user,
+        session_id=gateway.session_id,
+        expires_at=datetime.now(timezone.utc) - timedelta(minutes=1),
+        device=None,
+    )
+    gateway.token_expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+
+    current_user = await service.get_current_user_from_token("refreshed-token")
+
+    assert current_user.user_id == user.id
+    assert session.expires_at == gateway.token_expires_at
+    assert repository.commits == 1

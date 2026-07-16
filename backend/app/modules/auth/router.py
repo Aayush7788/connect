@@ -60,7 +60,8 @@ async def confirm_role(
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     access_token: str = Depends(get_current_access_token),
+    current_user: CurrentUser = Depends(get_current_user_from_token),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> Response:
-    await auth_service.logout(access_token)
+    await auth_service.logout(current_user=current_user, access_token=access_token)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

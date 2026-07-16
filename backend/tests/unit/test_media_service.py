@@ -201,6 +201,13 @@ def test_public_image_is_staged_then_promoted_after_byte_validation() -> None:
     assert media.width == 320
     assert media.height == 240
     assert media.original_path.startswith(f"profile/{repository.target.entity.id}/")
+    assert media.thumbnail_path == (
+        f"profile/{repository.target.entity.id}/{media.id}-thumbnail.jpg"
+    )
+    assert (
+        service.settings.supabase_public_media_bucket,
+        media.thumbnail_path,
+    ) in storage.objects
     assert (private_bucket, f"staging/{current_user.user_id}/{media.id}.png") not in (
         storage.objects
     )

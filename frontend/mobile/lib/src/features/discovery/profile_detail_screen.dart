@@ -53,11 +53,13 @@ class ProfileDetailScreen extends ConsumerStatefulWidget {
     super.key,
     this.sourceType,
     this.sourceId,
+    this.preview,
   });
 
   final String profileId;
   final String? sourceType;
   final String? sourceId;
+  final MarketplaceSearchResult? preview;
 
   @override
   ConsumerState<ProfileDetailScreen> createState() =>
@@ -104,7 +106,9 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
         ],
       ),
       body: detail.when(
-        loading: () => const _ProfileDetailSkeleton(),
+        loading: () => widget.preview == null
+            ? const _ProfileDetailSkeleton()
+            : _ProfileDetailPreview(preview: widget.preview!),
         error: (error, _) => _DetailError(
           message: error is ApiFailure
               ? error.message
@@ -580,6 +584,55 @@ class _ProfileDetailSkeleton extends StatelessWidget {
             color: const Color(0xFFE8ECE8),
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _ProfileDetailPreview extends StatelessWidget {
+  const _ProfileDetailPreview({required this.preview});
+
+  final MarketplaceSearchResult preview;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      children: [
+        const LinearProgressIndicator(minHeight: 2),
+        const SizedBox(height: 14),
+        PublicPhotoCarousel(photos: preview.photos, height: 220),
+        const SizedBox(height: 16),
+        VerifiedTitle(
+          title: preview.title,
+          isVerified: preview.isVerified,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        if (preview.subtitle != null &&
+            preview.subtitle!.trim().isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(preview.subtitle!),
+        ],
+        if (preview.category != null &&
+            preview.category!.trim().isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(preview.category!),
+        ],
+        if (preview.productTypes.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(preview.productTypes.join(', ')),
+        ],
+        if (preview.locality != null &&
+            preview.locality!.trim().isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.location_on_outlined, size: 18),
+              const SizedBox(width: 6),
+              Expanded(child: Text(preview.locality!)),
+            ],
+          ),
+        ],
       ],
     );
   }

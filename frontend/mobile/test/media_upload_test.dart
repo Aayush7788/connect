@@ -244,7 +244,7 @@ class _FakeCompressor implements MediaCompressor {
   Future<PreparedMediaImage> compress(SelectedMediaImage image) async {
     return PreparedMediaImage(
       filename: '${image.name}.jpg',
-      bytes: image.bytes,
+      bytes: image.bytes!,
     );
   }
 }

@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/.dart_tool
+**/build
+backend/.env
+frontend
+outputs
+infra
+scripts
+*.log

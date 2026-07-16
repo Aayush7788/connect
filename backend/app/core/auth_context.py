@@ -14,3 +14,4 @@ class CurrentUser:
     mobile: str
     role: UserRole | None
     account_status: AccountStatus
+    session_id: UUID | None = None

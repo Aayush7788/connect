@@ -64,7 +64,7 @@ class FakeAuthService:
     async def get_me(self, current_user: CurrentUser) -> MeResponse:
         return self.me_response
 
-    async def logout(self, access_token: str) -> None:
+    async def logout(self, *, current_user: CurrentUser, access_token: str) -> None:
         self.logged_out_token = access_token
 
 

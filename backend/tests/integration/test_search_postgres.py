@@ -187,3 +187,31 @@ def test_all_search_modes_execute_on_postgresql(
 
         assert page.result_count >= 0
     engine.dispose()
+
+
+def test_empty_later_search_page_keeps_total_result_count() -> None:
+    engine = create_database_engine()
+    with Session(bind=engine, expire_on_commit=False) as session:
+        repository = SearchRepository(session)
+        criteria = SearchCriteria(
+            target="job_worker",
+            normalized_query="",
+            business_mode=None,
+            category_id=None,
+            product_type_id=None,
+            normalized_locality=None,
+            min_experience_years=None,
+            max_experience_years=None,
+            verified_only=False,
+            sort="best",
+        )
+        first_page = repository.search(criteria=criteria, offset=0, limit=1)
+        later_page = repository.search(
+            criteria=criteria,
+            offset=first_page.result_count + 1,
+            limit=1,
+        )
+
+        assert later_page.items == []
+        assert later_page.result_count == first_page.result_count
+    engine.dispose()

@@ -90,6 +90,17 @@ class CompletionResult:
         return self.score == 100 and not self.missing_fields
 
 
+@dataclass(frozen=True)
+class ContactRevealPayload:
+    viewer_user_id: UUID
+    profile_id: UUID
+    source_type: str | None
+    source_id: UUID | None
+    ip_address: str | None
+    device_id: str | None
+    user_agent: str | None
+
+
 def has_text(value: str | None) -> bool:
     return bool(value and value.strip())
 
@@ -115,11 +126,22 @@ class ProfileService:
     ) -> None:
         self.repository = repository
         self.public_media_url = public_media_url
+        self.deferred_reveal: ContactRevealPayload | None = None
 
     def get_owner_profile(self, current_user: CurrentUser) -> OwnerProfileResponse:
         bundle = self._get_bundle(current_user.user_id)
         self._ensure_active(bundle.user.account_status)
-        completion = self._calculate_completion(bundle)
+        completion = (
+            CompletionResult(
+                score=bundle.profile.completion_score,
+                flags={
+                    key: bool(value)
+                    for key, value in bundle.profile.completion_flags.items()
+                },
+            )
+            if bundle.profile.completion_flags
+            else self._calculate_completion(bundle)
+        )
         return self._response(bundle, completion)
 
     def get_public_profile(
@@ -132,6 +154,7 @@ class ProfileService:
         ip_address: str | None,
         device_id: str | None,
         user_agent: str | None,
+        defer_reveal: bool = False,
     ) -> PublicProfileDetailResponse:
         bundle = self.repository.get_public_bundle(profile_id)
         if bundle is None:
@@ -141,15 +164,27 @@ class ProfileService:
                 message="Profile not found.",
             )
         response = self._public_response(bundle)
+        reveal = ContactRevealPayload(
+            viewer_user_id=current_user.user_id,
+            profile_id=profile_id,
+            source_type=source_type,
+            source_id=source_id,
+            ip_address=ip_address,
+            device_id=device_id,
+            user_agent=user_agent,
+        )
+        if defer_reveal:
+            self.deferred_reveal = reveal
+            return response
         try:
             self.repository.record_contact_reveal(
-                viewer_user_id=current_user.user_id,
-                profile_id=profile_id,
-                source_type=source_type,
-                source_id=source_id,
-                ip_address=ip_address,
-                device_id=device_id,
-                user_agent=user_agent,
+                viewer_user_id=reveal.viewer_user_id,
+                profile_id=reveal.profile_id,
+                source_type=reveal.source_type,
+                source_id=reveal.source_id,
+                ip_address=reveal.ip_address,
+                device_id=reveal.device_id,
+                user_agent=reveal.user_agent,
             )
             self.repository.commit()
         except Exception:
@@ -208,6 +243,17 @@ class ProfileService:
         after: dict[str, Any] = {}
         self._apply_common_fields(bundle, payload, before, after)
         self._apply_role_fields(bundle, payload, before, after)
+        if not after:
+            return self._response(
+                bundle,
+                CompletionResult(
+                    score=bundle.profile.completion_score,
+                    flags={
+                        key: bool(value)
+                        for key, value in bundle.profile.completion_flags.items()
+                    },
+                ),
+            )
         self.repository.flush()
         refreshed = self._get_bundle(current_user.user_id, for_update=True)
         completion = self._calculate_completion(refreshed)

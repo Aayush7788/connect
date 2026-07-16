@@ -866,7 +866,27 @@ Columns:
 | `created_at` | timestamptz |  |
 | `updated_at` | timestamptz |  |
 
-### 12.5 `user_settings`
+### 12.5 `user_auth_sessions`
+
+Purpose: locally enforce current-device session revocation while FastAPI verifies Supabase asymmetric JWTs through cached JWKS instead of calling Supabase Auth on every API request.
+
+Columns:
+
+| Column | Type | Notes |
+|---|---|---|
+| `session_id` | uuid pk | Verified Supabase JWT `session_id` claim |
+| `user_id` | uuid fk users(id) | Session owner |
+| `device_id` | text null | App/device generated id when available |
+| `status` | text not null default 'active' | `active`, `revoked` |
+| `expires_at` | timestamptz not null | JWT session expiry boundary |
+| `last_seen_at` | timestamptz not null | Last authoritative session registration/check |
+| `revoked_at` | timestamptz null | Current-session logout or administrative revocation |
+| `created_at` | timestamptz |  |
+| `updated_at` | timestamptz |  |
+
+FastAPI may cache a verified active authorization context for a short bounded period. JWT signature, issuer, audience, expiry, subject, and session id must still be validated locally on every request. Logout invalidates the process cache immediately and marks this row revoked.
+
+### 12.6 `user_settings`
 
 Columns:
 
@@ -1370,6 +1390,7 @@ Initial migration order:
    - `pg_trgm`
 2. Base identity:
    - `users`
+   - `user_auth_sessions`
    - `user_settings`
    - `user_devices`
 3. Admin:

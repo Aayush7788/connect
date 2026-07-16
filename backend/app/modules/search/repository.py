@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Any, Callable, Literal, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import Float, and_, case, func, literal
 from sqlalchemy import or_, select
@@ -77,6 +77,7 @@ class SearchRepository:
     def create_log(
         self,
         *,
+        log_id: UUID | None = None,
         user_id: UUID,
         query: str | None,
         normalized_query: str | None,
@@ -85,6 +86,7 @@ class SearchRepository:
         result_count: int,
     ) -> SearchLog:
         search_log = SearchLog(
+            id=log_id or uuid4(),
             user_id=user_id,
             query=query,
             normalized_query=normalized_query,
@@ -93,7 +95,6 @@ class SearchRepository:
             result_count=result_count,
         )
         self.session.add(search_log)
-        self.session.flush()
         return search_log
 
     def commit(self) -> None:
@@ -119,15 +120,23 @@ class SearchRepository:
         else:
             statement = self._skilled_worker_statement(criteria, fuzzy=fuzzy)
 
-        result_count = int(
-            self.session.scalar(
-                select(func.count()).select_from(statement.order_by(None).subquery())
-            )
-            or 0
-        )
+        statement = statement.add_columns(func.count().over().label("_result_count"))
         rows = list(
             self.session.execute(statement.offset(offset).limit(limit)).mappings()
         )
+        if rows:
+            result_count = int(rows[0]["_result_count"])
+        elif offset > 0:
+            result_count = int(
+                self.session.scalar(
+                    select(func.count()).select_from(
+                        statement.order_by(None).subquery()
+                    )
+                )
+                or 0
+            )
+        else:
+            result_count = 0
         product_types = self._product_types(rows)
         photos = self._photos(rows)
         items = [

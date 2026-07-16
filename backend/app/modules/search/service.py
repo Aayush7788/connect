@@ -1,10 +1,11 @@
 import base64
+from dataclasses import dataclass
 import hashlib
 import json
 import re
 import unicodedata
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.core.auth_context import CurrentUser
 from app.core.errors import ApiError, ErrorCode
@@ -18,9 +19,21 @@ def normalize_search_text(value: str | None) -> str:
     return " ".join(re.sub(r"[^\w]+", " ", normalized, flags=re.UNICODE).split())
 
 
+@dataclass(frozen=True)
+class SearchLogPayload:
+    id: UUID
+    user_id: UUID
+    query: str | None
+    normalized_query: str | None
+    target_persona: SearchTarget
+    filters_json: dict[str, Any]
+    result_count: int
+
+
 class SearchService:
     def __init__(self, repository: SearchRepository) -> None:
         self.repository = repository
+        self.deferred_log: SearchLogPayload | None = None
 
     def search(
         self,
@@ -38,6 +51,7 @@ class SearchService:
         sort: SearchSort,
         cursor: str | None,
         limit: int,
+        defer_log: bool = False,
     ) -> SearchResponse:
         resolved_business_mode = self._business_mode(target, business_mode)
         self._validate_experience(
@@ -83,7 +97,8 @@ class SearchService:
                 offset=offset,
                 limit=limit,
             )
-            search_log = self.repository.create_log(
+            log_payload = SearchLogPayload(
+                id=uuid4(),
                 user_id=current_user.user_id,
                 query=cleaned_query,
                 normalized_query=normalized_query or None,
@@ -91,7 +106,21 @@ class SearchService:
                 filters_json=filters,
                 result_count=page.result_count,
             )
-            self.repository.commit()
+            if defer_log:
+                self.deferred_log = log_payload
+                search_log_id = log_payload.id
+            else:
+                search_log = self.repository.create_log(
+                    log_id=log_payload.id,
+                    user_id=log_payload.user_id,
+                    query=log_payload.query,
+                    normalized_query=log_payload.normalized_query,
+                    target_persona=log_payload.target_persona,
+                    filters_json=log_payload.filters_json,
+                    result_count=log_payload.result_count,
+                )
+                self.repository.commit()
+                search_log_id = search_log.id
         except Exception:
             self.repository.rollback()
             raise
@@ -107,7 +136,7 @@ class SearchService:
             items=page.items,
             result_count=page.result_count,
             next_cursor=next_cursor,
-            search_log_id=search_log.id,
+            search_log_id=search_log_id,
         )
 
     @staticmethod

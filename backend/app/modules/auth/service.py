@@ -1,4 +1,5 @@
 import re
+import logging
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -15,9 +16,11 @@ from app.modules.auth.schemas import OtpVerifyRequest
 from app.modules.auth.schemas import ProfileSummaryResponse
 from app.modules.auth.schemas import RoleConfirmRequest
 from app.modules.auth.schemas import UserResponse
+from app.modules.auth.session_cache import auth_context_cache
 
 
 PHONE_DIGITS_RE = re.compile(r"\D+")
+logger = logging.getLogger(__name__)
 
 
 def normalize_mobile(mobile: str) -> str:
@@ -42,9 +45,11 @@ class AuthService:
         *,
         repository: AuthRepository,
         auth_gateway: SupabaseAuthGateway,
+        auth_context_cache_seconds: int = 15,
     ) -> None:
         self.repository = repository
         self.auth_gateway = auth_gateway
+        self.auth_context_cache_seconds = auth_context_cache_seconds
 
     async def request_otp(self, payload: OtpRequest) -> OtpRequestResponse:
         mobile = normalize_mobile(payload.mobile)
@@ -78,6 +83,18 @@ class AuthService:
 
         self.repository.mark_login(user)
         self.repository.upsert_device(user=user, device=payload.device)
+        auth_session = self.repository.register_auth_session(
+            user=user,
+            session_id=verified_session.session_id,
+            expires_at=verified_session.expires_at,
+            device=payload.device,
+        )
+        if auth_session.user_id != user.id or auth_session.status == "revoked":
+            raise ApiError(
+                status_code=401,
+                code=ErrorCode.UNAUTHORIZED,
+                message="Please login again.",
+            )
         self.repository.commit()
 
         return AuthSessionResponse(
@@ -141,50 +158,120 @@ class AuthService:
             self.repository.create_profile_shell(user=user, role=payload.role)
 
         self.repository.commit()
+        if current_user.session_id is not None:
+            auth_context_cache.invalidate_session(current_user.session_id)
         return self.me_response_for_user(user)
 
     async def get_current_user_from_token(self, access_token: str) -> CurrentUser:
-        auth_user = await self.auth_gateway.get_user(access_token=access_token)
-        user = self.repository.get_user_by_auth_user_id(auth_user.auth_user_id)
-        if user is None:
-            mobile = normalize_mobile(auth_user.phone)
-            user = self.repository.create_user_after_otp(
-                auth_user_id=auth_user.auth_user_id,
-                mobile=mobile,
-            )
-            self.repository.commit()
-
-        return CurrentUser(
-            user_id=user.id,
-            auth_user_id=user.auth_user_id,
-            mobile=user.primary_mobile,
-            role=user.role,
-            account_status=user.account_status,
+        claims = await self.auth_gateway.verify_access_token(access_token=access_token)
+        cached_user = auth_context_cache.get(
+            session_id=claims.session_id,
+            auth_user_id=claims.auth_user_id,
         )
-
-    async def get_me(self, current_user: CurrentUser) -> MeResponse:
-        user = self.repository.get_user_by_auth_user_id(current_user.auth_user_id)
+        if cached_user is not None:
+            return cached_user
+        user, auth_session = self.repository.get_user_and_auth_session(
+            auth_user_id=claims.auth_user_id,
+            session_id=claims.session_id,
+        )
         if user is None:
             raise ApiError(
                 status_code=401,
                 code=ErrorCode.UNAUTHORIZED,
                 message="Please login again.",
+        )
+        if auth_session is None:
+            auth_session = self.repository.register_auth_session(
+                user=user,
+                session_id=claims.session_id,
+                expires_at=claims.expires_at,
+                device=None,
             )
-        return self.me_response_for_user(user)
+            if auth_session.user_id != user.id or auth_session.status != "active":
+                raise ApiError(
+                    status_code=401,
+                    code=ErrorCode.UNAUTHORIZED,
+                    message="Please login again.",
+                )
+            self.repository.commit()
+        elif auth_session.status != "active":
+            raise ApiError(
+                status_code=401,
+                code=ErrorCode.UNAUTHORIZED,
+                message="Please login again.",
+            )
+        else:
+            expiry_extended = self.repository.extend_auth_session_expiry(
+                auth_session,
+                claims.expires_at,
+            )
+            if expiry_extended:
+                self.repository.commit()
+            elif auth_session.expires_at <= datetime.now(timezone.utc):
+                raise ApiError(
+                    status_code=401,
+                    code=ErrorCode.UNAUTHORIZED,
+                    message="Please login again.",
+                )
 
-    async def logout(self, access_token: str) -> None:
-        await self.auth_gateway.logout(access_token=access_token)
+        current_user = CurrentUser(
+            user_id=user.id,
+            auth_user_id=user.auth_user_id,
+            mobile=user.primary_mobile,
+            role=user.role,
+            account_status=user.account_status,
+            session_id=claims.session_id,
+        )
+        auth_context_cache.put(
+            current_user=current_user,
+            token_expires_at=claims.expires_at,
+            ttl_seconds=self.auth_context_cache_seconds,
+        )
+        return current_user
+
+    async def get_me(self, current_user: CurrentUser) -> MeResponse:
+        snapshot = self.repository.get_me_snapshot(current_user.user_id)
+        if snapshot is None:
+            raise ApiError(
+                status_code=401,
+                code=ErrorCode.UNAUTHORIZED,
+                message="Please login again.",
+            )
+        user, profile, unread_count = snapshot
+        return self._build_me_response(
+            user=user,
+            profile=profile,
+            unread_count=unread_count,
+        )
+
+    async def logout(self, *, current_user: CurrentUser, access_token: str) -> None:
+        if current_user.session_id is not None:
+            auth_context_cache.invalidate_session(current_user.session_id)
+            self.repository.revoke_auth_session(
+                user_id=current_user.user_id,
+                session_id=current_user.session_id,
+            )
+            self.repository.commit()
+        try:
+            await self.auth_gateway.logout(access_token=access_token)
+        except Exception:
+            logger.warning("Supabase session logout failed after local revocation")
 
     def me_response_for_user(self, user) -> MeResponse:
         profile = self.repository.get_profile_for_user(user.id)
+        return self._build_me_response(
+            user=user,
+            profile=profile,
+            unread_count=self.repository.unread_notification_count(user.id),
+        )
+
+    def _build_me_response(self, *, user, profile, unread_count: int) -> MeResponse:
         next_state = self.next_state_for_user(user)
         return MeResponse(
             user=self.user_response(user),
             next_state=next_state,
             profile=self.profile_response(profile),
-            unread_notification_count=self.repository.unread_notification_count(
-                user.id
-            ),
+            unread_notification_count=unread_count,
             allowed_actions=self.allowed_actions_for_state(next_state),
         )
 
