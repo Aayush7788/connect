@@ -1,4 +1,11 @@
 import 'package:connect_app/src/data/connect_api.dart';
+import 'package:connect_app/src/features/discovery/discovery_controller.dart';
+import 'package:connect_app/src/features/discovery/profile_detail_screen.dart';
+import 'package:connect_app/src/features/engagement/engagement_controller.dart';
+import 'package:connect_app/src/features/profile/profile_controller.dart';
+import 'package:connect_app/src/features/profile/verification_controller.dart';
+import 'package:connect_app/src/features/work_cards/work_card_controller.dart';
+import 'package:connect_app/src/features/work_needed_posts/work_needed_post_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -204,9 +211,26 @@ class AuthController extends Notifier<AuthState> {
 
   Future<void> logout() async {
     state = state.copyWith(isLoading: true);
-    await ref.read(connectApiProvider).logout();
-    await ref.read(tokenStoreProvider).clear();
-    state = const AuthState();
+    try {
+      await ref.read(connectApiProvider).logout();
+    } finally {
+      try {
+        await ref.read(tokenStoreProvider).clear();
+      } finally {
+        _invalidateAccountState();
+        state = const AuthState();
+      }
+    }
+  }
+
+  void _invalidateAccountState() {
+    ref.invalidate(profileControllerProvider);
+    ref.invalidate(workCardControllerProvider);
+    ref.invalidate(workNeededPostControllerProvider);
+    ref.invalidate(verificationControllerProvider);
+    ref.invalidate(engagementControllerProvider);
+    ref.invalidate(discoveryControllerProvider);
+    ref.invalidate(publicProfileDetailProvider);
   }
 
   void updateProfileSummary(ProfileSummary profile) {
