@@ -166,6 +166,42 @@ void main() {
     await tester.tap(find.text('Open settings'));
     expect(settings.openCount, 1);
   });
+
+  testWidgets('deleted server photo is not restored by a stale refresh', (
+    tester,
+  ) async {
+    final api = _FakeMediaApi();
+    const existing = MediaAssetResult(
+      id: 'server-photo-1',
+      mediaKind: 'image',
+      visibility: 'public',
+      uploadStatus: 'ready',
+      sortOrder: 0,
+      url: 'https://media.test/server-photo-1.jpg',
+      thumbnailUrl: 'https://media.test/server-photo-1-thumbnail.jpg',
+      documentType: 'shop_photo',
+    );
+    await _pumpGrid(
+      tester,
+      picker: _FakePicker(const []),
+      api: api,
+      existingMedia: const [existing],
+      rebuildWithStaleMediaAfterChange: true,
+    );
+
+    expect(
+      find.byKey(const Key('media-tile-server-server-photo-1')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byTooltip('Delete photo'));
+    await tester.pumpAndSettle();
+
+    expect(api.deleted, ['server-photo-1']);
+    expect(
+      find.byKey(const Key('media-tile-server-server-photo-1')),
+      findsNothing,
+    );
+  });
 }
 
 Future<void> _pumpGrid(
@@ -174,6 +210,8 @@ Future<void> _pumpGrid(
   required _FakeMediaApi api,
   ValueChanged<MediaUploadSummary>? onSummaryChanged,
   AppSettingsGateway? appSettings,
+  List<MediaAssetResult> existingMedia = const [],
+  bool rebuildWithStaleMediaAfterChange = false,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -186,19 +224,24 @@ Future<void> _pumpGrid(
           appSettingsGatewayProvider.overrideWithValue(appSettings),
       ],
       child: MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: MediaUploadGrid(
-              target: const MediaTargetConfig(
-                entityType: 'profile',
-                entityId: 'profile-1',
-                documentType: 'shop_photo',
-                minimumPhotos: 3,
+        home: StatefulBuilder(
+          builder: (context, setState) => Scaffold(
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: MediaUploadGrid(
+                target: const MediaTargetConfig(
+                  entityType: 'profile',
+                  entityId: 'profile-1',
+                  documentType: 'shop_photo',
+                  minimumPhotos: 3,
+                ),
+                title: 'Shop photos',
+                existingMedia: existingMedia,
+                onSummaryChanged: onSummaryChanged,
+                onMediaChanged: rebuildWithStaleMediaAfterChange
+                    ? () async => setState(() {})
+                    : null,
               ),
-              title: 'Shop photos',
-              existingMedia: const [],
-              onSummaryChanged: onSummaryChanged,
             ),
           ),
         ),
@@ -255,6 +298,7 @@ class _FakeMediaApi implements MediaApiGateway {
   int remainingUploadFailures = 0;
   MediaUploadIntentRequest? lastRequest;
   final List<String> cancelled = [];
+  final List<String> deleted = [];
 
   @override
   Future<void> cancelMediaUpload(String mediaAssetId) async {
@@ -283,7 +327,9 @@ class _FakeMediaApi implements MediaApiGateway {
   }
 
   @override
-  Future<void> deleteMedia(String mediaAssetId) async {}
+  Future<void> deleteMedia(String mediaAssetId) async {
+    deleted.add(mediaAssetId);
+  }
 
   @override
   Future<UploadIntentResult> retryMediaUpload(String mediaAssetId) async {

@@ -1728,6 +1728,10 @@ components:
           type: string
           format: uuid
           nullable: true
+        custom_business_category:
+          type: string
+          maxLength: 160
+          nullable: true
         manufacture_sell_details:
           type: string
           maxLength: 2000

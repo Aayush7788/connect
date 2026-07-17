@@ -11,6 +11,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 const maxMediaUploadBytes = 10 * 1024 * 1024;
+const mediaUploadMaxDimension = 1440;
+const mediaUploadJpegQuality = 72;
 
 final mediaPickerProvider = Provider<MediaPickerGateway>((ref) {
   return DeviceMediaPicker(ImagePicker());
@@ -157,9 +159,9 @@ class DeviceMediaCompressor implements MediaCompressor {
     final bytes = image.path == null
         ? await FlutterImageCompress.compressWithList(
             image.bytes!,
-            minWidth: 1600,
-            minHeight: 1600,
-            quality: 74,
+            minWidth: mediaUploadMaxDimension,
+            minHeight: mediaUploadMaxDimension,
+            quality: mediaUploadJpegQuality,
             format: CompressFormat.jpeg,
             keepExif: false,
           )
@@ -185,9 +187,9 @@ class DeviceMediaCompressor implements MediaCompressor {
     final compressed = await FlutterImageCompress.compressAndGetFile(
       sourcePath,
       targetPath,
-      minWidth: 1600,
-      minHeight: 1600,
-      quality: 74,
+      minWidth: mediaUploadMaxDimension,
+      minHeight: mediaUploadMaxDimension,
+      quality: mediaUploadJpegQuality,
       format: CompressFormat.jpeg,
       keepExif: false,
     );

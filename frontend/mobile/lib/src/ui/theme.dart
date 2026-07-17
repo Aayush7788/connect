@@ -113,10 +113,16 @@ class ScreenFrame extends StatelessWidget {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            const padding = EdgeInsets.fromLTRB(20, 20, 20, 28);
             return SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+              physics: const ClampingScrollPhysics(),
+              padding: padding,
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                constraints: BoxConstraints(
+                  minHeight: (constraints.maxHeight - padding.vertical)
+                      .clamp(0, double.infinity)
+                      .toDouble(),
+                ),
                 child: child,
               ),
             );

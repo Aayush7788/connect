@@ -15,6 +15,7 @@ import 'package:connect_app/src/features/profile/profile_controller.dart';
 import 'package:connect_app/src/features/profile/verification_controller.dart';
 import 'package:connect_app/src/features/work_cards/work_card_controller.dart';
 import 'package:connect_app/src/features/work_needed_posts/work_needed_post_controller.dart';
+import 'package:connect_app/src/ui/theme.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -237,6 +238,80 @@ void main() {
           .visibilityStatus,
       'hidden_by_user',
     );
+  });
+
+  testWidgets(
+    'manufacturer form orders identity first and reveals Other fields',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final api = _FakeConnectApi();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStoreProvider.overrideWithValue(
+              _MemoryTokenStore(initialAccessToken: 'access-token'),
+            ),
+            connectApiProvider.overrideWithValue(api),
+            mediaPickerProvider.overrideWithValue(_NoopMediaPicker()),
+          ],
+          child: const ConnectApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      GoRouter.of(tester.element(find.byType(Navigator).first)).go('/splash');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('My Profile'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('business-profile-tab')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Complete your profile to get business'));
+      await tester.pumpAndSettle();
+
+      final ownerTop = tester.getTopLeft(find.text('Owner name')).dy;
+      final mobileTop = tester.getTopLeft(find.text('Mobile number')).dy;
+      final businessTop = tester.getTopLeft(find.text('Business name')).dy;
+      final categoryTop = tester.getTopLeft(find.text('Business category')).dy;
+      expect(ownerTop, lessThan(mobileTop));
+      expect(mobileTop, lessThan(businessTop));
+      expect(businessTop, lessThan(categoryTop));
+      expect(find.text('Other business category'), findsNothing);
+      expect(find.text('Other product category'), findsNothing);
+
+      final businessCategoryDropdown = find.byType(
+        DropdownButtonFormField<String>,
+      );
+      await tester.ensureVisible(businessCategoryDropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(businessCategoryDropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Other textile business').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Other business category'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('Select product types'));
+      await tester.tap(find.text('Select product types'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Other').last);
+      await tester.tap(find.text('Done').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Other product category'), findsOneWidget);
+    },
+  );
+
+  testWidgets('short ScreenFrame content has no empty scroll range', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: ScreenFrame(child: Text('Short content'))),
+    );
+    await tester.pumpAndSettle();
+
+    final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scrollable.position.maxScrollExtent, 0);
   });
 
   testWidgets('job worker opens the role-specific completion form', (
@@ -561,7 +636,28 @@ class _FakeConnectApi implements ConnectApi {
   Future<List<CategoryOption>> categories({
     required String categoryType,
   }) async {
-    return const [];
+    return switch (categoryType) {
+      'business_category' => const [
+        CategoryOption(
+          id: '11111111-1111-1111-1111-111111111111',
+          categoryType: 'business_category',
+          name: 'Manufacturing',
+        ),
+        CategoryOption(
+          id: '22222222-2222-2222-2222-222222222222',
+          categoryType: 'business_category',
+          name: 'Other textile business',
+        ),
+      ],
+      'product_type' => const [
+        CategoryOption(
+          id: '33333333-3333-3333-3333-333333333333',
+          categoryType: 'product_type',
+          name: 'Dupatta',
+        ),
+      ],
+      _ => const [],
+    };
   }
 
   @override

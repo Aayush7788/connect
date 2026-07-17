@@ -25,9 +25,15 @@ abstract class _$ProfileUpdateRequestCWProxy {
 
   ProfileUpdateRequest pincode(String? pincode);
 
+  ProfileUpdateRequest stateId(int? stateId);
+
+  ProfileUpdateRequest districtId(int? districtId);
+
   ProfileUpdateRequest businessName(String? businessName);
 
   ProfileUpdateRequest businessCategoryId(String? businessCategoryId);
+
+  ProfileUpdateRequest customBusinessCategory(String? customBusinessCategory);
 
   ProfileUpdateRequest manufactureSellDetails(String? manufactureSellDetails);
 
@@ -69,8 +75,11 @@ abstract class _$ProfileUpdateRequestCWProxy {
     String? city,
     String? state,
     String? pincode,
+    int? stateId,
+    int? districtId,
     String? businessName,
     String? businessCategoryId,
+    String? customBusinessCategory,
     String? manufactureSellDetails,
     String? productNotes,
     List<String>? productTypeIds,
@@ -126,12 +135,23 @@ class _$ProfileUpdateRequestCWProxyImpl
   ProfileUpdateRequest pincode(String? pincode) => this(pincode: pincode);
 
   @override
+  ProfileUpdateRequest stateId(int? stateId) => this(stateId: stateId);
+
+  @override
+  ProfileUpdateRequest districtId(int? districtId) =>
+      this(districtId: districtId);
+
+  @override
   ProfileUpdateRequest businessName(String? businessName) =>
       this(businessName: businessName);
 
   @override
   ProfileUpdateRequest businessCategoryId(String? businessCategoryId) =>
       this(businessCategoryId: businessCategoryId);
+
+  @override
+  ProfileUpdateRequest customBusinessCategory(String? customBusinessCategory) =>
+      this(customBusinessCategory: customBusinessCategory);
 
   @override
   ProfileUpdateRequest manufactureSellDetails(String? manufactureSellDetails) =>
@@ -197,8 +217,11 @@ class _$ProfileUpdateRequestCWProxyImpl
     Object? city = const $CopyWithPlaceholder(),
     Object? state = const $CopyWithPlaceholder(),
     Object? pincode = const $CopyWithPlaceholder(),
+    Object? stateId = const $CopyWithPlaceholder(),
+    Object? districtId = const $CopyWithPlaceholder(),
     Object? businessName = const $CopyWithPlaceholder(),
     Object? businessCategoryId = const $CopyWithPlaceholder(),
+    Object? customBusinessCategory = const $CopyWithPlaceholder(),
     Object? manufactureSellDetails = const $CopyWithPlaceholder(),
     Object? productNotes = const $CopyWithPlaceholder(),
     Object? productTypeIds = const $CopyWithPlaceholder(),
@@ -250,6 +273,14 @@ class _$ProfileUpdateRequestCWProxyImpl
           ? _value.pincode
           // ignore: cast_nullable_to_non_nullable
           : pincode as String?,
+      stateId: stateId == const $CopyWithPlaceholder()
+          ? _value.stateId
+          // ignore: cast_nullable_to_non_nullable
+          : stateId as int?,
+      districtId: districtId == const $CopyWithPlaceholder()
+          ? _value.districtId
+          // ignore: cast_nullable_to_non_nullable
+          : districtId as int?,
       businessName: businessName == const $CopyWithPlaceholder()
           ? _value.businessName
           // ignore: cast_nullable_to_non_nullable
@@ -258,6 +289,11 @@ class _$ProfileUpdateRequestCWProxyImpl
           ? _value.businessCategoryId
           // ignore: cast_nullable_to_non_nullable
           : businessCategoryId as String?,
+      customBusinessCategory:
+          customBusinessCategory == const $CopyWithPlaceholder()
+          ? _value.customBusinessCategory
+          // ignore: cast_nullable_to_non_nullable
+          : customBusinessCategory as String?,
       manufactureSellDetails:
           manufactureSellDetails == const $CopyWithPlaceholder()
           ? _value.manufactureSellDetails
@@ -343,9 +379,15 @@ ProfileUpdateRequest _$ProfileUpdateRequestFromJson(
       city: $checkedConvert('city', (v) => v as String?),
       state: $checkedConvert('state', (v) => v as String?),
       pincode: $checkedConvert('pincode', (v) => v as String?),
+      stateId: $checkedConvert('state_id', (v) => (v as num?)?.toInt()),
+      districtId: $checkedConvert('district_id', (v) => (v as num?)?.toInt()),
       businessName: $checkedConvert('business_name', (v) => v as String?),
       businessCategoryId: $checkedConvert(
         'business_category_id',
+        (v) => v as String?,
+      ),
+      customBusinessCategory: $checkedConvert(
+        'custom_business_category',
         (v) => v as String?,
       ),
       manufactureSellDetails: $checkedConvert(
@@ -387,8 +429,11 @@ ProfileUpdateRequest _$ProfileUpdateRequestFromJson(
     'fullAddress': 'full_address',
     'addressLine1': 'address_line1',
     'addressLine2': 'address_line2',
+    'stateId': 'state_id',
+    'districtId': 'district_id',
     'businessName': 'business_name',
     'businessCategoryId': 'business_category_id',
+    'customBusinessCategory': 'custom_business_category',
     'manufactureSellDetails': 'manufacture_sell_details',
     'productNotes': 'product_notes',
     'productTypeIds': 'product_type_ids',
@@ -415,8 +460,11 @@ Map<String, dynamic> _$ProfileUpdateRequestToJson(
   'city': ?instance.city,
   'state': ?instance.state,
   'pincode': ?instance.pincode,
+  'state_id': ?instance.stateId,
+  'district_id': ?instance.districtId,
   'business_name': ?instance.businessName,
   'business_category_id': ?instance.businessCategoryId,
+  'custom_business_category': ?instance.customBusinessCategory,
   'manufacture_sell_details': ?instance.manufactureSellDetails,
   'product_notes': ?instance.productNotes,
   'product_type_ids': ?instance.productTypeIds,

@@ -353,6 +353,38 @@ class ProfileRepository:
             ]
         )
 
+    def create_business_category_suggestion(
+        self,
+        *,
+        user_id: UUID,
+        profile_id: UUID,
+        value: str,
+    ) -> None:
+        normalized = value.casefold()
+        exists = self.session.scalar(
+            select(CategorySuggestion.id).where(
+                CategorySuggestion.profile_id == profile_id,
+                CategorySuggestion.source_entity_type == "profile",
+                CategorySuggestion.category_type == "business_category",
+                CategorySuggestion.normalized_text == normalized,
+                CategorySuggestion.status == "pending",
+            )
+        )
+        if exists is not None:
+            return
+        self.session.add(
+            CategorySuggestion(
+                submitted_by_user_id=user_id,
+                profile_id=profile_id,
+                source_entity_type="profile",
+                source_entity_id=profile_id,
+                category_type="business_category",
+                raw_text=value,
+                normalized_text=normalized,
+                status="pending",
+            )
+        )
+
     def category_ids_are_valid(
         self,
         category_ids: set[UUID],

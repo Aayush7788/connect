@@ -20,6 +20,7 @@ class FakeProfileRepository:
         self.commits = 0
         self.histories: list[dict] = []
         self.suggestions: list[str] = []
+        self.business_category_suggestions: list[str] = []
 
     def get_owner_bundle(self, user_id, *, for_update=False):
         return self.bundle if self.bundle.user.id == user_id else None
@@ -74,6 +75,15 @@ class FakeProfileRepository:
     ):
         self.suggestions.extend(values)
 
+    def create_business_category_suggestion(
+        self,
+        *,
+        user_id,
+        profile_id,
+        value,
+    ):
+        self.business_category_suggestions.append(value)
+
     def add_change_history(self, **values):
         self.histories.append(values)
 
@@ -125,6 +135,7 @@ def make_bundle(role: str) -> OwnerProfileBundle:
         role_profile = SimpleNamespace(
             business_name="Connect Textiles",
             business_category_id=uuid4(),
+            custom_business_category=None,
             manufacture_sell_details="Dupattas",
             product_notes=None,
         )
@@ -217,6 +228,7 @@ def test_owner_profile_returns_url_only_for_ready_public_media() -> None:
             sort_order=0,
             document_type="shop_photo",
             original_path="profile/profile-id/photo.jpg",
+            thumbnail_path="profile/profile-id/photo-thumbnail.jpg",
         ),
         SimpleNamespace(
             id=uuid4(),
@@ -226,6 +238,7 @@ def test_owner_profile_returns_url_only_for_ready_public_media() -> None:
             sort_order=1,
             document_type="shop_photo",
             original_path="staging/photo.jpg",
+            thumbnail_path=None,
         ),
     ]
     service.public_media_url = lambda path: f"https://media.test/{path}"
@@ -233,6 +246,9 @@ def test_owner_profile_returns_url_only_for_ready_public_media() -> None:
     response = service.get_owner_profile(current_user)
 
     assert response.media[0].url == ("https://media.test/profile/profile-id/photo.jpg")
+    assert response.media[0].thumbnail_url == (
+        "https://media.test/profile/profile-id/photo-thumbnail.jpg"
+    )
     assert response.media[1].url is None
 
 
@@ -358,3 +374,21 @@ def test_custom_business_product_creates_mapping_suggestion() -> None:
 
     assert repository.suggestions == ["New Dupatta Style"]
     assert response.profile.completion_flags["product_type"] is True
+
+
+def test_custom_business_category_is_saved_and_searchable() -> None:
+    service, repository, current_user = make_service("business", products=1)
+
+    response = service.update_owner_profile(
+        current_user=current_user,
+        payload=ProfileUpdateRequest(custom_business_category="Dupatta exporter"),
+    )
+
+    assert repository.bundle.role_profile.custom_business_category == (
+        "Dupatta exporter"
+    )
+    assert repository.business_category_suggestions == ["Dupatta exporter"]
+    assert response.role_specific["custom_business_category"] == (
+        "Dupatta exporter"
+    )
+    assert "dupatta exporter" in repository.bundle.profile.search_text

@@ -20,6 +20,8 @@ class ProfileFormScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
+  static const _otherProductTypeId = '__other_product_type__';
+
   final _ownerName = TextEditingController();
   final _alternateContact = TextEditingController();
   final _addressLine1 = TextEditingController();
@@ -28,6 +30,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   final _state = TextEditingController();
   final _pincode = TextEditingController();
   final _businessName = TextEditingController();
+  final _customBusinessCategory = TextEditingController();
   final _manufactureSell = TextEditingController();
   final _customProduct = TextEditingController();
   final _workshopName = TextEditingController();
@@ -44,6 +47,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   String? _businessCategoryId;
   String? _skillCategoryId;
   final Set<String> _productTypeIds = {};
+  bool _otherProductSelected = false;
   bool _savedOnce = false;
   bool _isSubmitting = false;
   Future<bool>? _saveFuture;
@@ -80,6 +84,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       _state,
       _pincode,
       _businessName,
+      _customBusinessCategory,
       _manufactureSell,
       _customProduct,
       _workshopName,
@@ -249,6 +254,16 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     final categoryOptions = state.categories['business_category'] ?? const [];
     final productOptions = state.categories['product_type'] ?? const [];
     final skillOptions = state.categories['work_name'] ?? const [];
+    final primaryMobile =
+        ref.watch(authControllerProvider).me?.user.primaryMobile ?? '';
+    final productSelectorOptions = [
+      ...productOptions,
+      const CategoryOption(
+        id: _otherProductTypeId,
+        categoryType: 'product_type',
+        name: 'Other',
+      ),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -259,11 +274,83 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         const SizedBox(height: 18),
         if (role == 'business') ...[
           _field(
+            label: 'Owner name',
+            placeholder: 'Enter owner name',
+            controller: _ownerName,
+            disabled: disabled || ownerLocked,
+            errorText: state.fieldErrors['owner_name'],
+          ),
+          _field(
+            label: 'Mobile number',
+            placeholder: primaryMobile,
+            readOnlyValue: primaryMobile,
+          ),
+          _field(
             label: 'Business name',
             placeholder: 'Enter business name',
             controller: _businessName,
             disabled: disabled,
             errorText: state.fieldErrors['business_name'],
+          ),
+          _dropdown(
+            label: 'Business category',
+            value: _businessCategoryId,
+            options: categoryOptions,
+            disabled: disabled,
+            onChanged: (value) {
+              setState(() {
+                _businessCategoryId = value;
+                if (!_isOtherBusinessCategory(categoryOptions)) {
+                  _customBusinessCategory.clear();
+                }
+              });
+              _scheduleAutoSave();
+            },
+          ),
+          if (_isOtherBusinessCategory(categoryOptions))
+            _field(
+              label: 'Other business category',
+              placeholder: 'Enter your business category',
+              controller: _customBusinessCategory,
+              disabled: disabled,
+              errorText: state.fieldErrors['custom_business_category'],
+            ),
+          _ProductTypeSelector(
+            options: productSelectorOptions,
+            selectedIds: {
+              ..._productTypeIds,
+              if (_otherProductSelected) _otherProductTypeId,
+            },
+            disabled: disabled,
+            onChanged: (values) {
+              final selected = Set<String>.from(values);
+              final otherSelected = selected.remove(_otherProductTypeId);
+              setState(() {
+                _productTypeIds
+                  ..clear()
+                  ..addAll(selected);
+                _otherProductSelected = otherSelected;
+                if (!otherSelected) {
+                  _customProduct.clear();
+                }
+              });
+              _scheduleAutoSave();
+            },
+          ),
+          if (_otherProductSelected)
+            _field(
+              label: 'Other product category',
+              placeholder: 'Enter your product category',
+              controller: _customProduct,
+              disabled: disabled,
+            ),
+          _field(
+            label: 'Optional phone number',
+            placeholder: 'Enter another contact number',
+            controller: _alternateContact,
+            disabled: disabled,
+            keyboardType: TextInputType.phone,
+            errorText: state.fieldErrors['alternate_contact_number'],
           ),
           _field(
             label: 'What do you manufacture or sell?',
@@ -273,120 +360,99 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
             maxLines: 3,
             errorText: state.fieldErrors['manufacture_sell_details'],
           ),
-          _dropdown(
-            label: 'Business category',
-            value: _businessCategoryId,
-            options: categoryOptions,
-            disabled: disabled,
-            onChanged: (value) {
-              setState(() => _businessCategoryId = value);
-              _scheduleAutoSave();
-            },
-          ),
-          _ProductTypeSelector(
-            options: productOptions,
-            selectedIds: _productTypeIds,
-            disabled: disabled,
-            onChanged: (values) {
-              setState(() {
-                _productTypeIds
-                  ..clear()
-                  ..addAll(values);
-              });
-              _scheduleAutoSave();
-            },
-          ),
-          _field(
-            label: 'Other product type',
-            placeholder: 'Type product if not listed',
-            controller: _customProduct,
-            disabled: disabled,
-          ),
-        ] else if (role == 'job_worker') ...[
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('I work from a workshop'),
-            value: _hasWorkshop,
-            onChanged: disabled
-                ? null
-                : (value) {
-                    setState(() => _hasWorkshop = value);
-                    _scheduleAutoSave();
-                  },
-          ),
-          if (_hasWorkshop)
-            _field(
-              label: 'Workshop name',
-              placeholder: 'Enter workshop name',
-              controller: _workshopName,
-              disabled: disabled,
-              errorText: state.fieldErrors['workshop_name'],
-            ),
-          _field(
-            label: 'What work do you do?',
-            placeholder: 'Example: Flat hemming and overlock',
-            controller: _workSummary,
-            disabled: disabled,
-            maxLines: 3,
-          ),
         ] else ...[
-          _dropdown(
-            label: 'Primary skill',
-            value: _skillCategoryId,
-            options: skillOptions,
-            disabled: disabled,
-            onChanged: (value) {
-              setState(() => _skillCategoryId = value);
-              _scheduleAutoSave();
-            },
+          if (role == 'job_worker') ...[
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('I work from a workshop'),
+              value: _hasWorkshop,
+              onChanged: disabled
+                  ? null
+                  : (value) {
+                      setState(() => _hasWorkshop = value);
+                      _scheduleAutoSave();
+                    },
+            ),
+            if (_hasWorkshop)
+              _field(
+                label: 'Workshop name',
+                placeholder: 'Enter workshop name',
+                controller: _workshopName,
+                disabled: disabled,
+                errorText: state.fieldErrors['workshop_name'],
+              ),
+            _field(
+              label: 'What work do you do?',
+              placeholder: 'Example: Flat hemming and overlock',
+              controller: _workSummary,
+              disabled: disabled,
+              maxLines: 3,
+            ),
+          ] else ...[
+            _dropdown(
+              label: 'Primary skill',
+              value: _skillCategoryId,
+              options: skillOptions,
+              disabled: disabled,
+              onChanged: (value) {
+                setState(() => _skillCategoryId = value);
+                _scheduleAutoSave();
+              },
+            ),
+            _field(
+              label: 'Skill details',
+              placeholder: 'Describe the work you have mastery in',
+              controller: _skillMastery,
+              disabled: disabled,
+              maxLines: 3,
+              errorText: state.fieldErrors['skill_mastery'],
+            ),
+            _field(
+              label: 'Experience in years',
+              placeholder: 'Example: 4',
+              controller: _experience,
+              disabled: disabled,
+              keyboardType: TextInputType.number,
+              errorText: state.fieldErrors['experience_years'],
+            ),
+            _field(
+              label: 'About your work',
+              placeholder: 'Optional',
+              controller: _bio,
+              disabled: disabled,
+              maxLines: 3,
+            ),
+          ],
+          _field(
+            label: role == 'skilled_worker' ? 'Name' : 'Owner name',
+            placeholder: 'Enter name',
+            controller: _ownerName,
+            disabled: disabled || ownerLocked,
+            errorText: state.fieldErrors['owner_name'],
           ),
           _field(
-            label: 'Skill details',
-            placeholder: 'Describe the work you have mastery in',
-            controller: _skillMastery,
-            disabled: disabled,
-            maxLines: 3,
-            errorText: state.fieldErrors['skill_mastery'],
+            label: 'Mobile number',
+            placeholder: primaryMobile,
+            readOnlyValue: primaryMobile,
           ),
           _field(
-            label: 'Experience in years',
-            placeholder: 'Example: 4',
-            controller: _experience,
-            disabled: disabled,
-            keyboardType: TextInputType.number,
-            errorText: state.fieldErrors['experience_years'],
-          ),
-          _field(
-            label: 'About your work',
+            label: 'Alternate contact number',
             placeholder: 'Optional',
-            controller: _bio,
+            controller: _alternateContact,
             disabled: disabled,
-            maxLines: 3,
+            keyboardType: TextInputType.phone,
+            errorText: state.fieldErrors['alternate_contact_number'],
           ),
         ],
-        _field(
-          label: role == 'skilled_worker' ? 'Name' : 'Owner name',
-          placeholder: 'Enter name',
-          controller: _ownerName,
-          disabled: disabled || ownerLocked,
-          errorText: state.fieldErrors['owner_name'],
-        ),
-        _field(
-          label: 'Mobile number',
-          placeholder:
-              ref.watch(authControllerProvider).me?.user.primaryMobile ?? '',
-          readOnlyValue:
-              ref.watch(authControllerProvider).me?.user.primaryMobile ?? '',
-        ),
-        _field(
-          label: 'Alternate contact number',
-          placeholder: 'Optional',
-          controller: _alternateContact,
-          disabled: disabled,
-          keyboardType: TextInputType.phone,
-          errorText: state.fieldErrors['alternate_contact_number'],
-        ),
       ],
+    );
+  }
+
+  bool _isOtherBusinessCategory(List<CategoryOption> options) {
+    return options.any(
+      (option) =>
+          option.id == _businessCategoryId &&
+          option.name.toLowerCase().startsWith('other'),
     );
   }
 
@@ -985,6 +1051,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     }
     _businessName.text = details['business_name']?.toString() ?? '';
     _businessCategoryId = details['business_category_id']?.toString();
+    _customBusinessCategory.text =
+        details['custom_business_category']?.toString() ?? '';
     _manufactureSell.text =
         details['manufacture_sell_details']?.toString() ?? '';
     _workshopName.text = details['workshop_name']?.toString() ?? '';
@@ -1004,6 +1072,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       }
       if (custom != null && custom.isNotEmpty) {
         _customProduct.text = custom;
+        _otherProductSelected = true;
       }
     }
     _initialized = true;
@@ -1034,9 +1103,11 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       fields.addAll({
         'business_name': _value(_businessName),
         'business_category_id': _businessCategoryId,
+        'custom_business_category': _value(_customBusinessCategory),
         'manufacture_sell_details': _value(_manufactureSell),
         'product_type_ids': _productTypeIds.toList(growable: false),
-        'custom_product_types': _value(_customProduct) == null
+        'custom_product_types':
+            !_otherProductSelected || _value(_customProduct) == null
             ? <String>[]
             : [_value(_customProduct)],
       });

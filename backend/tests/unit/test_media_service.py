@@ -198,6 +198,7 @@ def test_public_image_is_staged_then_promoted_after_byte_validation() -> None:
 
     assert response.upload_status == "ready"
     assert response.url is not None
+    assert response.thumbnail_url is not None
     assert media.width == 320
     assert media.height == 240
     assert media.original_path.startswith(f"profile/{repository.target.entity.id}/")
@@ -300,6 +301,38 @@ def test_delete_blocks_completed_profile_at_minimum_photo_count() -> None:
 
     assert exc_info.value.code == ErrorCode.MINIMUM_PHOTOS_REQUIRED
     assert selected.upload_status == "ready"
+
+
+def test_delete_allows_completed_profile_after_replacement_is_ready() -> None:
+    service, repository, storage, _, current_user = make_service(completion_score=100)
+    for index in range(4):
+        media = MediaAsset(
+            id=uuid4(),
+            entity_type="profile",
+            entity_id=repository.target.entity.id,
+            media_kind="image",
+            document_type="shop_photo",
+            visibility="public",
+            upload_status="ready",
+            original_path=f"profile/photo-{index}.png",
+            thumbnail_path=f"profile/photo-{index}-thumbnail.jpg",
+            sort_order=index,
+            uploaded_by_user_id=current_user.user_id,
+        )
+        repository.media[media.id] = media
+        storage.objects[
+            (service.settings.supabase_public_media_bucket, media.original_path)
+        ] = make_png()
+        storage.objects[
+            (service.settings.supabase_public_media_bucket, media.thumbnail_path)
+        ] = make_png()
+
+    selected = next(iter(repository.media.values()))
+    service.delete_media(current_user=current_user, media_asset_id=selected.id)
+
+    assert selected.upload_status == "deleted"
+    assert selected.deleted_at is not None
+    assert repository.target.entity.photo_count == 3
 
 
 def test_private_document_response_never_contains_download_url() -> None:
