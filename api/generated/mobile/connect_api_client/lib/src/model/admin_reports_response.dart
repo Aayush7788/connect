@@ -3,11 +3,11 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:connect_api_client/src/model/admin_report.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'admin_reports_response.g.dart';
-
 
 @CopyWith()
 @JsonSerializable(
@@ -18,50 +18,26 @@ part 'admin_reports_response.g.dart';
 )
 class AdminReportsResponse {
   /// Returns a new [AdminReportsResponse] instance.
-  AdminReportsResponse({
+  AdminReportsResponse({required this.items, this.nextCursor});
 
-    required  this.items,
+  @JsonKey(name: r'items', required: true, includeIfNull: false)
+  final List<AdminReport> items;
 
-     this.nextCursor,
-  });
-
-  @JsonKey(
-    
-    name: r'items',
-    required: true,
-    includeIfNull: false,
-  )
-
-
-  final List<Map<String, Object>> items;
-
-
-
-  @JsonKey(
-    
-    name: r'next_cursor',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'next_cursor', required: false, includeIfNull: false)
   final String? nextCursor;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AdminReportsResponse &&
+          other.items == items &&
+          other.nextCursor == nextCursor;
 
+  @override
+  int get hashCode => items.hashCode + nextCursor.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is AdminReportsResponse &&
-      other.items == items &&
-      other.nextCursor == nextCursor;
-
-    @override
-    int get hashCode =>
-        items.hashCode +
-        nextCursor.hashCode;
-
-  factory AdminReportsResponse.fromJson(Map<String, dynamic> json) => _$AdminReportsResponseFromJson(json);
+  factory AdminReportsResponse.fromJson(Map<String, dynamic> json) =>
+      _$AdminReportsResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$AdminReportsResponseToJson(this);
 
@@ -69,6 +45,4 @@ class AdminReportsResponse {
   String toString() {
     return toJson().toString();
   }
-
 }
-

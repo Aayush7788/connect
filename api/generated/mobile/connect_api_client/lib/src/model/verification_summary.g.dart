@@ -15,7 +15,13 @@ abstract class _$VerificationSummaryCWProxy {
 
   VerificationSummary activeCaseId(String? activeCaseId);
 
+  VerificationSummary caseStatus(VerificationCaseStatus? caseStatus);
+
   VerificationSummary notesToUser(String? notesToUser);
+
+  VerificationSummary submittedAt(DateTime? submittedAt);
+
+  VerificationSummary checks(List<VerificationSummaryChecksInner>? checks);
 
   VerificationSummary safeDocuments(
     List<VerificationSummarySafeDocumentsInner>? safeDocuments,
@@ -32,7 +38,10 @@ abstract class _$VerificationSummaryCWProxy {
     bool isVerified,
     bool? reverificationRequired,
     String? activeCaseId,
+    VerificationCaseStatus? caseStatus,
     String? notesToUser,
+    DateTime? submittedAt,
+    List<VerificationSummaryChecksInner>? checks,
     List<VerificationSummarySafeDocumentsInner>? safeDocuments,
   });
 }
@@ -61,8 +70,20 @@ class _$VerificationSummaryCWProxyImpl implements _$VerificationSummaryCWProxy {
       this(activeCaseId: activeCaseId);
 
   @override
+  VerificationSummary caseStatus(VerificationCaseStatus? caseStatus) =>
+      this(caseStatus: caseStatus);
+
+  @override
   VerificationSummary notesToUser(String? notesToUser) =>
       this(notesToUser: notesToUser);
+
+  @override
+  VerificationSummary submittedAt(DateTime? submittedAt) =>
+      this(submittedAt: submittedAt);
+
+  @override
+  VerificationSummary checks(List<VerificationSummaryChecksInner>? checks) =>
+      this(checks: checks);
 
   @override
   VerificationSummary safeDocuments(
@@ -81,7 +102,10 @@ class _$VerificationSummaryCWProxyImpl implements _$VerificationSummaryCWProxy {
     Object? isVerified = const $CopyWithPlaceholder(),
     Object? reverificationRequired = const $CopyWithPlaceholder(),
     Object? activeCaseId = const $CopyWithPlaceholder(),
+    Object? caseStatus = const $CopyWithPlaceholder(),
     Object? notesToUser = const $CopyWithPlaceholder(),
+    Object? submittedAt = const $CopyWithPlaceholder(),
+    Object? checks = const $CopyWithPlaceholder(),
     Object? safeDocuments = const $CopyWithPlaceholder(),
   }) {
     return VerificationSummary(
@@ -102,10 +126,22 @@ class _$VerificationSummaryCWProxyImpl implements _$VerificationSummaryCWProxy {
           ? _value.activeCaseId
           // ignore: cast_nullable_to_non_nullable
           : activeCaseId as String?,
+      caseStatus: caseStatus == const $CopyWithPlaceholder()
+          ? _value.caseStatus
+          // ignore: cast_nullable_to_non_nullable
+          : caseStatus as VerificationCaseStatus?,
       notesToUser: notesToUser == const $CopyWithPlaceholder()
           ? _value.notesToUser
           // ignore: cast_nullable_to_non_nullable
           : notesToUser as String?,
+      submittedAt: submittedAt == const $CopyWithPlaceholder()
+          ? _value.submittedAt
+          // ignore: cast_nullable_to_non_nullable
+          : submittedAt as DateTime?,
+      checks: checks == const $CopyWithPlaceholder()
+          ? _value.checks
+          // ignore: cast_nullable_to_non_nullable
+          : checks as List<VerificationSummaryChecksInner>?,
       safeDocuments: safeDocuments == const $CopyWithPlaceholder()
           ? _value.safeDocuments
           // ignore: cast_nullable_to_non_nullable
@@ -145,7 +181,25 @@ VerificationSummary _$VerificationSummaryFromJson(Map<String, dynamic> json) =>
             (v) => v as bool?,
           ),
           activeCaseId: $checkedConvert('active_case_id', (v) => v as String?),
+          caseStatus: $checkedConvert(
+            'case_status',
+            (v) => $enumDecodeNullable(_$VerificationCaseStatusEnumMap, v),
+          ),
           notesToUser: $checkedConvert('notes_to_user', (v) => v as String?),
+          submittedAt: $checkedConvert(
+            'submitted_at',
+            (v) => v == null ? null : DateTime.parse(v as String),
+          ),
+          checks: $checkedConvert(
+            'checks',
+            (v) => (v as List<dynamic>?)
+                ?.map(
+                  (e) => VerificationSummaryChecksInner.fromJson(
+                    e as Map<String, dynamic>,
+                  ),
+                )
+                .toList(),
+          ),
           safeDocuments: $checkedConvert(
             'safe_documents',
             (v) => (v as List<dynamic>?)
@@ -164,7 +218,9 @@ VerificationSummary _$VerificationSummaryFromJson(Map<String, dynamic> json) =>
         'isVerified': 'is_verified',
         'reverificationRequired': 'reverification_required',
         'activeCaseId': 'active_case_id',
+        'caseStatus': 'case_status',
         'notesToUser': 'notes_to_user',
+        'submittedAt': 'submitted_at',
         'safeDocuments': 'safe_documents',
       },
     );
@@ -177,7 +233,10 @@ Map<String, dynamic> _$VerificationSummaryToJson(
   'is_verified': instance.isVerified,
   'reverification_required': ?instance.reverificationRequired,
   'active_case_id': ?instance.activeCaseId,
+  'case_status': ?_$VerificationCaseStatusEnumMap[instance.caseStatus],
   'notes_to_user': ?instance.notesToUser,
+  'submitted_at': ?instance.submittedAt?.toIso8601String(),
+  'checks': ?instance.checks?.map((e) => e.toJson()).toList(),
   'safe_documents': ?instance.safeDocuments?.map((e) => e.toJson()).toList(),
 };
 
@@ -187,4 +246,13 @@ const _$VerificationStatusEnumMap = {
   VerificationStatus.verified: 'verified',
   VerificationStatus.changesRequested: 'changes_requested',
   VerificationStatus.rejected: 'rejected',
+};
+
+const _$VerificationCaseStatusEnumMap = {
+  VerificationCaseStatus.draft: 'draft',
+  VerificationCaseStatus.pendingReview: 'pending_review',
+  VerificationCaseStatus.changesRequested: 'changes_requested',
+  VerificationCaseStatus.approved: 'approved',
+  VerificationCaseStatus.rejected: 'rejected',
+  VerificationCaseStatus.cancelled: 'cancelled',
 };

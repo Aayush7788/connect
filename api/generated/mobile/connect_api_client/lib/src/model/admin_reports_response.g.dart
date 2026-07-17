@@ -7,7 +7,7 @@ part of 'admin_reports_response.dart';
 // **************************************************************************
 
 abstract class _$AdminReportsResponseCWProxy {
-  AdminReportsResponse items(List<Map<String, Object>> items);
+  AdminReportsResponse items(List<AdminReport> items);
 
   AdminReportsResponse nextCursor(String? nextCursor);
 
@@ -17,10 +17,7 @@ abstract class _$AdminReportsResponseCWProxy {
   /// ```dart
   /// AdminReportsResponse(...).copyWith(id: 12, name: "My name")
   /// ````
-  AdminReportsResponse call({
-    List<Map<String, Object>> items,
-    String? nextCursor,
-  });
+  AdminReportsResponse call({List<AdminReport> items, String? nextCursor});
 }
 
 /// Proxy class for `copyWith` functionality. This is a callable class and can be used as follows: `instanceOfAdminReportsResponse.copyWith(...)`. Additionally contains functions for specific fields e.g. `instanceOfAdminReportsResponse.copyWith.fieldName(...)`
@@ -31,8 +28,7 @@ class _$AdminReportsResponseCWProxyImpl
   final AdminReportsResponse _value;
 
   @override
-  AdminReportsResponse items(List<Map<String, Object>> items) =>
-      this(items: items);
+  AdminReportsResponse items(List<AdminReport> items) => this(items: items);
 
   @override
   AdminReportsResponse nextCursor(String? nextCursor) =>
@@ -53,7 +49,7 @@ class _$AdminReportsResponseCWProxyImpl
       items: items == const $CopyWithPlaceholder()
           ? _value.items
           // ignore: cast_nullable_to_non_nullable
-          : items as List<Map<String, Object>>,
+          : items as List<AdminReport>,
       nextCursor: nextCursor == const $CopyWithPlaceholder()
           ? _value.nextCursor
           // ignore: cast_nullable_to_non_nullable
@@ -81,11 +77,7 @@ AdminReportsResponse _$AdminReportsResponseFromJson(
     items: $checkedConvert(
       'items',
       (v) => (v as List<dynamic>)
-          .map(
-            (e) => (e as Map<String, dynamic>).map(
-              (k, e) => MapEntry(k, e as Object),
-            ),
-          )
+          .map((e) => AdminReport.fromJson(e as Map<String, dynamic>))
           .toList(),
     ),
     nextCursor: $checkedConvert('next_cursor', (v) => v as String?),
@@ -96,6 +88,6 @@ AdminReportsResponse _$AdminReportsResponseFromJson(
 Map<String, dynamic> _$AdminReportsResponseToJson(
   AdminReportsResponse instance,
 ) => <String, dynamic>{
-  'items': instance.items,
+  'items': instance.items.map((e) => e.toJson()).toList(),
   'next_cursor': ?instance.nextCursor,
 };

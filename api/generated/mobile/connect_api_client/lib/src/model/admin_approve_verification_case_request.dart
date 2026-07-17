@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'admin_approve_verification_case_request.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,73 +17,28 @@ part 'admin_approve_verification_case_request.g.dart';
 )
 class AdminApproveVerificationCaseRequest {
   /// Returns a new [AdminApproveVerificationCaseRequest] instance.
-  AdminApproveVerificationCaseRequest({
+  AdminApproveVerificationCaseRequest({this.notes});
 
-     this.notesToUser,
+  @JsonKey(name: r'notes', required: false, includeIfNull: false)
+  final String? notes;
 
-     this.internalNote,
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AdminApproveVerificationCaseRequest && other.notes == notes;
 
-     this.reason,
-  });
+  @override
+  int get hashCode => notes.hashCode;
 
-  @JsonKey(
-    
-    name: r'notes_to_user',
-    required: false,
-    includeIfNull: false,
-  )
+  factory AdminApproveVerificationCaseRequest.fromJson(
+    Map<String, dynamic> json,
+  ) => _$AdminApproveVerificationCaseRequestFromJson(json);
 
-
-  final String? notesToUser;
-
-
-
-  @JsonKey(
-    
-    name: r'internal_note',
-    required: false,
-    includeIfNull: false,
-  )
-
-
-  final String? internalNote;
-
-
-
-  @JsonKey(
-    
-    name: r'reason',
-    required: false,
-    includeIfNull: false,
-  )
-
-
-  final String? reason;
-
-
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is AdminApproveVerificationCaseRequest &&
-      other.notesToUser == notesToUser &&
-      other.internalNote == internalNote &&
-      other.reason == reason;
-
-    @override
-    int get hashCode =>
-        notesToUser.hashCode +
-        internalNote.hashCode +
-        reason.hashCode;
-
-  factory AdminApproveVerificationCaseRequest.fromJson(Map<String, dynamic> json) => _$AdminApproveVerificationCaseRequestFromJson(json);
-
-  Map<String, dynamic> toJson() => _$AdminApproveVerificationCaseRequestToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$AdminApproveVerificationCaseRequestToJson(this);
 
   @override
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -15,3 +15,11 @@ class CurrentUser:
     role: UserRole | None
     account_status: AccountStatus
     session_id: UUID | None = None
+
+
+@dataclass(frozen=True)
+class CurrentAdmin:
+    admin_user_id: UUID
+    user: CurrentUser
+    role: str
+    display_name: str | None = None

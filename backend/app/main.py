@@ -6,6 +6,7 @@ from app.core.config import Settings, get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import RequestIdMiddleware, configure_logging, get_request_id
 from app.modules.auth.router import router as auth_router
+from app.modules.admin.router import router as admin_router
 from app.modules.engagement.router import router as engagement_router
 from app.modules.me.router import router as me_router
 from app.modules.media.router import router as media_router
@@ -16,6 +17,7 @@ from app.modules.search.router import router as search_router
 from app.modules.taxonomy.router import router as taxonomy_router
 from app.modules.work_cards.router import router as work_cards_router
 from app.modules.work_needed_posts.router import router as work_needed_posts_router
+from app.modules.verification.router import router as verification_router
 
 
 class HealthResponse(BaseModel):
@@ -68,6 +70,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     app.include_router(auth_router, prefix=resolved_settings.api_v1_prefix)
+    app.include_router(admin_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(engagement_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(me_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(media_router, prefix=resolved_settings.api_v1_prefix)
@@ -77,6 +80,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(search_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(taxonomy_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(work_cards_router, prefix=resolved_settings.api_v1_prefix)
+    app.include_router(verification_router, prefix=resolved_settings.api_v1_prefix)
     app.include_router(
         work_needed_posts_router,
         prefix=resolved_settings.api_v1_prefix,

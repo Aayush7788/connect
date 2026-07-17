@@ -111,7 +111,7 @@ Analytics/share/contact failures must not block the visible user action, except 
 | Screen | Primary APIs | Notes |
 |---|---|---|
 | Verify My Profile Button | `GET /v1/me/verification` | Enabled only after completion requirements. |
-| Submit Verification | media APIs, `POST /v1/me/verification/submit` | Optional ID/GST proof; private media. |
+| Submit Verification | `POST /v1/me/verification/prepare`, media APIs, `POST /v1/me/verification/submit` | Prepare a case before optional private ID/GST proof uploads. Direct submit remains valid when no optional proof is supplied. |
 | Pending Review | `GET /v1/me/verification` | Editing locked. |
 | Approved | `GET /v1/me`, `GET /v1/me/verification` | Blue tick public. |
 | Rejected | `GET /v1/me/verification` | Profile remains public but unverified. |
@@ -136,13 +136,12 @@ Analytics/share/contact failures must not block the visible user action, except 
 | Admin View | Primary APIs | Notes |
 |---|---|---|
 | Admin Login/Me | admin auth/session API, `GET /v1/admin/me` | MVP all admins are super-admin. |
-| Verification Queue | `GET /v1/admin/verification-cases` | Filters by status/role/date. |
+| Verification Queue | `GET /v1/admin/verification-cases` | Phase 24 filters by verification case status. |
 | Verification Detail | `GET /v1/admin/verification-cases/{id}` | Includes private proof access through audited short-lived URL. |
 | Verification Actions | approve/request-changes/reject endpoints | Audit logged; sends notification. |
-| Profiles | `GET /v1/admin/profiles` | Filter by role/status/verified/seeded. |
-| Seed Profile Create/Edit | `POST /v1/admin/seed-profiles`, patch seed endpoint | Public/searchable if complete. |
-| Suspend/Unsuspend | profile/user suspension endpoints | Blocks account and removes content from discovery. |
-| Reports Queue | `GET /v1/admin/reports` | Group repeated reports by target/reason/reporter/status. |
-| Categories/Aliases | category admin endpoints | Manage taxonomy and suggestions. |
+| Profiles | `GET /v1/admin/profiles` | Filter by role, verification status, and seeded status through API. |
+| Seed Profile Create | `POST /v1/admin/seed-profiles` | Ownerless demo profile using backend-whitelisted fields; public only when admin chooses it. |
+| Suspend/Unsuspend | `POST /v1/admin/profiles/{id}/suspend`, `POST /v1/admin/profiles/{id}/unsuspend` | Blocks owned account and removes profile from discovery; unsuspend does not publish an incomplete user profile. |
+| Reports Queue | `GET /v1/admin/reports` | Group repeated reports by target/reason/status or inspect raw rows. |
 | Analytics | `GET /v1/admin/analytics/summary` | Search/contact/profile view summary. |
-| Exports | `POST /v1/admin/exports`, `GET /v1/admin/exports/{id}` | Profiles, verification, reports, search/contact summary. |
+| Exports | `POST /v1/admin/exports` | Synchronous private CSV with an audited 15-minute signed download URL. |

@@ -2,6 +2,7 @@ import 'package:connect_app/src/data/connect_api.dart';
 import 'package:connect_app/src/features/auth/auth_controller.dart';
 import 'package:connect_app/src/features/profile/profile_controller.dart';
 import 'package:connect_app/src/features/profile/profile_display.dart';
+import 'package:connect_app/src/features/profile/verification_controller.dart';
 import 'package:connect_app/src/features/work_cards/work_card_owner_list.dart';
 import 'package:connect_app/src/features/work_needed_posts/work_needed_post_owner_list.dart';
 import 'package:connect_app/src/ui/theme.dart';
@@ -31,6 +32,7 @@ class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(profileControllerProvider.notifier).load();
+      ref.read(verificationControllerProvider.notifier).load();
     });
   }
 
@@ -38,6 +40,7 @@ class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
     final authState = ref.watch(authControllerProvider);
+    final verificationState = ref.watch(verificationControllerProvider);
     if (profileState.isLoading && profileState.profile == null) {
       return const _ProfileLoading();
     }
@@ -197,6 +200,15 @@ class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
             color: connectTeal,
           ),
         ],
+        if (profile.completionScore == 100) ...[
+          const SizedBox(height: 16),
+          _VerificationCard(
+            profileStatus: profile.verificationStatus,
+            state: verificationState,
+            onSubmit: (resubmit) =>
+                _confirmVerification(context, resubmit: resubmit),
+          ),
+        ],
         if (missing.isNotEmpty) ...[
           const SizedBox(height: 20),
           Text('Complete next', style: Theme.of(context).textTheme.titleMedium),
@@ -251,6 +263,113 @@ class _MyProfileDashboardState extends ConsumerState<MyProfileDashboard> {
     } else if (role == 'business') {
       widget.onWorkNeededSelectionChanged?.call(selected);
     }
+  }
+
+  Future<void> _confirmVerification(
+    BuildContext context, {
+    required bool resubmit,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(resubmit ? 'Resubmit verification?' : 'Verify my profile?'),
+        content: Text(
+          resubmit
+              ? 'Your updated profile will be sent for review.'
+              : 'Your profile details and photos will be sent for manual review.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(resubmit ? 'Resubmit' : 'Submit'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    await ref
+        .read(verificationControllerProvider.notifier)
+        .submit(resubmit: resubmit);
+  }
+}
+
+class _VerificationCard extends StatelessWidget {
+  const _VerificationCard({
+    required this.profileStatus,
+    required this.state,
+    required this.onSubmit,
+  });
+
+  final String profileStatus;
+  final VerificationState state;
+  final ValueChanged<bool> onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = state.summary?.verificationStatus ?? profileStatus;
+    final message = switch (status) {
+      'pending' => 'Pending review',
+      'verified' => 'Approved. Your profile shows a blue tick.',
+      'changes_requested' =>
+        state.summary?.notesToUser ??
+            'Make the requested changes and resubmit.',
+      'rejected' =>
+        state.summary?.notesToUser ?? 'Not approved. You can submit again.',
+      _ => 'Submit your completed profile for manual verification.',
+    };
+    final canSubmit = status == 'unverified' || status == 'rejected';
+    final canResubmit = status == 'changes_requested';
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified_user_outlined, color: connectTeal),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Profile verification',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(message),
+          if (state.errorMessage != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              state.errorMessage!,
+              style: const TextStyle(color: Color(0xFFB91C1C)),
+            ),
+          ],
+          if (canSubmit || canResubmit) ...[
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: state.isSubmitting
+                  ? null
+                  : () => onSubmit(canResubmit),
+              icon: state.isSubmitting
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.verified_outlined),
+              label: Text(
+                canResubmit ? 'Resubmit profile' : 'Verify my profile',
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

@@ -6,12 +6,14 @@ import 'package:connect_app/src/data/discovery_models.dart';
 import 'package:connect_app/src/data/engagement_models.dart';
 import 'package:connect_app/src/data/work_card_models.dart';
 import 'package:connect_app/src/data/work_needed_post_models.dart';
+import 'package:connect_app/src/data/verification_models.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 export 'package:connect_app/src/data/media_models.dart';
 export 'package:connect_app/src/data/location_models.dart';
+export 'package:connect_app/src/data/verification_models.dart';
 
 const termsVersion = '2026-07-12';
 const privacyVersion = '2026-07-12';
@@ -87,6 +89,14 @@ abstract class ConnectApi {
   Future<OwnerProfileResult> hideOwnerProfile();
 
   Future<OwnerProfileResult> showOwnerProfile();
+
+  Future<VerificationSummaryResult> verificationSummary();
+
+  Future<VerificationSummaryResult> prepareVerification();
+
+  Future<VerificationSummaryResult> submitVerification();
+
+  Future<VerificationSummaryResult> resubmitVerification();
 
   Future<List<CategoryOption>> categories({required String categoryType});
 
@@ -362,6 +372,51 @@ class DioConnectApi implements ConnectApi {
         options: await _authOptions(),
       );
     });
+  }
+
+  @override
+  Future<VerificationSummaryResult> verificationSummary() {
+    return _verificationRequest('GET', '/me/verification');
+  }
+
+  @override
+  Future<VerificationSummaryResult> prepareVerification() {
+    return _verificationRequest('POST', '/me/verification/prepare');
+  }
+
+  @override
+  Future<VerificationSummaryResult> submitVerification() {
+    return _verificationRequest(
+      'POST',
+      '/me/verification/submit',
+      data: {'consent_accepted': false},
+    );
+  }
+
+  @override
+  Future<VerificationSummaryResult> resubmitVerification() {
+    return _verificationRequest(
+      'POST',
+      '/me/verification/resubmit',
+      data: {'consent_accepted': false},
+    );
+  }
+
+  Future<VerificationSummaryResult> _verificationRequest(
+    String method,
+    String path, {
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      final response = await _dio.request<Map<String, dynamic>>(
+        path,
+        data: data,
+        options: (await _authOptions()).copyWith(method: method),
+      );
+      return VerificationSummaryResult.fromJson(_body(response));
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
   }
 
   @override

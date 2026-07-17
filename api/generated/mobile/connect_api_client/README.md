@@ -112,6 +112,8 @@ Class | Method | HTTP request | Description
 [*ShareApi*](doc/ShareApi.md) | [**createShareLink**](doc/ShareApi.md#createsharelink) | **POST** /share-links | Create canonical share link and log share event
 [*TaxonomyApi*](doc/TaxonomyApi.md) | [**listCategories**](doc/TaxonomyApi.md#listcategories) | **GET** /taxonomy/categories | List active categories for profile and marketplace forms
 [*VerificationApi*](doc/VerificationApi.md) | [**getMyVerification**](doc/VerificationApi.md#getmyverification) | **GET** /me/verification | Get own verification summary
+[*VerificationApi*](doc/VerificationApi.md) | [**getMyVerificationCase**](doc/VerificationApi.md#getmyverificationcase) | **GET** /me/verification/cases/{case_id} | Get an owner-safe verification case summary
+[*VerificationApi*](doc/VerificationApi.md) | [**prepareVerification**](doc/VerificationApi.md#prepareverification) | **POST** /me/verification/prepare | Prepare a draft verification case for optional proof uploads
 [*VerificationApi*](doc/VerificationApi.md) | [**resubmitVerification**](doc/VerificationApi.md#resubmitverification) | **POST** /me/verification/resubmit | Resubmit changes-requested verification case
 [*VerificationApi*](doc/VerificationApi.md) | [**submitVerification**](doc/VerificationApi.md#submitverification) | **POST** /me/verification/submit | Submit profile for manual verification
 [*WorkCardsApi*](doc/WorkCardsApi.md) | [**createWorkCard**](doc/WorkCardsApi.md#createworkcard) | **POST** /me/work-cards | Create own work card draft
@@ -137,13 +139,16 @@ Class | Method | HTTP request | Description
  - [AddressValidationRequest](doc/AddressValidationRequest.md)
  - [AddressValidationResponse](doc/AddressValidationResponse.md)
  - [AdminAnalyticsSummary](doc/AdminAnalyticsSummary.md)
+ - [AdminAnalyticsSummaryTopSearchTermsInner](doc/AdminAnalyticsSummaryTopSearchTermsInner.md)
  - [AdminApproveVerificationCaseRequest](doc/AdminApproveVerificationCaseRequest.md)
  - [AdminProfile](doc/AdminProfile.md)
  - [AdminProfilesResponse](doc/AdminProfilesResponse.md)
+ - [AdminReport](doc/AdminReport.md)
  - [AdminReportsResponse](doc/AdminReportsResponse.md)
  - [AdminSeedProfileRequest](doc/AdminSeedProfileRequest.md)
  - [AdminUser](doc/AdminUser.md)
  - [AdminVerificationCase](doc/AdminVerificationCase.md)
+ - [AdminVerificationCaseChecksInner](doc/AdminVerificationCaseChecksInner.md)
  - [AdminVerificationCasePrivateDocumentAccessInner](doc/AdminVerificationCasePrivateDocumentAccessInner.md)
  - [AdminVerificationCasesResponse](doc/AdminVerificationCasesResponse.md)
  - [AuthSessionResponse](doc/AuthSessionResponse.md)
@@ -202,7 +207,9 @@ Class | Method | HTTP request | Description
  - [UserSettings](doc/UserSettings.md)
  - [VerificationCaseStatus](doc/VerificationCaseStatus.md)
  - [VerificationStatus](doc/VerificationStatus.md)
+ - [VerificationSubmitRequest](doc/VerificationSubmitRequest.md)
  - [VerificationSummary](doc/VerificationSummary.md)
+ - [VerificationSummaryChecksInner](doc/VerificationSummaryChecksInner.md)
  - [VerificationSummarySafeDocumentsInner](doc/VerificationSummarySafeDocumentsInner.md)
  - [WorkCard](doc/WorkCard.md)
  - [WorkCardStatus](doc/WorkCardStatus.md)

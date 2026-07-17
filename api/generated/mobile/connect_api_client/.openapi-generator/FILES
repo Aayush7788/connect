@@ -31,13 +31,16 @@ lib/src/model/account_status.dart
 lib/src/model/address_validation_request.dart
 lib/src/model/address_validation_response.dart
 lib/src/model/admin_analytics_summary.dart
+lib/src/model/admin_analytics_summary_top_search_terms_inner.dart
 lib/src/model/admin_approve_verification_case_request.dart
 lib/src/model/admin_profile.dart
 lib/src/model/admin_profiles_response.dart
+lib/src/model/admin_report.dart
 lib/src/model/admin_reports_response.dart
 lib/src/model/admin_seed_profile_request.dart
 lib/src/model/admin_user.dart
 lib/src/model/admin_verification_case.dart
+lib/src/model/admin_verification_case_checks_inner.dart
 lib/src/model/admin_verification_case_private_document_access_inner.dart
 lib/src/model/admin_verification_cases_response.dart
 lib/src/model/auth_session_response.dart
@@ -96,7 +99,9 @@ lib/src/model/user_role.dart
 lib/src/model/user_settings.dart
 lib/src/model/verification_case_status.dart
 lib/src/model/verification_status.dart
+lib/src/model/verification_submit_request.dart
 lib/src/model/verification_summary.dart
+lib/src/model/verification_summary_checks_inner.dart
 lib/src/model/verification_summary_safe_documents_inner.dart
 lib/src/model/work_card.dart
 lib/src/model/work_card_status.dart
