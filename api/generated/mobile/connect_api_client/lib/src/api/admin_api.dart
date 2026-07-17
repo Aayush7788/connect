@@ -27,13 +27,12 @@ import 'package:connect_api_client/src/model/verification_case_status.dart';
 import 'package:connect_api_client/src/model/verification_status.dart';
 
 class AdminApi {
-
   final Dio _dio;
 
   const AdminApi(this._dio);
 
   /// Get admin analytics summary
-  /// 
+  ///
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -45,7 +44,7 @@ class AdminApi {
   ///
   /// Returns a [Future] containing a [Response] with a [AdminAnalyticsSummary] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminAnalyticsSummary>> adminAnalyticsSummary({ 
+  Future<Response<AdminAnalyticsSummary>> adminAnalyticsSummary({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -56,16 +55,10 @@ class AdminApi {
     final _path = r'/admin/analytics/summary';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -83,9 +76,14 @@ class AdminApi {
     AdminAnalyticsSummary? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminAnalyticsSummary, AdminAnalyticsSummary>(rawData, 'AdminAnalyticsSummary', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<AdminAnalyticsSummary, AdminAnalyticsSummary>(
+              rawData,
+              'AdminAnalyticsSummary',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -109,11 +107,11 @@ _responseData = rawData == null ? null : deserialize<AdminAnalyticsSummary, Admi
   }
 
   /// Approve verification case
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [caseId] 
-  /// * [adminApproveVerificationCaseRequest] 
+  /// * [caseId]
+  /// * [adminApproveVerificationCaseRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -123,9 +121,10 @@ _responseData = rawData == null ? null : deserialize<AdminAnalyticsSummary, Admi
   ///
   /// Returns a [Future] containing a [Response] with a [AdminVerificationCase] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminVerificationCase>> adminApproveVerificationCase({ 
+  Future<Response<AdminVerificationCase>> adminApproveVerificationCase({
     required String caseId,
-    AdminApproveVerificationCaseRequest? adminApproveVerificationCaseRequest,
+    required AdminApproveVerificationCaseRequest
+    adminApproveVerificationCaseRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -133,19 +132,18 @@ _responseData = rawData == null ? null : deserialize<AdminAnalyticsSummary, Admi
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/admin/verification-cases/{case_id}/approve'.replaceAll('{' r'case_id' '}', caseId.toString());
+    final _path = r'/admin/verification-cases/{case_id}/approve'.replaceAll(
+      '{'
+      r'case_id'
+      '}',
+      caseId.toString(),
+    );
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -157,13 +155,9 @@ _responseData = rawData == null ? null : deserialize<AdminAnalyticsSummary, Admi
 
     try {
       _bodyData = jsonEncode(adminApproveVerificationCaseRequest);
-
-    } catch(error, stackTrace) {
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
+        requestOptions: _options.compose(_dio.options, _path),
         type: DioExceptionType.unknown,
         error: error,
         stackTrace: stackTrace,
@@ -182,9 +176,14 @@ _responseData = rawData == null ? null : deserialize<AdminAnalyticsSummary, Admi
     AdminVerificationCase? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminVerificationCase, AdminVerificationCase>(rawData, 'AdminVerificationCase', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<AdminVerificationCase, AdminVerificationCase>(
+              rawData,
+              'AdminVerificationCase',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -208,10 +207,10 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
   }
 
   /// Create admin CSV export
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [createExportRequest] 
+  /// * [createExportRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -221,7 +220,7 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
   ///
   /// Returns a [Future] containing a [Response] with a [ExportJob] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ExportJob>> adminCreateExport({ 
+  Future<Response<ExportJob>> adminCreateExport({
     required CreateExportRequest createExportRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -233,16 +232,10 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
     final _path = r'/admin/exports';
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -254,13 +247,9 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
 
     try {
       _bodyData = jsonEncode(createExportRequest);
-
-    } catch(error, stackTrace) {
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
+        requestOptions: _options.compose(_dio.options, _path),
         type: DioExceptionType.unknown,
         error: error,
         stackTrace: stackTrace,
@@ -279,9 +268,14 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
     ExportJob? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<ExportJob, ExportJob>(rawData, 'ExportJob', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<ExportJob, ExportJob>(
+              rawData,
+              'ExportJob',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -305,10 +299,10 @@ _responseData = rawData == null ? null : deserialize<ExportJob, ExportJob>(rawDa
   }
 
   /// Create admin-seeded profile
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [adminSeedProfileRequest] 
+  /// * [adminSeedProfileRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -318,7 +312,7 @@ _responseData = rawData == null ? null : deserialize<ExportJob, ExportJob>(rawDa
   ///
   /// Returns a [Future] containing a [Response] with a [AdminProfile] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminProfile>> adminCreateSeedProfile({ 
+  Future<Response<AdminProfile>> adminCreateSeedProfile({
     required AdminSeedProfileRequest adminSeedProfileRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -330,16 +324,10 @@ _responseData = rawData == null ? null : deserialize<ExportJob, ExportJob>(rawDa
     final _path = r'/admin/seed-profiles';
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -351,13 +339,9 @@ _responseData = rawData == null ? null : deserialize<ExportJob, ExportJob>(rawDa
 
     try {
       _bodyData = jsonEncode(adminSeedProfileRequest);
-
-    } catch(error, stackTrace) {
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
+        requestOptions: _options.compose(_dio.options, _path),
         type: DioExceptionType.unknown,
         error: error,
         stackTrace: stackTrace,
@@ -376,9 +360,14 @@ _responseData = rawData == null ? null : deserialize<ExportJob, ExportJob>(rawDa
     AdminProfile? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>(rawData, 'AdminProfile', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<AdminProfile, AdminProfile>(
+              rawData,
+              'AdminProfile',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -402,10 +391,10 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
   }
 
   /// Get verification case detail
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [caseId] 
+  /// * [caseId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -415,7 +404,7 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
   ///
   /// Returns a [Future] containing a [Response] with a [AdminVerificationCase] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminVerificationCase>> adminGetVerificationCase({ 
+  Future<Response<AdminVerificationCase>> adminGetVerificationCase({
     required String caseId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -424,19 +413,18 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/admin/verification-cases/{case_id}'.replaceAll('{' r'case_id' '}', caseId.toString());
+    final _path = r'/admin/verification-cases/{case_id}'.replaceAll(
+      '{'
+      r'case_id'
+      '}',
+      caseId.toString(),
+    );
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -454,9 +442,14 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
     AdminVerificationCase? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminVerificationCase, AdminVerificationCase>(rawData, 'AdminVerificationCase', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<AdminVerificationCase, AdminVerificationCase>(
+              rawData,
+              'AdminVerificationCase',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -480,14 +473,14 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
   }
 
   /// List profiles for admin
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [role] 
-  /// * [verificationStatus] 
-  /// * [isAdminSeeded] 
-  /// * [cursor] 
-  /// * [limit] 
+  /// * [role]
+  /// * [verificationStatus]
+  /// * [isAdminSeeded]
+  /// * [cursor]
+  /// * [limit]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -497,7 +490,7 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
   ///
   /// Returns a [Future] containing a [Response] with a [AdminProfilesResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminProfilesResponse>> adminListProfiles({ 
+  Future<Response<AdminProfilesResponse>> adminListProfiles({
     UserRole? role,
     VerificationStatus? verificationStatus,
     bool? isAdminSeeded,
@@ -513,16 +506,10 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
     final _path = r'/admin/profiles';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -531,7 +518,8 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
 
     final _queryParameters = <String, dynamic>{
       if (role != null) r'role': role,
-      if (verificationStatus != null) r'verification_status': verificationStatus,
+      if (verificationStatus != null)
+        r'verification_status': verificationStatus,
       if (isAdminSeeded != null) r'is_admin_seeded': isAdminSeeded,
       if (cursor != null) r'cursor': cursor,
       if (limit != null) r'limit': limit,
@@ -549,9 +537,14 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
     AdminProfilesResponse? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminProfilesResponse, AdminProfilesResponse>(rawData, 'AdminProfilesResponse', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<AdminProfilesResponse, AdminProfilesResponse>(
+              rawData,
+              'AdminProfilesResponse',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -575,13 +568,13 @@ _responseData = rawData == null ? null : deserialize<AdminProfilesResponse, Admi
   }
 
   /// List reports grouped or raw
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [status] 
-  /// * [grouped] 
-  /// * [cursor] 
-  /// * [limit] 
+  /// * [status]
+  /// * [grouped]
+  /// * [cursor]
+  /// * [limit]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -591,7 +584,7 @@ _responseData = rawData == null ? null : deserialize<AdminProfilesResponse, Admi
   ///
   /// Returns a [Future] containing a [Response] with a [AdminReportsResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminReportsResponse>> adminListReports({ 
+  Future<Response<AdminReportsResponse>> adminListReports({
     ReportStatus? status,
     bool? grouped = true,
     String? cursor,
@@ -606,16 +599,10 @@ _responseData = rawData == null ? null : deserialize<AdminProfilesResponse, Admi
     final _path = r'/admin/reports';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -641,9 +628,14 @@ _responseData = rawData == null ? null : deserialize<AdminProfilesResponse, Admi
     AdminReportsResponse? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminReportsResponse, AdminReportsResponse>(rawData, 'AdminReportsResponse', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<AdminReportsResponse, AdminReportsResponse>(
+              rawData,
+              'AdminReportsResponse',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -667,12 +659,12 @@ _responseData = rawData == null ? null : deserialize<AdminReportsResponse, Admin
   }
 
   /// List verification cases
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [status] 
-  /// * [cursor] 
-  /// * [limit] 
+  /// * [status]
+  /// * [cursor]
+  /// * [limit]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -682,7 +674,7 @@ _responseData = rawData == null ? null : deserialize<AdminReportsResponse, Admin
   ///
   /// Returns a [Future] containing a [Response] with a [AdminVerificationCasesResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminVerificationCasesResponse>> adminListVerificationCases({ 
+  Future<Response<AdminVerificationCasesResponse>> adminListVerificationCases({
     VerificationCaseStatus? status,
     String? cursor,
     int? limit = 20,
@@ -696,16 +688,10 @@ _responseData = rawData == null ? null : deserialize<AdminReportsResponse, Admin
     final _path = r'/admin/verification-cases';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -730,9 +716,13 @@ _responseData = rawData == null ? null : deserialize<AdminReportsResponse, Admin
     AdminVerificationCasesResponse? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminVerificationCasesResponse, AdminVerificationCasesResponse>(rawData, 'AdminVerificationCasesResponse', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<
+              AdminVerificationCasesResponse,
+              AdminVerificationCasesResponse
+            >(rawData, 'AdminVerificationCasesResponse', growable: true);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -756,11 +746,11 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCasesRespo
   }
 
   /// Reject verification case
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [caseId] 
-  /// * [adminApproveVerificationCaseRequest] 
+  /// * [caseId]
+  /// * [adminApproveVerificationCaseRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -770,9 +760,10 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCasesRespo
   ///
   /// Returns a [Future] containing a [Response] with a [AdminVerificationCase] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminVerificationCase>> adminRejectVerificationCase({ 
+  Future<Response<AdminVerificationCase>> adminRejectVerificationCase({
     required String caseId,
-    AdminApproveVerificationCaseRequest? adminApproveVerificationCaseRequest,
+    required AdminApproveVerificationCaseRequest
+    adminApproveVerificationCaseRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -780,19 +771,18 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCasesRespo
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/admin/verification-cases/{case_id}/reject'.replaceAll('{' r'case_id' '}', caseId.toString());
+    final _path = r'/admin/verification-cases/{case_id}/reject'.replaceAll(
+      '{'
+      r'case_id'
+      '}',
+      caseId.toString(),
+    );
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -804,13 +794,9 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCasesRespo
 
     try {
       _bodyData = jsonEncode(adminApproveVerificationCaseRequest);
-
-    } catch(error, stackTrace) {
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
+        requestOptions: _options.compose(_dio.options, _path),
         type: DioExceptionType.unknown,
         error: error,
         stackTrace: stackTrace,
@@ -829,9 +815,14 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCasesRespo
     AdminVerificationCase? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminVerificationCase, AdminVerificationCase>(rawData, 'AdminVerificationCase', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<AdminVerificationCase, AdminVerificationCase>(
+              rawData,
+              'AdminVerificationCase',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -855,11 +846,11 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
   }
 
   /// Request verification changes
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [caseId] 
-  /// * [adminApproveVerificationCaseRequest] 
+  /// * [caseId]
+  /// * [adminApproveVerificationCaseRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -869,9 +860,10 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
   ///
   /// Returns a [Future] containing a [Response] with a [AdminVerificationCase] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminVerificationCase>> adminRequestVerificationChanges({ 
+  Future<Response<AdminVerificationCase>> adminRequestVerificationChanges({
     required String caseId,
-    AdminApproveVerificationCaseRequest? adminApproveVerificationCaseRequest,
+    required AdminApproveVerificationCaseRequest
+    adminApproveVerificationCaseRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -879,19 +871,19 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/admin/verification-cases/{case_id}/request-changes'.replaceAll('{' r'case_id' '}', caseId.toString());
+    final _path = r'/admin/verification-cases/{case_id}/request-changes'
+        .replaceAll(
+          '{'
+          r'case_id'
+          '}',
+          caseId.toString(),
+        );
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -903,13 +895,9 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
 
     try {
       _bodyData = jsonEncode(adminApproveVerificationCaseRequest);
-
-    } catch(error, stackTrace) {
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
+        requestOptions: _options.compose(_dio.options, _path),
         type: DioExceptionType.unknown,
         error: error,
         stackTrace: stackTrace,
@@ -928,9 +916,14 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
     AdminVerificationCase? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminVerificationCase, AdminVerificationCase>(rawData, 'AdminVerificationCase', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<AdminVerificationCase, AdminVerificationCase>(
+              rawData,
+              'AdminVerificationCase',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -954,11 +947,11 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
   }
 
   /// Suspend profile and account where applicable
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [profileId] 
-  /// * [adminApproveVerificationCaseRequest] 
+  /// * [profileId]
+  /// * [adminApproveVerificationCaseRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -968,9 +961,10 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
   ///
   /// Returns a [Future] containing a [Response] with a [AdminProfile] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminProfile>> adminSuspendProfile({ 
+  Future<Response<AdminProfile>> adminSuspendProfile({
     required String profileId,
-    AdminApproveVerificationCaseRequest? adminApproveVerificationCaseRequest,
+    required AdminApproveVerificationCaseRequest
+    adminApproveVerificationCaseRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -978,19 +972,18 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/admin/profiles/{profile_id}/suspend'.replaceAll('{' r'profile_id' '}', profileId.toString());
+    final _path = r'/admin/profiles/{profile_id}/suspend'.replaceAll(
+      '{'
+      r'profile_id'
+      '}',
+      profileId.toString(),
+    );
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -1002,13 +995,9 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
 
     try {
       _bodyData = jsonEncode(adminApproveVerificationCaseRequest);
-
-    } catch(error, stackTrace) {
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
+        requestOptions: _options.compose(_dio.options, _path),
         type: DioExceptionType.unknown,
         error: error,
         stackTrace: stackTrace,
@@ -1027,9 +1016,14 @@ _responseData = rawData == null ? null : deserialize<AdminVerificationCase, Admi
     AdminProfile? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>(rawData, 'AdminProfile', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<AdminProfile, AdminProfile>(
+              rawData,
+              'AdminProfile',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1053,10 +1047,10 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
   }
 
   /// Unsuspend profile and account where applicable
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [profileId] 
+  /// * [profileId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1066,7 +1060,7 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
   ///
   /// Returns a [Future] containing a [Response] with a [AdminProfile] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminProfile>> adminUnsuspendProfile({ 
+  Future<Response<AdminProfile>> adminUnsuspendProfile({
     required String profileId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -1075,19 +1069,18 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/admin/profiles/{profile_id}/unsuspend'.replaceAll('{' r'profile_id' '}', profileId.toString());
+    final _path = r'/admin/profiles/{profile_id}/unsuspend'.replaceAll(
+      '{'
+      r'profile_id'
+      '}',
+      profileId.toString(),
+    );
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -1105,9 +1098,14 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
     AdminProfile? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>(rawData, 'AdminProfile', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<AdminProfile, AdminProfile>(
+              rawData,
+              'AdminProfile',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1131,7 +1129,7 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
   }
 
   /// Get admin session
-  /// 
+  ///
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -1143,7 +1141,7 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
   ///
   /// Returns a [Future] containing a [Response] with a [AdminUser] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminUser>> getAdminMe({ 
+  Future<Response<AdminUser>> getAdminMe({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1154,16 +1152,10 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
     final _path = r'/admin/me';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'bearerAuth',
-          },
+          {'type': 'http', 'scheme': 'bearer', 'name': 'bearerAuth'},
         ],
         ...?extra,
       },
@@ -1181,9 +1173,14 @@ _responseData = rawData == null ? null : deserialize<AdminProfile, AdminProfile>
     AdminUser? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<AdminUser, AdminUser>(rawData, 'AdminUser', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<AdminUser, AdminUser>(
+              rawData,
+              'AdminUser',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1205,5 +1202,4 @@ _responseData = rawData == null ? null : deserialize<AdminUser, AdminUser>(rawDa
       extra: _response.extra,
     );
   }
-
 }

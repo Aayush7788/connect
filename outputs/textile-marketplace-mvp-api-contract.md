@@ -555,6 +555,7 @@ Rules:
 Owner endpoints:
 
 - `GET /v1/me/verification`
+- `POST /v1/me/verification/prepare`
 - `POST /v1/me/verification/submit`
 - `POST /v1/me/verification/resubmit`
 - `GET /v1/me/verification/cases/{case_id}`
@@ -573,6 +574,7 @@ Rules:
 - blue tick only after admin final approval
 - verification is free
 - optional ID/GST proof is supporting evidence
+- `prepare` creates the draft case needed to scope optional private proof uploads before submission
 - no raw Aadhaar/PAN/identity number storage
 - one active verification case per profile
 - pending verification locks profile edits
@@ -674,12 +676,10 @@ Core admin capabilities:
 
 - verification queue and decisions
 - profile/user list
-- seed profile creation/editing
+- seed profile creation
 - moderation/status changes
 - suspension/unsuspension
 - report queue
-- category and alias management
-- notification sending
 - analytics summary
 - CSV exports
 
@@ -687,7 +687,7 @@ Admin-created seed profiles:
 
 - can be public/searchable before claimed
 - are internally marked as admin-seeded
-- are editable by admin until claimed
+- can only be created from whitelisted profile fields in the Phase 24 dashboard
 
 User-owned content:
 
@@ -703,6 +703,9 @@ Exports:
 - contact summary
 
 Exports must exclude private proof document URLs and raw sensitive identity data.
+Phase 24 generates the CSV synchronously, stores it in private storage, returns a
+15-minute signed URL, and audit logs the export. Async export jobs can replace this
+without changing the dashboard workflow when dataset size requires it.
 
 ## 15. Observability And Privacy
 

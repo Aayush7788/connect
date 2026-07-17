@@ -200,9 +200,10 @@ class AdminAuditLog(Base):
         primary_key=True,
         server_default=text("gen_random_uuid()"),
     )
-    actor_admin_user_id: Mapped[UUID | None] = mapped_column(
+    actor_admin_user_id: Mapped[UUID] = mapped_column(
         PgUUID(as_uuid=True),
         ForeignKey("admin_users.id"),
+        nullable=False,
     )
     action: Mapped[str] = mapped_column(Text)
     entity_type: Mapped[str] = mapped_column(Text)

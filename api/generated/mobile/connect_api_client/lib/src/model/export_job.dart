@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'export_job.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,65 +18,42 @@ part 'export_job.g.dart';
 class ExportJob {
   /// Returns a new [ExportJob] instance.
   ExportJob({
+    required this.id,
 
-    required  this.id,
+    required this.status,
 
-    required  this.status,
+    required this.downloadUrl,
 
-     this.downloadUrl,
+    required this.expiresAt,
   });
 
-  @JsonKey(
-    
-    name: r'id',
-    required: true,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'id', required: true, includeIfNull: false)
   final String id;
 
-
-
-  @JsonKey(
-    
-    name: r'status',
-    required: true,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'status', required: true, includeIfNull: false)
   final ExportJobStatusEnum status;
 
+  @JsonKey(name: r'download_url', required: true, includeIfNull: false)
+  final String downloadUrl;
 
+  @JsonKey(name: r'expires_at', required: true, includeIfNull: false)
+  final DateTime expiresAt;
 
-  @JsonKey(
-    
-    name: r'download_url',
-    required: false,
-    includeIfNull: false,
-  )
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ExportJob &&
+          other.id == id &&
+          other.status == status &&
+          other.downloadUrl == downloadUrl &&
+          other.expiresAt == expiresAt;
 
+  @override
+  int get hashCode =>
+      id.hashCode + status.hashCode + downloadUrl.hashCode + expiresAt.hashCode;
 
-  final String? downloadUrl;
-
-
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ExportJob &&
-      other.id == id &&
-      other.status == status &&
-      other.downloadUrl == downloadUrl;
-
-    @override
-    int get hashCode =>
-        id.hashCode +
-        status.hashCode +
-        downloadUrl.hashCode;
-
-  factory ExportJob.fromJson(Map<String, dynamic> json) => _$ExportJobFromJson(json);
+  factory ExportJob.fromJson(Map<String, dynamic> json) =>
+      _$ExportJobFromJson(json);
 
   Map<String, dynamic> toJson() => _$ExportJobToJson(this);
 
@@ -85,26 +61,16 @@ class ExportJob {
   String toString() {
     return toJson().toString();
   }
-
 }
-
 
 enum ExportJobStatusEnum {
-@JsonValue(r'queued')
-queued(r'queued'),
-@JsonValue(r'processing')
-processing(r'processing'),
-@JsonValue(r'ready')
-ready(r'ready'),
-@JsonValue(r'failed')
-failed(r'failed');
+  @JsonValue(r'ready')
+  ready(r'ready');
 
-const ExportJobStatusEnum(this.value);
+  const ExportJobStatusEnum(this.value);
 
-final String value;
+  final String value;
 
-@override
-String toString() => value;
+  @override
+  String toString() => value;
 }
-
-

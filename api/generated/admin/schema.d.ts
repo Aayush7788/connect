@@ -570,6 +570,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/verification/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prepare a draft verification case for optional proof uploads */
+        post: operations["prepareVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/verification/submit": {
         parameters: {
             query?: never;
@@ -598,6 +615,23 @@ export interface paths {
         put?: never;
         /** Resubmit changes-requested verification case */
         post: operations["resubmitVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/verification/cases/{case_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an owner-safe verification case summary */
+        get: operations["getMyVerificationCase"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1043,7 +1077,7 @@ export interface components {
         /** @enum {string} */
         ReportStatus: "submitted" | "in_review" | "resolved_no_action" | "action_taken" | "dismissed";
         /** @enum {string} */
-        VerificationCaseStatus: "pending" | "approved" | "changes_requested" | "rejected";
+        VerificationCaseStatus: "draft" | "pending_review" | "changes_requested" | "approved" | "rejected" | "cancelled";
         /** @enum {string} */
         MediaVisibility: "public" | "private_admin_only";
         /** @enum {string} */
@@ -1342,13 +1376,28 @@ export interface components {
             is_verified: boolean;
             reverification_required?: boolean;
             /** Format: uuid */
-            active_case_id?: string;
-            notes_to_user?: string;
-            safe_documents?: {
-                document_type?: string;
-                status?: string;
-                safe_display_name?: string;
+            active_case_id?: string | null;
+            case_status?: components["schemas"]["VerificationCaseStatus"];
+            notes_to_user?: string | null;
+            /** Format: date-time */
+            submitted_at?: string | null;
+            checks?: {
+                check_type: string;
+                status: string;
+                notes_to_user?: string | null;
             }[];
+            safe_documents?: {
+                /** Format: uuid */
+                media_asset_id: string;
+                document_type: string;
+                status: string;
+                safe_display_name: string;
+            }[];
+        };
+        VerificationSubmitRequest: {
+            consent_version?: string | null;
+            /** @default false */
+            consent_accepted: boolean;
         };
         SavedItemsResponse: {
             items: components["schemas"]["SavedItem"][];
@@ -1435,7 +1484,8 @@ export interface components {
         AdminUser: {
             /** Format: uuid */
             id: string;
-            email?: string;
+            display_name?: string | null;
+            mobile: string;
             /** @enum {string} */
             role: "super_admin";
         };
@@ -1447,13 +1497,28 @@ export interface components {
             /** Format: uuid */
             id: string;
             status: components["schemas"]["VerificationCaseStatus"];
+            case_reason: string;
             profile: components["schemas"]["ProfileSummary"];
+            owner_mobile?: string | null;
+            full_address?: string | null;
+            /** Format: date-time */
+            submitted_at?: string | null;
+            /** Format: date-time */
+            reviewed_at?: string | null;
+            notes_to_user?: string | null;
+            internal_notes?: string | null;
+            resubmission_count?: number;
             checks?: {
-                [key: string]: unknown;
+                check_type: string;
+                status: string;
+                notes_to_user?: string | null;
+                internal_notes?: string | null;
             }[];
             private_document_access?: {
                 /** Format: uuid */
                 media_asset_id?: string;
+                document_type?: string;
+                safe_display_name?: string;
                 /** Format: uri */
                 access_url?: string;
                 /** Format: date-time */
@@ -1464,12 +1529,16 @@ export interface components {
             items: components["schemas"]["AdminProfile"][];
             next_cursor?: string | null;
         };
-        AdminProfile: components["schemas"]["ProfileSummary"] & {
+        AdminProfile: {
+            profile: components["schemas"]["ProfileSummary"];
             /** Format: uuid */
             owner_user_id?: string | null;
-            is_admin_seeded?: boolean;
-            /** @enum {string} */
-            claim_status?: "unclaimed" | "claimed" | "not_applicable";
+            owner_mobile?: string | null;
+            is_admin_seeded: boolean;
+            /** @enum {string|null} */
+            claim_status?: "unclaimed" | "claimed" | "not_claimable" | null;
+            account_status?: components["schemas"]["AccountStatus"];
+            full_address?: string | null;
         };
         AdminSeedProfileRequest: {
             role: components["schemas"]["UserRole"];
@@ -1481,19 +1550,34 @@ export interface components {
             make_public: boolean;
         };
         AdminReportsResponse: {
-            items: {
-                [key: string]: unknown;
-            }[];
+            items: components["schemas"]["AdminReport"][];
             next_cursor?: string | null;
         };
+        AdminReport: {
+            /** Format: uuid */
+            id?: string | null;
+            reported_entity_type: string;
+            /** Format: uuid */
+            reported_entity_id: string;
+            reason: string;
+            status?: string | null;
+            message?: string | null;
+            report_count: number;
+            /** Format: date-time */
+            latest_reported_at: string;
+        };
         AdminAnalyticsSummary: {
-            total_profiles?: number;
-            verified_profiles?: number;
-            top_search_terms?: {
-                [key: string]: unknown;
+            total_profiles: number;
+            verified_profiles: number;
+            pending_verifications: number;
+            submitted_reports: number;
+            profile_views: number;
+            top_search_terms: {
+                term: string;
+                count: number;
             }[];
-            contact_actions?: {
-                [key: string]: unknown;
+            contact_actions: {
+                [key: string]: number;
             };
         };
         CreateExportRequest: {
@@ -1507,9 +1591,11 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            status: "queued" | "processing" | "ready" | "failed";
+            status: "ready";
             /** Format: uri */
-            download_url?: string | null;
+            download_url: string;
+            /** Format: date-time */
+            expires_at: string;
         };
         ErrorResponse: {
             error: {
@@ -1550,9 +1636,7 @@ export interface components {
         AdminDecision: {
             content: {
                 "application/json": {
-                    notes_to_user?: string;
-                    internal_note?: string;
-                    reason?: string;
+                    notes?: string;
                 };
             };
         };
@@ -2474,6 +2558,27 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
+    prepareVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Draft verification case */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationSummary"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
     submitVerification: {
         parameters: {
             query?: never;
@@ -2483,10 +2588,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationSubmitRequest"];
+            };
+        };
         responses: {
-            /** @description Verification case created */
-            201: {
+            /** @description Verification submitted */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2506,9 +2615,36 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationSubmitRequest"];
+            };
+        };
         responses: {
             /** @description Verification resubmitted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationSummary"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getMyVerificationCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: components["parameters"]["CaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verification case summary */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2858,7 +2994,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: components["requestBodies"]["AdminDecision"];
+        requestBody: components["requestBodies"]["AdminDecision"];
         responses: {
             /** @description Approved */
             200: {
@@ -2881,7 +3017,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: components["requestBodies"]["AdminDecision"];
+        requestBody: components["requestBodies"]["AdminDecision"];
         responses: {
             /** @description Changes requested */
             200: {
@@ -2904,7 +3040,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: components["requestBodies"]["AdminDecision"];
+        requestBody: components["requestBodies"]["AdminDecision"];
         responses: {
             /** @description Rejected */
             200: {
@@ -2979,7 +3115,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: components["requestBodies"]["AdminDecision"];
+        requestBody: components["requestBodies"]["AdminDecision"];
         responses: {
             /** @description Suspended */
             200: {

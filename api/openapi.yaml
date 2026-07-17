@@ -785,6 +785,20 @@ paths:
                 $ref: '#/components/schemas/VerificationSummary'
         default:
           $ref: '#/components/responses/Error'
+  /me/verification/prepare:
+    post:
+      tags: [Verification]
+      summary: Prepare a draft verification case for optional proof uploads
+      operationId: prepareVerification
+      responses:
+        '200':
+          description: Draft verification case
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSummary'
+        default:
+          $ref: '#/components/responses/Error'
   /me/verification/submit:
     post:
       tags: [Verification]
@@ -792,9 +806,15 @@ paths:
       operationId: submitVerification
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationSubmitRequest'
       responses:
-        '201':
-          description: Verification case created
+        '200':
+          description: Verification submitted
           content:
             application/json:
               schema:
@@ -808,9 +828,31 @@ paths:
       operationId: resubmitVerification
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationSubmitRequest'
       responses:
         '200':
           description: Verification resubmitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSummary'
+        default:
+          $ref: '#/components/responses/Error'
+  /me/verification/cases/{case_id}:
+    get:
+      tags: [Verification]
+      summary: Get an owner-safe verification case summary
+      operationId: getMyVerificationCase
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      responses:
+        '200':
+          description: Verification case summary
           content:
             application/json:
               schema:
@@ -1331,17 +1373,13 @@ components:
         format: uuid
   requestBodies:
     AdminDecision:
-      required: false
+      required: true
       content:
         application/json:
           schema:
             type: object
             properties:
-              notes_to_user:
-                type: string
-              internal_note:
-                type: string
-              reason:
+              notes:
                 type: string
   responses:
     Error:
@@ -1478,7 +1516,7 @@ components:
       enum: [submitted, in_review, resolved_no_action, action_taken, dismissed]
     VerificationCaseStatus:
       type: string
-      enum: [pending, approved, changes_requested, rejected]
+      enum: [draft, pending_review, changes_requested, approved, rejected, cancelled]
     MediaVisibility:
       type: string
       enum: [public, private_admin_only]
@@ -2211,19 +2249,54 @@ components:
         active_case_id:
           type: string
           format: uuid
+          nullable: true
+        case_status:
+          $ref: '#/components/schemas/VerificationCaseStatus'
+          nullable: true
         notes_to_user:
           type: string
+          nullable: true
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+        checks:
+          type: array
+          items:
+            type: object
+            required: [check_type, status]
+            properties:
+              check_type:
+                type: string
+              status:
+                type: string
+              notes_to_user:
+                type: string
+                nullable: true
         safe_documents:
           type: array
           items:
             type: object
+            required: [media_asset_id, document_type, status, safe_display_name]
             properties:
+              media_asset_id:
+                type: string
+                format: uuid
               document_type:
                 type: string
               status:
                 type: string
               safe_display_name:
                 type: string
+    VerificationSubmitRequest:
+      type: object
+      properties:
+        consent_version:
+          type: string
+          nullable: true
+        consent_accepted:
+          type: boolean
+          default: false
     SavedItemsResponse:
       type: object
       required: [items]
@@ -2378,12 +2451,15 @@ components:
           type: string
     AdminUser:
       type: object
-      required: [id, role]
+      required: [id, mobile, role]
       properties:
         id:
           type: string
           format: uuid
-        email:
+        display_name:
+          type: string
+          nullable: true
+        mobile:
           type: string
         role:
           type: string
@@ -2401,20 +2477,55 @@ components:
           nullable: true
     AdminVerificationCase:
       type: object
-      required: [id, status, profile]
+      required: [id, status, case_reason, profile]
       properties:
         id:
           type: string
           format: uuid
         status:
           $ref: '#/components/schemas/VerificationCaseStatus'
+        case_reason:
+          type: string
         profile:
           $ref: '#/components/schemas/ProfileSummary'
+        owner_mobile:
+          type: string
+          nullable: true
+        full_address:
+          type: string
+          nullable: true
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+        notes_to_user:
+          type: string
+          nullable: true
+        internal_notes:
+          type: string
+          nullable: true
+        resubmission_count:
+          type: integer
         checks:
           type: array
           items:
             type: object
-            additionalProperties: true
+            required: [check_type, status]
+            properties:
+              check_type:
+                type: string
+              status:
+                type: string
+              notes_to_user:
+                type: string
+                nullable: true
+              internal_notes:
+                type: string
+                nullable: true
         private_document_access:
           type: array
           items:
@@ -2423,6 +2534,10 @@ components:
               media_asset_id:
                 type: string
                 format: uuid
+              document_type:
+                type: string
+              safe_display_name:
+                type: string
               access_url:
                 type: string
                 format: uri
@@ -2441,19 +2556,29 @@ components:
           type: string
           nullable: true
     AdminProfile:
-      allOf:
-        - $ref: '#/components/schemas/ProfileSummary'
-        - type: object
-          properties:
-            owner_user_id:
-              type: string
-              format: uuid
-              nullable: true
-            is_admin_seeded:
-              type: boolean
-            claim_status:
-              type: string
-              enum: [unclaimed, claimed, not_applicable]
+      type: object
+      required: [profile, is_admin_seeded]
+      properties:
+        profile:
+          $ref: '#/components/schemas/ProfileSummary'
+        owner_user_id:
+          type: string
+          format: uuid
+          nullable: true
+        owner_mobile:
+          type: string
+          nullable: true
+        is_admin_seeded:
+          type: boolean
+        claim_status:
+          type: string
+          enum: [unclaimed, claimed, not_claimable]
+          nullable: true
+        account_status:
+          $ref: '#/components/schemas/AccountStatus'
+        full_address:
+          type: string
+          nullable: true
     AdminSeedProfileRequest:
       type: object
       required: [role, display_name]
@@ -2475,26 +2600,65 @@ components:
         items:
           type: array
           items:
-            type: object
-            additionalProperties: true
+            $ref: '#/components/schemas/AdminReport'
         next_cursor:
           type: string
           nullable: true
+    AdminReport:
+      type: object
+      required: [reported_entity_type, reported_entity_id, reason, report_count, latest_reported_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        reported_entity_type:
+          type: string
+        reported_entity_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        status:
+          type: string
+          nullable: true
+        message:
+          type: string
+          nullable: true
+        report_count:
+          type: integer
+          minimum: 1
+        latest_reported_at:
+          type: string
+          format: date-time
     AdminAnalyticsSummary:
       type: object
+      required: [total_profiles, verified_profiles, pending_verifications, submitted_reports, profile_views, contact_actions, top_search_terms]
       properties:
         total_profiles:
           type: integer
         verified_profiles:
           type: integer
+        pending_verifications:
+          type: integer
+        submitted_reports:
+          type: integer
+        profile_views:
+          type: integer
         top_search_terms:
           type: array
           items:
             type: object
-            additionalProperties: true
+            required: [term, count]
+            properties:
+              term:
+                type: string
+              count:
+                type: integer
         contact_actions:
           type: object
-          additionalProperties: true
+          additionalProperties:
+            type: integer
     CreateExportRequest:
       type: object
       required: [dataset]
@@ -2507,18 +2671,20 @@ components:
           additionalProperties: true
     ExportJob:
       type: object
-      required: [id, status]
+      required: [id, status, download_url, expires_at]
       properties:
         id:
           type: string
           format: uuid
         status:
           type: string
-          enum: [queued, processing, ready, failed]
+          enum: [ready]
         download_url:
           type: string
           format: uri
-          nullable: true
+        expires_at:
+          type: string
+          format: date-time
     ErrorResponse:
       type: object
       required: [error]

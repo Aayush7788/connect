@@ -7,15 +7,21 @@ part of 'admin_analytics_summary.dart';
 // **************************************************************************
 
 abstract class _$AdminAnalyticsSummaryCWProxy {
-  AdminAnalyticsSummary totalProfiles(int? totalProfiles);
+  AdminAnalyticsSummary totalProfiles(int totalProfiles);
 
-  AdminAnalyticsSummary verifiedProfiles(int? verifiedProfiles);
+  AdminAnalyticsSummary verifiedProfiles(int verifiedProfiles);
+
+  AdminAnalyticsSummary pendingVerifications(int pendingVerifications);
+
+  AdminAnalyticsSummary submittedReports(int submittedReports);
+
+  AdminAnalyticsSummary profileViews(int profileViews);
 
   AdminAnalyticsSummary topSearchTerms(
-    List<Map<String, Object>>? topSearchTerms,
+    List<AdminAnalyticsSummaryTopSearchTermsInner> topSearchTerms,
   );
 
-  AdminAnalyticsSummary contactActions(Map<String, Object>? contactActions);
+  AdminAnalyticsSummary contactActions(Map<String, int> contactActions);
 
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `AdminAnalyticsSummary(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
@@ -24,10 +30,13 @@ abstract class _$AdminAnalyticsSummaryCWProxy {
   /// AdminAnalyticsSummary(...).copyWith(id: 12, name: "My name")
   /// ````
   AdminAnalyticsSummary call({
-    int? totalProfiles,
-    int? verifiedProfiles,
-    List<Map<String, Object>>? topSearchTerms,
-    Map<String, Object>? contactActions,
+    int totalProfiles,
+    int verifiedProfiles,
+    int pendingVerifications,
+    int submittedReports,
+    int profileViews,
+    List<AdminAnalyticsSummaryTopSearchTermsInner> topSearchTerms,
+    Map<String, int> contactActions,
   });
 }
 
@@ -39,20 +48,32 @@ class _$AdminAnalyticsSummaryCWProxyImpl
   final AdminAnalyticsSummary _value;
 
   @override
-  AdminAnalyticsSummary totalProfiles(int? totalProfiles) =>
+  AdminAnalyticsSummary totalProfiles(int totalProfiles) =>
       this(totalProfiles: totalProfiles);
 
   @override
-  AdminAnalyticsSummary verifiedProfiles(int? verifiedProfiles) =>
+  AdminAnalyticsSummary verifiedProfiles(int verifiedProfiles) =>
       this(verifiedProfiles: verifiedProfiles);
 
   @override
+  AdminAnalyticsSummary pendingVerifications(int pendingVerifications) =>
+      this(pendingVerifications: pendingVerifications);
+
+  @override
+  AdminAnalyticsSummary submittedReports(int submittedReports) =>
+      this(submittedReports: submittedReports);
+
+  @override
+  AdminAnalyticsSummary profileViews(int profileViews) =>
+      this(profileViews: profileViews);
+
+  @override
   AdminAnalyticsSummary topSearchTerms(
-    List<Map<String, Object>>? topSearchTerms,
+    List<AdminAnalyticsSummaryTopSearchTermsInner> topSearchTerms,
   ) => this(topSearchTerms: topSearchTerms);
 
   @override
-  AdminAnalyticsSummary contactActions(Map<String, Object>? contactActions) =>
+  AdminAnalyticsSummary contactActions(Map<String, int> contactActions) =>
       this(contactActions: contactActions);
 
   @override
@@ -65,6 +86,9 @@ class _$AdminAnalyticsSummaryCWProxyImpl
   AdminAnalyticsSummary call({
     Object? totalProfiles = const $CopyWithPlaceholder(),
     Object? verifiedProfiles = const $CopyWithPlaceholder(),
+    Object? pendingVerifications = const $CopyWithPlaceholder(),
+    Object? submittedReports = const $CopyWithPlaceholder(),
+    Object? profileViews = const $CopyWithPlaceholder(),
     Object? topSearchTerms = const $CopyWithPlaceholder(),
     Object? contactActions = const $CopyWithPlaceholder(),
   }) {
@@ -72,19 +96,31 @@ class _$AdminAnalyticsSummaryCWProxyImpl
       totalProfiles: totalProfiles == const $CopyWithPlaceholder()
           ? _value.totalProfiles
           // ignore: cast_nullable_to_non_nullable
-          : totalProfiles as int?,
+          : totalProfiles as int,
       verifiedProfiles: verifiedProfiles == const $CopyWithPlaceholder()
           ? _value.verifiedProfiles
           // ignore: cast_nullable_to_non_nullable
-          : verifiedProfiles as int?,
+          : verifiedProfiles as int,
+      pendingVerifications: pendingVerifications == const $CopyWithPlaceholder()
+          ? _value.pendingVerifications
+          // ignore: cast_nullable_to_non_nullable
+          : pendingVerifications as int,
+      submittedReports: submittedReports == const $CopyWithPlaceholder()
+          ? _value.submittedReports
+          // ignore: cast_nullable_to_non_nullable
+          : submittedReports as int,
+      profileViews: profileViews == const $CopyWithPlaceholder()
+          ? _value.profileViews
+          // ignore: cast_nullable_to_non_nullable
+          : profileViews as int,
       topSearchTerms: topSearchTerms == const $CopyWithPlaceholder()
           ? _value.topSearchTerms
           // ignore: cast_nullable_to_non_nullable
-          : topSearchTerms as List<Map<String, Object>>?,
+          : topSearchTerms as List<AdminAnalyticsSummaryTopSearchTermsInner>,
       contactActions: contactActions == const $CopyWithPlaceholder()
           ? _value.contactActions
           // ignore: cast_nullable_to_non_nullable
-          : contactActions as Map<String, Object>?,
+          : contactActions as Map<String, int>,
     );
   }
 }
@@ -106,30 +142,49 @@ AdminAnalyticsSummary _$AdminAnalyticsSummaryFromJson(
   'AdminAnalyticsSummary',
   json,
   ($checkedConvert) {
+    $checkKeys(
+      json,
+      requiredKeys: const [
+        'total_profiles',
+        'verified_profiles',
+        'pending_verifications',
+        'submitted_reports',
+        'profile_views',
+        'top_search_terms',
+        'contact_actions',
+      ],
+    );
     final val = AdminAnalyticsSummary(
       totalProfiles: $checkedConvert(
         'total_profiles',
-        (v) => (v as num?)?.toInt(),
+        (v) => (v as num).toInt(),
       ),
       verifiedProfiles: $checkedConvert(
         'verified_profiles',
-        (v) => (v as num?)?.toInt(),
+        (v) => (v as num).toInt(),
       ),
+      pendingVerifications: $checkedConvert(
+        'pending_verifications',
+        (v) => (v as num).toInt(),
+      ),
+      submittedReports: $checkedConvert(
+        'submitted_reports',
+        (v) => (v as num).toInt(),
+      ),
+      profileViews: $checkedConvert('profile_views', (v) => (v as num).toInt()),
       topSearchTerms: $checkedConvert(
         'top_search_terms',
-        (v) => (v as List<dynamic>?)
-            ?.map(
-              (e) => (e as Map<String, dynamic>).map(
-                (k, e) => MapEntry(k, e as Object),
+        (v) => (v as List<dynamic>)
+            .map(
+              (e) => AdminAnalyticsSummaryTopSearchTermsInner.fromJson(
+                e as Map<String, dynamic>,
               ),
             )
             .toList(),
       ),
       contactActions: $checkedConvert(
         'contact_actions',
-        (v) => (v as Map<String, dynamic>?)?.map(
-          (k, e) => MapEntry(k, e as Object),
-        ),
+        (v) => Map<String, int>.from(v as Map),
       ),
     );
     return val;
@@ -137,6 +192,9 @@ AdminAnalyticsSummary _$AdminAnalyticsSummaryFromJson(
   fieldKeyMap: const {
     'totalProfiles': 'total_profiles',
     'verifiedProfiles': 'verified_profiles',
+    'pendingVerifications': 'pending_verifications',
+    'submittedReports': 'submitted_reports',
+    'profileViews': 'profile_views',
     'topSearchTerms': 'top_search_terms',
     'contactActions': 'contact_actions',
   },
@@ -145,8 +203,11 @@ AdminAnalyticsSummary _$AdminAnalyticsSummaryFromJson(
 Map<String, dynamic> _$AdminAnalyticsSummaryToJson(
   AdminAnalyticsSummary instance,
 ) => <String, dynamic>{
-  'total_profiles': ?instance.totalProfiles,
-  'verified_profiles': ?instance.verifiedProfiles,
-  'top_search_terms': ?instance.topSearchTerms,
-  'contact_actions': ?instance.contactActions,
+  'total_profiles': instance.totalProfiles,
+  'verified_profiles': instance.verifiedProfiles,
+  'pending_verifications': instance.pendingVerifications,
+  'submitted_reports': instance.submittedReports,
+  'profile_views': instance.profileViews,
+  'top_search_terms': instance.topSearchTerms.map((e) => e.toJson()).toList(),
+  'contact_actions': instance.contactActions,
 };

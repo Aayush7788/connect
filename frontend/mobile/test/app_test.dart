@@ -944,6 +944,45 @@ class _FakeConnectApi implements ConnectApi {
   }
 
   @override
+  Future<VerificationSummaryResult> verificationSummary() async {
+    return VerificationSummaryResult(
+      verificationStatus: profile.profile.verificationStatus,
+      isVerified: profile.profile.isVerified,
+      reverificationRequired: false,
+      checks: const [],
+    );
+  }
+
+  @override
+  Future<VerificationSummaryResult> prepareVerification() async {
+    return const VerificationSummaryResult(
+      verificationStatus: 'unverified',
+      isVerified: false,
+      reverificationRequired: false,
+      activeCaseId: 'case-1',
+      caseStatus: 'draft',
+      checks: [],
+    );
+  }
+
+  @override
+  Future<VerificationSummaryResult> submitVerification() async {
+    return const VerificationSummaryResult(
+      verificationStatus: 'pending',
+      isVerified: false,
+      reverificationRequired: false,
+      activeCaseId: 'case-1',
+      caseStatus: 'pending_review',
+      checks: [],
+    );
+  }
+
+  @override
+  Future<VerificationSummaryResult> resubmitVerification() {
+    return submitVerification();
+  }
+
+  @override
   Future<OwnerProfileResult> updateOwnerProfile(
     Map<String, dynamic> fields,
   ) async {

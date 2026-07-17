@@ -60,6 +60,10 @@ def test_identity_migration_renders_required_tables_and_constraints() -> None:
         migration_sql
     )
     assert "fcm_token is not null and status = 'active'" in migration_sql
+    assert (
+        "ALTER TABLE admin_audit_logs ALTER COLUMN actor_admin_user_id SET NOT NULL"
+        in migration_sql
+    )
 
 
 def test_identity_migration_enables_rls_and_seeds_launch_mode() -> None:

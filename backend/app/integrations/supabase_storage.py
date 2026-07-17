@@ -8,8 +8,13 @@ from app.core.config import Settings
 
 
 PUBLIC_IMAGE_MIME_TYPES = ("image/jpeg", "image/png", "image/webp")
-PRIVATE_DOCUMENT_MIME_TYPES = (*PUBLIC_IMAGE_MIME_TYPES, "application/pdf")
+PRIVATE_DOCUMENT_MIME_TYPES = (
+    *PUBLIC_IMAGE_MIME_TYPES,
+    "application/pdf",
+    "text/csv",
+)
 SIGNED_UPLOAD_TTL_SECONDS = 2 * 60 * 60
+SIGNED_DOWNLOAD_TTL_SECONDS = 15 * 60
 
 
 class StorageObjectNotFound(Exception):
@@ -26,8 +31,22 @@ class SignedUpload:
     expires_in_seconds: int = SIGNED_UPLOAD_TTL_SECONDS
 
 
+@dataclass(frozen=True)
+class SignedDownload:
+    url: str
+    expires_in_seconds: int = SIGNED_DOWNLOAD_TTL_SECONDS
+
+
 class MediaStorageGateway(Protocol):
     def create_signed_upload(self, *, bucket: str, path: str) -> SignedUpload: ...
+
+    def create_signed_download(
+        self,
+        *,
+        bucket: str,
+        path: str,
+        expires_in_seconds: int = SIGNED_DOWNLOAD_TTL_SECONDS,
+    ) -> SignedDownload: ...
 
     def object_info(self, *, bucket: str, path: str) -> dict[str, Any]: ...
 
@@ -64,6 +83,28 @@ class SupabaseStorageGateway:
             return SignedUpload(url=str(result["signed_url"]))
         except StorageApiError as error:
             raise StorageProviderError("Unable to create upload URL.") from error
+
+    def create_signed_download(
+        self,
+        *,
+        bucket: str,
+        path: str,
+        expires_in_seconds: int = SIGNED_DOWNLOAD_TTL_SECONDS,
+    ) -> SignedDownload:
+        try:
+            result = self._client.storage.from_(bucket).create_signed_url(
+                path,
+                expires_in_seconds,
+            )
+            url = result.get("signedURL") or result.get("signed_url")
+            if not url:
+                raise StorageProviderError("Unable to create download URL.")
+            return SignedDownload(
+                url=str(url),
+                expires_in_seconds=expires_in_seconds,
+            )
+        except StorageApiError as error:
+            raise StorageProviderError("Unable to create download URL.") from error
 
     def object_info(self, *, bucket: str, path: str) -> dict[str, Any]:
         try:
