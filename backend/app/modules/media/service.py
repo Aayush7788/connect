@@ -528,11 +528,17 @@ class MediaService:
 
     def _media_response(self, media: MediaAsset) -> MediaAssetResponse:
         url = None
+        thumbnail_url = None
         if media.visibility == "public" and media.upload_status == "ready":
             url = self.storage.public_url(
                 bucket=self.settings.supabase_public_media_bucket,
                 path=media.original_path,
             )
+            if media.thumbnail_path is not None:
+                thumbnail_url = self.storage.public_url(
+                    bucket=self.settings.supabase_public_media_bucket,
+                    path=media.thumbnail_path,
+                )
         safe_name = None
         if media.visibility == "private_admin_only":
             safe_name = (media.document_type or "document").replace("_", " ").title()
@@ -542,6 +548,7 @@ class MediaService:
             visibility=media.visibility,
             upload_status=media.upload_status,
             url=url,
+            thumbnail_url=thumbnail_url,
             sort_order=media.sort_order,
             document_type=media.document_type,
             safe_display_name=safe_name,

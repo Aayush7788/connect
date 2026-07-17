@@ -27,6 +27,7 @@ class ProfileUpdateRequest(BaseModel):
     district_id: int | None = Field(default=None, gt=0)
     business_name: str | None = Field(default=None, max_length=200)
     business_category_id: UUID | None = None
+    custom_business_category: str | None = Field(default=None, max_length=160)
     manufacture_sell_details: str | None = Field(default=None, max_length=2000)
     product_notes: str | None = Field(default=None, max_length=1000)
     product_type_ids: list[UUID] | None = Field(default=None, max_length=20)
@@ -53,6 +54,7 @@ class ProfileUpdateRequest(BaseModel):
         "state",
         "pincode",
         "business_name",
+        "custom_business_category",
         "manufacture_sell_details",
         "product_notes",
         "workshop_name",
@@ -105,6 +107,7 @@ class OwnerMediaResponse(BaseModel):
     document_type: str | None = None
     safe_display_name: str | None = None
     url: str | None = None
+    thumbnail_url: str | None = None
 
 
 class OwnerProfileResponse(BaseModel):

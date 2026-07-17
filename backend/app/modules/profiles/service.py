@@ -48,6 +48,7 @@ ROLE_FIELDS = {
     "business": {
         "business_name",
         "business_category_id",
+        "custom_business_category",
         "manufacture_sell_details",
         "product_notes",
         "product_type_ids",
@@ -613,6 +614,7 @@ class ProfileService:
             for field in (
                 "business_name",
                 "business_category_id",
+                "custom_business_category",
                 "manufacture_sell_details",
                 "product_notes",
             ):
@@ -621,6 +623,15 @@ class ProfileService:
                     if field in {"business_name", "manufacture_sell_details"}:
                         value = value or ""
                     self._set_changed(role_profile, field, value, before, after)
+            if (
+                "custom_business_category" in payload.model_fields_set
+                and payload.custom_business_category
+            ):
+                self.repository.create_business_category_suggestion(
+                    user_id=bundle.user.id,
+                    profile_id=bundle.profile.id,
+                    value=payload.custom_business_category,
+                )
             if "business_name" in payload.model_fields_set:
                 self._set_changed(
                     bundle.profile,
@@ -800,6 +811,7 @@ class ProfileService:
             values.extend(
                 [
                     business_profile.business_name,
+                    business_profile.custom_business_category,
                     business_profile.manufacture_sell_details,
                     business_profile.product_notes,
                     *(
@@ -907,6 +919,14 @@ class ProfileService:
                         and media.upload_status == "ready"
                         else None
                     ),
+                    thumbnail_url=(
+                        self.public_media_url(media.thumbnail_path)
+                        if self.public_media_url is not None
+                        and media.visibility == "public"
+                        and media.upload_status == "ready"
+                        and media.thumbnail_path
+                        else None
+                    ),
                 )
                 for media in bundle.media
             ],
@@ -962,7 +982,10 @@ class ProfileService:
             return {
                 "owner_name": profile.owner_name,
                 "business_name": role_profile.business_name,
-                "business_category": category.name if category else None,
+                "business_category": (
+                    role_profile.custom_business_category
+                    or (category.name if category else None)
+                ),
                 "manufacture_sell_details": role_profile.manufacture_sell_details,
                 "product_notes": role_profile.product_notes,
                 "product_types": [
@@ -1128,6 +1151,7 @@ class ProfileService:
             return {
                 "business_name": role_profile.business_name,
                 "business_category_id": role_profile.business_category_id,
+                "custom_business_category": role_profile.custom_business_category,
                 "manufacture_sell_details": role_profile.manufacture_sell_details,
                 "product_notes": role_profile.product_notes,
                 "product_types": [

@@ -62,6 +62,7 @@ class _MediaTile {
     this.localPath,
     this.previewBytes,
     this.url,
+    this.thumbnailUrl,
     this.prepared,
     this.progress = 0,
     this.message,
@@ -74,6 +75,7 @@ class _MediaTile {
   final _MediaPhase phase;
   final Uint8List? previewBytes;
   final String? url;
+  final String? thumbnailUrl;
   final PreparedMediaImage? prepared;
   final double progress;
   final String? message;
@@ -85,6 +87,7 @@ class _MediaTile {
     _MediaPhase? phase,
     Uint8List? previewBytes,
     String? url,
+    String? thumbnailUrl,
     PreparedMediaImage? prepared,
     double? progress,
     String? message,
@@ -97,6 +100,7 @@ class _MediaTile {
       phase: phase ?? this.phase,
       previewBytes: previewBytes ?? this.previewBytes,
       url: url ?? this.url,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       prepared: prepared ?? this.prepared,
       progress: progress ?? this.progress,
       message: message,
@@ -111,6 +115,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
   bool _permissionRequired = false;
   bool _isPicking = false;
   int _localSequence = 0;
+  final Set<String> _deletedMediaIds = {};
 
   @override
   void initState() {
@@ -128,6 +133,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
     if (oldWidget.target.entityId != widget.target.entityId ||
         oldWidget.target.entityType != widget.target.entityType) {
       _tiles.clear();
+      _deletedMediaIds.clear();
     }
     _syncExisting(widget.existingMedia);
   }
@@ -330,7 +336,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
     }
     if (tile.url != null) {
       return Image.network(
-        tile.url!,
+        tile.thumbnailUrl ?? tile.url!,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => const _PhotoPlaceholder(),
       );
@@ -472,9 +478,12 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
       }
       _replace(
         localId,
-        _find(
-          localId,
-        )!.copyWith(phase: _MediaPhase.ready, progress: 1, url: ready.url),
+        _find(localId)!.copyWith(
+          phase: _MediaPhase.ready,
+          progress: 1,
+          url: ready.url,
+          thumbnailUrl: ready.thumbnailUrl,
+        ),
       );
     } on DioException catch (error) {
       if (!CancelToken.isCancel(error)) {
@@ -531,9 +540,12 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
       if (_contains(tile.localId)) {
         _replace(
           tile.localId,
-          _find(
-            tile.localId,
-          )!.copyWith(phase: _MediaPhase.ready, progress: 1, url: ready.url),
+          _find(tile.localId)!.copyWith(
+            phase: _MediaPhase.ready,
+            progress: 1,
+            url: ready.url,
+            thumbnailUrl: ready.thumbnailUrl,
+          ),
         );
         await _notifyMediaChanged();
       }
@@ -565,9 +577,16 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
     _replace(tile.localId, tile.copyWith(phase: _MediaPhase.deleting));
     try {
       await ref.read(mediaUploadCoordinatorProvider).delete(tile.mediaAssetId!);
+      _deletedMediaIds.add(tile.mediaAssetId!);
       _remove(tile.localId);
       await _notifyMediaChanged();
     } on ApiFailure catch (error) {
+      if (error.code == 'not_found') {
+        _deletedMediaIds.add(tile.mediaAssetId!);
+        _remove(tile.localId);
+        await _notifyMediaChanged();
+        return;
+      }
       _replace(tile.localId, tile.copyWith(phase: _MediaPhase.ready));
       if (mounted) {
         setState(() => _selectionError = error.message);
@@ -602,6 +621,13 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
   }
 
   void _syncExisting(List<MediaAssetResult> media) {
+    final authoritativeIds = media.map((asset) => asset.id).toSet();
+    _tiles.removeWhere(
+      (tile) =>
+          tile.localId.startsWith('server-') &&
+          tile.mediaAssetId != null &&
+          !authoritativeIds.contains(tile.mediaAssetId),
+    );
     final existingIds = _tiles
         .map((tile) => tile.mediaAssetId)
         .whereType<String>()
@@ -613,6 +639,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
                   asset.mediaKind == 'image' &&
                   asset.visibility == 'public' &&
                   asset.documentType == widget.target.documentType &&
+                  !_deletedMediaIds.contains(asset.id) &&
                   !existingIds.contains(asset.id),
             )
             .toList(growable: false)
@@ -626,6 +653,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
               ? _MediaPhase.ready
               : _MediaPhase.failed,
           url: asset.url,
+          thumbnailUrl: asset.thumbnailUrl,
           message: asset.uploadStatus == 'ready'
               ? null
               : 'Unable to upload, please retry',

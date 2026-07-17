@@ -217,6 +217,7 @@ Columns:
 | `profile_id` | uuid pk fk profiles(id) |  |
 | `business_name` | text not null | Mandatory |
 | `business_category_id` | uuid null fk categories(id) | Category type `business_category` |
+| `custom_business_category` | text null | User-entered label when the mapped category is `Other`; creates a pending category suggestion |
 | `manufacture_sell_details` | text not null | What they manufacture/sell |
 | `product_notes` | text null | Optional free text |
 | `created_at` | timestamptz |  |

@@ -172,8 +172,22 @@ def test_verification_resubmission_approval_and_suspension_are_persisted() -> No
         assert suspended.profile.visibility_status == "suspended_by_admin"
         assert restored.profile.visibility_status == "public"
         assert session.get(User, owner_id).account_status == "active"
-        assert session.scalar(select(func.count(AdminAuditLog.id))) == 4
-        assert session.scalar(select(func.count(Notification.id))) == 4
+        assert (
+            session.scalar(
+                select(func.count(AdminAuditLog.id)).where(
+                    AdminAuditLog.actor_admin_user_id == admin_id
+                )
+            )
+            == 4
+        )
+        assert (
+            session.scalar(
+                select(func.count(Notification.id)).where(
+                    Notification.user_id == owner_id
+                )
+            )
+            == 4
+        )
         assert (
             session.scalar(
                 select(func.count(AdminAuditLog.id)).where(

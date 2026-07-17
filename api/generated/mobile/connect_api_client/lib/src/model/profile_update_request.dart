@@ -46,6 +46,8 @@ class ProfileUpdateRequest {
 
      this.businessCategoryId,
 
+     this.customBusinessCategory,
+
      this.manufactureSellDetails,
 
      this.productNotes,
@@ -72,7 +74,7 @@ class ProfileUpdateRequest {
   });
 
   @JsonKey(
-    
+
     name: r'owner_name',
     required: false,
     includeIfNull: false,
@@ -231,6 +233,18 @@ class ProfileUpdateRequest {
 
   @JsonKey(
     
+    name: r'custom_business_category',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final String? customBusinessCategory;
+
+
+
+  @JsonKey(
+
     name: r'manufacture_sell_details',
     required: false,
     includeIfNull: false,
@@ -394,6 +408,7 @@ class ProfileUpdateRequest {
       other.districtId == districtId &&
       other.businessName == businessName &&
       other.businessCategoryId == businessCategoryId &&
+      other.customBusinessCategory == customBusinessCategory &&
       other.manufactureSellDetails == manufactureSellDetails &&
       other.productNotes == productNotes &&
       other.productTypeIds == productTypeIds &&
@@ -422,6 +437,7 @@ class ProfileUpdateRequest {
         districtId.hashCode +
         businessName.hashCode +
         businessCategoryId.hashCode +
+        customBusinessCategory.hashCode +
         manufactureSellDetails.hashCode +
         productNotes.hashCode +
         productTypeIds.hashCode +
@@ -445,4 +461,3 @@ class ProfileUpdateRequest {
   }
 
 }
-

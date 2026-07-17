@@ -213,6 +213,7 @@ class BusinessProfile(TimestampMixin, Base):
         PgUUID(as_uuid=True),
         ForeignKey("categories.id"),
     )
+    custom_business_category: Mapped[str | None] = mapped_column(Text)
     manufacture_sell_details: Mapped[str] = mapped_column(Text)
     product_notes: Mapped[str | None] = mapped_column(Text)
 

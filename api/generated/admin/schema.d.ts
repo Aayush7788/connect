@@ -1174,6 +1174,7 @@ export interface components {
             business_name?: string | null;
             /** Format: uuid */
             business_category_id?: string | null;
+            custom_business_category?: string | null;
             manufacture_sell_details?: string | null;
             product_notes?: string | null;
             product_type_ids?: string[] | null;
