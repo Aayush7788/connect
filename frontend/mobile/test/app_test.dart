@@ -6,8 +6,15 @@ import 'package:connect_app/src/data/discovery_models.dart';
 import 'package:connect_app/src/data/engagement_models.dart';
 import 'package:connect_app/src/data/work_card_models.dart';
 import 'package:connect_app/src/data/work_needed_post_models.dart';
+import 'package:connect_app/src/features/auth/auth_controller.dart';
+import 'package:connect_app/src/features/discovery/discovery_controller.dart';
+import 'package:connect_app/src/features/discovery/profile_detail_screen.dart';
+import 'package:connect_app/src/features/engagement/engagement_controller.dart';
 import 'package:connect_app/src/features/media/media_upload_service.dart';
 import 'package:connect_app/src/features/profile/profile_controller.dart';
+import 'package:connect_app/src/features/profile/verification_controller.dart';
+import 'package:connect_app/src/features/work_cards/work_card_controller.dart';
+import 'package:connect_app/src/features/work_needed_posts/work_needed_post_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -132,6 +139,56 @@ void main() {
     expect(saved, isTrue);
     expect(api.lastProfileUpdate?['business_name'], 'Surat Dupatta House');
     expect(container.read(profileControllerProvider).profile, isNotNull);
+  });
+
+  test('logout invalidates all account-specific providers', () async {
+    final api = _FakeConnectApi();
+    final tokenStore = _MemoryTokenStore(initialAccessToken: 'access-token');
+    final container = ProviderContainer(
+      overrides: [
+        connectApiProvider.overrideWithValue(api),
+        tokenStoreProvider.overrideWithValue(tokenStore),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(profileControllerProvider.notifier).load();
+    await container.read(workCardControllerProvider.notifier).load();
+    await container.read(workNeededPostControllerProvider.notifier).load();
+    await container.read(verificationControllerProvider.notifier).load();
+    await container
+        .read(engagementControllerProvider.notifier)
+        .loadNotifications();
+    await container
+        .read(discoveryControllerProvider.notifier)
+        .configure(target: 'job_worker', initialQuery: 'flat hemming');
+    const profileRequest = ProfileDetailRequest(profileId: 'profile-1');
+    final profileSubscription = container.listen(
+      publicProfileDetailProvider(profileRequest),
+      (_, _) {},
+    );
+    addTearDown(profileSubscription.close);
+    await container.read(publicProfileDetailProvider(profileRequest).future);
+
+    await container.read(authControllerProvider.notifier).logout();
+    await container.pump();
+
+    expect(await tokenStore.readAccessToken(), isNull);
+    expect(container.read(profileControllerProvider).profile, isNull);
+    expect(container.read(workCardControllerProvider).isInitialized, isFalse);
+    expect(container.read(workCardControllerProvider).cards, isEmpty);
+    expect(
+      container.read(workNeededPostControllerProvider).isInitialized,
+      isFalse,
+    );
+    expect(container.read(workNeededPostControllerProvider).posts, isEmpty);
+    expect(container.read(verificationControllerProvider).summary, isNull);
+    expect(container.read(engagementControllerProvider).notifications, isEmpty);
+    expect(container.read(discoveryControllerProvider).isInitialized, isFalse);
+    expect(container.read(discoveryControllerProvider).results, isEmpty);
+    expect(container.read(discoveryControllerProvider).query, isEmpty);
+    await container.read(publicProfileDetailProvider(profileRequest).future);
+    expect(api.publicProfileCallCount, 2);
   });
 
   test('profile controller exposes backend completion requirements', () async {
@@ -498,6 +555,7 @@ class _FakeConnectApi implements ConnectApi {
   bool notificationRead = false;
   bool pushNotificationsEnabled = true;
   int reportCount = 0;
+  int publicProfileCallCount = 0;
 
   @override
   Future<List<CategoryOption>> categories({
@@ -767,6 +825,7 @@ class _FakeConnectApi implements ConnectApi {
     String? sourceType,
     String? sourceId,
   }) async {
+    publicProfileCallCount += 1;
     return PublicProfileDetailResult(
       profile: PublicProfileSummary(
         id: profileId,
