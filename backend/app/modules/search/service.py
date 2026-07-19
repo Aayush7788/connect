@@ -10,7 +10,8 @@ from uuid import UUID, uuid4
 from app.core.auth_context import CurrentUser
 from app.core.errors import ApiError, ErrorCode
 from app.modules.search.repository import SearchCriteria, SearchRepository
-from app.modules.search.schemas import BusinessSearchMode, SearchResponse
+from app.modules.search.schemas import BusinessSearchMode, JobWorkerSearchMode
+from app.modules.search.schemas import SearchResponse
 from app.modules.search.schemas import SearchSort, SearchTarget
 
 
@@ -51,9 +52,11 @@ class SearchService:
         sort: SearchSort,
         cursor: str | None,
         limit: int,
+        job_worker_mode: JobWorkerSearchMode | None = None,
         defer_log: bool = False,
     ) -> SearchResponse:
         resolved_business_mode = self._business_mode(target, business_mode)
+        resolved_job_worker_mode = self._job_worker_mode(target, job_worker_mode)
         self._validate_experience(
             target=target,
             minimum=min_experience_years,
@@ -64,6 +67,7 @@ class SearchService:
         normalized_locality = normalize_search_text(locality) or None
         filters = {
             "business_mode": resolved_business_mode,
+            "job_worker_mode": resolved_job_worker_mode,
             "category_id": str(category_id) if category_id else None,
             "product_type_id": str(product_type_id) if product_type_id else None,
             "locality": locality,
@@ -83,6 +87,7 @@ class SearchService:
             target=target,
             normalized_query=normalized_query,
             business_mode=resolved_business_mode,
+            job_worker_mode=resolved_job_worker_mode,
             category_id=category_id,
             product_type_id=product_type_id,
             normalized_locality=normalized_locality,
@@ -153,6 +158,26 @@ class SearchService:
                 message="Please check the highlighted fields.",
                 field_errors={
                     "business_mode": "Business mode is only valid for business search."
+                },
+            )
+        return None
+
+    @staticmethod
+    def _job_worker_mode(
+        target: SearchTarget,
+        job_worker_mode: JobWorkerSearchMode | None,
+    ) -> JobWorkerSearchMode | None:
+        if target == "job_worker":
+            return job_worker_mode or "work_cards"
+        if job_worker_mode is not None:
+            raise ApiError(
+                status_code=422,
+                code=ErrorCode.VALIDATION_FAILED,
+                message="Please check the highlighted fields.",
+                field_errors={
+                    "job_worker_mode": (
+                        "Job-worker mode is only valid for job-worker search."
+                    )
                 },
             )
         return None

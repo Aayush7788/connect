@@ -14,6 +14,7 @@ class DiscoveryState {
     this.target = 'job_worker',
     this.query = '',
     this.businessMode = 'work_needed_posts',
+    this.jobWorkerMode = 'work_cards',
     this.sort = 'best',
     this.verifiedOnly = false,
     this.results = const [],
@@ -31,6 +32,7 @@ class DiscoveryState {
   final String target;
   final String query;
   final String businessMode;
+  final String jobWorkerMode;
   final String sort;
   final bool verifiedOnly;
   final List<MarketplaceSearchResult> results;
@@ -57,6 +59,7 @@ class DiscoveryState {
     String? target,
     String? query,
     String? businessMode,
+    String? jobWorkerMode,
     String? sort,
     bool? verifiedOnly,
     List<MarketplaceSearchResult>? results,
@@ -74,6 +77,7 @@ class DiscoveryState {
       target: target ?? this.target,
       query: query ?? this.query,
       businessMode: businessMode ?? this.businessMode,
+      jobWorkerMode: jobWorkerMode ?? this.jobWorkerMode,
       sort: sort ?? this.sort,
       verifiedOnly: verifiedOnly ?? this.verifiedOnly,
       results: results ?? this.results,
@@ -142,6 +146,11 @@ class DiscoveryController extends Notifier<DiscoveryState> {
     await Future.wait([loadTaxonomy(), search()]);
   }
 
+  Future<void> setJobWorkerMode(String mode) async {
+    state = state.copyWith(jobWorkerMode: mode, categoryId: null);
+    await Future.wait([loadTaxonomy(), search()]);
+  }
+
   Future<void> applyFilters({
     String? categoryId,
     String? productTypeId,
@@ -180,6 +189,7 @@ class DiscoveryController extends Notifier<DiscoveryState> {
     final repository = ref.read(discoveryRepositoryProvider);
     final target = state.target;
     final businessMode = state.businessMode;
+    final jobWorkerMode = state.jobWorkerMode;
     final categoryType = switch (state.target) {
       'business' when state.businessMode == 'profiles' => 'business_category',
       'skilled_worker' => 'work_name',
@@ -194,7 +204,9 @@ class DiscoveryController extends Notifier<DiscoveryState> {
       for (var index = 0; index < missing.length; index += 1) {
         _taxonomyCache[missing[index]] = loaded[index];
       }
-      if (state.target != target || state.businessMode != businessMode) {
+      if (state.target != target ||
+          state.businessMode != businessMode ||
+          state.jobWorkerMode != jobWorkerMode) {
         return;
       }
       state = state.copyWith(
@@ -217,6 +229,7 @@ class DiscoveryController extends Notifier<DiscoveryState> {
       target: state.target,
       query: state.query,
       businessMode: state.businessMode,
+      jobWorkerMode: state.jobWorkerMode,
       categoryId: state.categoryId,
       productTypeId: state.productTypeId,
       locality: state.locality,

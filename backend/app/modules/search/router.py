@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, Query
 from app.core.auth_context import CurrentUser
 from app.modules.auth.dependencies import get_active_current_user
 from app.modules.search.dependencies import enqueue_search_log, get_search_service
-from app.modules.search.schemas import BusinessSearchMode, SearchResponse
+from app.modules.search.schemas import BusinessSearchMode, JobWorkerSearchMode
+from app.modules.search.schemas import SearchResponse
 from app.modules.search.schemas import SearchSort, SearchTarget
 from app.modules.search.service import SearchService
 
@@ -19,6 +20,7 @@ def search_marketplace(
     target: SearchTarget,
     q: Annotated[str | None, Query(max_length=200)] = None,
     business_mode: BusinessSearchMode | None = None,
+    job_worker_mode: JobWorkerSearchMode | None = None,
     category_id: UUID | None = None,
     product_type_id: UUID | None = None,
     locality: Annotated[str | None, Query(max_length=160)] = None,
@@ -36,6 +38,7 @@ def search_marketplace(
         target=target,
         query=q,
         business_mode=business_mode,
+        job_worker_mode=job_worker_mode,
         category_id=category_id,
         product_type_id=product_type_id,
         locality=locality,

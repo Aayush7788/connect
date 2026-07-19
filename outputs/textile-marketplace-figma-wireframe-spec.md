@@ -100,25 +100,19 @@ Header height guidance:
 
 ### 3.2 Bottom Navigation
 
-Bottom navigation labels:
+Bottom navigation is role-specific:
 
-- Home.
-- Search.
-- Saved.
-- My Profile.
+- Manufacturer/business: `Home`, `Add Post`, `Saved`, `My Profile`.
+- Job worker/value adder: `Home`, `Add Work`, `Saved`, `My Profile`.
+- Skilled worker/karigar: `Home`, `Saved`, `My Profile`.
 
-Visibility:
+Behavior:
 
-- Show bottom navigation only on:
-  - Home.
-  - Saved.
-  - My Profile.
-
-Important interpretation:
-
-- Home includes the Search tab in bottom navigation.
-- Tapping Search opens the Search screen.
-- The Search screen itself can be a focused screen without bottom navigation.
+- Search is not a bottom-navigation destination. A user enters Search only by selecting one of the three discovery cards on Home.
+- `Add Post` opens the manufacturer's dedicated Work Needed Posts owner screen, which retains its sticky `+` button.
+- `Add Work` opens the job worker's dedicated Work List owner screen, which retains its sticky `+` button.
+- `My Profile` is profile-only and must not contain Work Needed Posts or Work List tabs.
+- The focused Search screen does not show bottom navigation.
 
 ### 3.3 Buttons
 
@@ -209,7 +203,7 @@ Create these mobile frames.
 ### 4.2 Home And Search
 
 8. `02.01 Home - Incomplete Profile`
-9. `02.02 Search - Global From Bottom Nav`
+9. `02.02 Search - Fixed Target From Home`
 10. `02.03 Search - Job Worker Recommended`
 11. `02.04 Search - Job Worker Query`
 12. `02.05 Filter Sheet`
@@ -233,8 +227,8 @@ Create these mobile frames.
 24. `04.04 Complete Profile - Karigar Step`
 25. `04.05 Complete Profile - Photo Upload`
 26. `04.06 Complete Profile - Final Actions`
-27. `04.07 My Profile - Job Worker Owner Work List`
-28. `04.08 My Profile - Manufacturer Owner Work Needed`
+27. `04.07 Job Worker Owner Work List`
+28. `04.08 Manufacturer Owner Work Needed`
 29. `04.09 My Profile - Owner Profile Tab`
 
 ### 4.5 Add Work And Work Needed
@@ -442,23 +436,26 @@ Layout top to bottom:
    - Button: `Complete Profile`
 8. Bottom nav:
    - Home selected.
-   - Search.
+   - Manufacturer/business: Add Post.
+   - Job worker/value adder: Add Work.
    - Saved.
    - My Profile.
 
+For skilled worker/karigar, show only Home, Saved, and My Profile.
+
 Arrows:
 
-- Manufacturer card -> Search with Manufacturers tab.
-- Job Worker card -> Search with Job Workers tab.
-- Karigar card -> Search with Karigars tab.
+- Manufacturer card -> fixed-target Business Search with Work Needed selected by default.
+- Job Worker card -> fixed-target Job Worker Search with Work selected by default.
+- Karigar card -> fixed-target Karigar Search without secondary tabs.
 - Complete Profile -> relevant profile completion flow.
 - Notification bell -> Notifications.
 
-### 6.2 `02.02 Search - Global From Bottom Nav`
+### 6.2 `02.02 Search - Fixed Target From Home`
 
 Purpose:
 
-- Search screen opened from the bottom navigation Search item.
+- Search screen opened only from one of the three Home discovery cards.
 
 Layout:
 
@@ -468,18 +465,19 @@ Layout:
 2. Search row:
    - Placeholder: `Search for profile/work`
    - Filter button on right.
-3. Persona tabs:
-   - Manufacturers.
-   - Job Workers.
-   - Karigars.
+3. Optional mode tabs determined by the fixed target:
+   - Business: `Work Needed` and `Profiles`.
+   - Job Worker: `Work` and `Profiles`.
+   - Karigar: no secondary tabs.
 4. Before user searches:
    - Recommended profiles for the selected/default tab.
    - Popular searches.
 
-Default selected tab:
+Default selected mode:
 
-- Use Job Workers selected in the wireframe because the strongest MVP journey is manufacturer finding a job worker.
-- Annotation: users can switch tabs before or after searching.
+- Business Search defaults to `Work Needed`.
+- Job Worker Search defaults to `Work`.
+- The user must return Home to select another persona target.
 
 Bottom navigation:
 
@@ -499,10 +497,9 @@ Layout:
 2. Search row:
    - Search input placeholder: `Search work like flat hemming, embroidery etc`
    - Filter button on right.
-3. Persona tabs:
-   - Manufacturers.
-   - Job Workers selected.
-   - Karigars.
+3. Mode tabs:
+   - `Work` selected.
+   - `Profiles`.
 4. Popular searches:
    - `Flat hemming`, `Digital print`, `Embroidery`
 5. Recommended results list.
@@ -973,21 +970,16 @@ If not eligible:
 - Show disabled verification button.
 - Message: `Complete profile first`
 
-### 9.7 `04.07 My Profile - Job Worker Owner Work List`
+### 9.7 `04.07 Job Worker Owner Work List`
 
 Purpose:
 
-- Owner view for job worker.
+- Dedicated owner work-management screen opened from the `Add Work` footer item.
 
 Header:
 
-- `My Profile`
+- `My Work`
 - Settings/action icon.
-
-Tabs:
-
-- `Work List` selected.
-- `My Profile`.
 
 Content:
 
@@ -1015,18 +1007,17 @@ Sticky button:
 
 Bottom navigation:
 
-- My Profile selected.
+- Add Work selected.
 
-### 9.8 `04.08 My Profile - Manufacturer Owner Work Needed`
+### 9.8 `04.08 Manufacturer Owner Work Needed`
 
 Purpose:
 
-- Owner view for manufacturer/business.
+- Dedicated owner post-management screen opened from the `Add Post` footer item.
 
-Tabs:
+Header:
 
-- `Work Needed Posts` selected.
-- `My Profile`.
+- `Work Needed Posts`.
 
 Content:
 
@@ -1049,17 +1040,17 @@ Sticky button:
 - Bottom-right circular `+`.
 - Opens Add Work Needed Post.
 
+Bottom navigation:
+
+- Add Post selected.
+
 ### 9.9 `04.09 My Profile - Owner Profile Tab`
 
 Purpose:
 
 - Show the owner's own public profile preview plus owner-only controls.
 
-Use for:
-
-- Job Worker `My Profile` tab.
-- Manufacturer `My Profile` tab.
-- Karigar main My Profile after completion.
+Use as the profile-only My Profile destination for all three roles.
 
 Layout:
 
@@ -1093,7 +1084,7 @@ Annotation:
 
 Entry:
 
-- My Profile -> Work List tab -> sticky `+`.
+- Add Work footer -> Work List owner screen -> sticky `+`.
 
 Form style:
 
@@ -1152,7 +1143,7 @@ Use same form but show validation near photo grid:
 
 Entry:
 
-- My Profile -> Work Needed Posts tab -> sticky `+`.
+- Add Post footer -> Work Needed Posts owner screen -> sticky `+`.
 
 Form style:
 
@@ -1492,7 +1483,7 @@ Flow:
 
 1. Home.
 2. Tap `Find Job worker, value adder`.
-3. Search opens with Job Workers tab selected.
+3. Fixed-target Job Worker Search opens with Work selected.
 4. User searches `flat hemming`.
 5. Results show work-first job-worker cards.
 6. User taps a work card.
@@ -1512,8 +1503,8 @@ Arrow labels:
 
 Flow:
 
-1. My Profile.
-2. Work List tab.
+1. Tap `Add Work` in the job-worker footer.
+2. Work List owner screen.
 3. Tap sticky `+`.
 4. Add Work Card.
 5. Select category.
@@ -1534,8 +1525,8 @@ Arrow labels:
 
 Flow:
 
-1. My Profile.
-2. Work Needed Posts tab.
+1. Tap `Add Post` in the manufacturer footer.
+2. Work Needed Posts owner screen.
 3. Tap sticky `+`.
 4. Add Work Needed Post.
 5. Select category.
@@ -1557,7 +1548,8 @@ Add annotations only near complex screens.
 
 Search annotations:
 
-- `Search shows one persona tab at a time.`
+- `Search target is fixed by the Home card; return Home to change persona.`
+- `Business has Work Needed / Profiles, Job Worker has Work / Profiles, and Karigar has no secondary tabs.`
 - `Result cards never show contact or full address.`
 - `Filters are modular and can change after user feedback.`
 
@@ -1620,7 +1612,8 @@ Use these latest decisions if older files disagree:
 - Add Work Needed Post requires minimum 3 photos.
 - Report has no optional text box.
 - Saved screen uses three top tabs: Business, Job Worker, Karigar.
-- Bottom navigation is drawn only on Home, Saved, and My Profile.
+- Bottom navigation is role-specific: manufacturer has Add Post, job worker has Add Work, and karigar has three items; Search is never a footer item.
+- Add Post and Add Work open dedicated owner list screens; My Profile is profile-only.
 - No admin screens in this wireframe.
 - Figma build should be created only after this spec is reviewed.
 

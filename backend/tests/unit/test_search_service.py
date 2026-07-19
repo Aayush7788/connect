@@ -76,6 +76,7 @@ def search(service: SearchService, **overrides):
         "target": "job_worker",
         "query": "  Flat   Hemming  ",
         "business_mode": None,
+        "job_worker_mode": None,
         "category_id": None,
         "product_type_id": None,
         "locality": " Ring Road ",
@@ -118,6 +119,26 @@ def test_business_search_defaults_to_work_needed_posts() -> None:
     )
 
     assert repository.criteria.business_mode == "work_needed_posts"
+
+
+def test_job_worker_search_defaults_to_work_cards_and_supports_profiles() -> None:
+    repository = FakeSearchRepository(result_count=0)
+    search(SearchService(repository))
+    assert repository.criteria.job_worker_mode == "work_cards"
+
+    search(SearchService(repository), job_worker_mode="profiles")
+    assert repository.criteria.job_worker_mode == "profiles"
+
+
+def test_job_worker_mode_is_rejected_for_other_targets() -> None:
+    with pytest.raises(ApiError) as error:
+        search(
+            SearchService(FakeSearchRepository()),
+            target="skilled_worker",
+            job_worker_mode="profiles",
+        )
+
+    assert error.value.field_errors["job_worker_mode"]
 
 
 def test_cursor_is_bound_to_the_same_query_and_filters() -> None:

@@ -7,6 +7,7 @@ class MarketplaceSearchRequest {
     required this.target,
     this.query,
     this.businessMode,
+    this.jobWorkerMode,
     this.categoryId,
     this.productTypeId,
     this.locality,
@@ -19,6 +20,7 @@ class MarketplaceSearchRequest {
   final String target;
   final String? query;
   final String? businessMode;
+  final String? jobWorkerMode;
   final String? categoryId;
   final String? productTypeId;
   final String? locality;
@@ -33,6 +35,8 @@ class MarketplaceSearchRequest {
       if (query != null && query!.trim().isNotEmpty) 'q': query!.trim(),
       if (target == 'business')
         'business_mode': businessMode ?? 'work_needed_posts',
+      if (target == 'job_worker')
+        'job_worker_mode': jobWorkerMode ?? 'work_cards',
       if (categoryId != null) 'category_id': categoryId,
       if (productTypeId != null) 'product_type_id': productTypeId,
       if (locality != null && locality!.trim().isNotEmpty)

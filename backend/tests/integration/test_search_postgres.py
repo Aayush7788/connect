@@ -117,6 +117,30 @@ def test_flat_hemming_work_card_is_searchable_without_private_fields() -> None:
             target="job_worker",
             query="Flat Hemming",
             business_mode=None,
+            job_worker_mode="work_cards",
+            category_id=None,
+            product_type_id=None,
+            locality=None,
+            min_experience_years=None,
+            max_experience_years=None,
+            verified_only=False,
+            sort="best",
+            cursor=None,
+            limit=20,
+        )
+
+        profile_response = SearchService(SearchRepository(session)).search(
+            current_user=CurrentUser(
+                user_id=user_id,
+                auth_user_id=uuid4(),
+                mobile="+919999999999",
+                role="job_worker",
+                account_status="active",
+            ),
+            target="job_worker",
+            query="Flat Hemming",
+            business_mode=None,
+            job_worker_mode="profiles",
             category_id=None,
             product_type_id=None,
             locality=None,
@@ -132,6 +156,10 @@ def test_flat_hemming_work_card_is_searchable_without_private_fields() -> None:
         payload = match.model_dump()
         search_log = session.get(SearchLog, response.search_log_id)
         assert match.title == "Flat hemming"
+        assert any(
+            item.id == profile_id and item.result_type == "profile"
+            for item in profile_response.items
+        )
         assert match.profile_id == profile_id
         assert match.product_types == ["Dupatta"]
         assert "full_address" not in payload
@@ -152,17 +180,25 @@ def test_flat_hemming_work_card_is_searchable_without_private_fields() -> None:
 
 
 @pytest.mark.parametrize(
-    ("target", "business_mode", "query", "sort"),
+    ("target", "business_mode", "job_worker_mode", "query", "sort"),
     [
-        ("job_worker", None, "unlikely flat heming typo", "verified_first"),
-        ("business", "work_needed_posts", None, "most_photos"),
-        ("business", "profiles", None, "nearby"),
-        ("skilled_worker", None, None, "recent"),
+        (
+            "job_worker",
+            None,
+            "work_cards",
+            "unlikely flat heming typo",
+            "verified_first",
+        ),
+        ("job_worker", None, "profiles", None, "most_photos"),
+        ("business", "work_needed_posts", None, None, "most_photos"),
+        ("business", "profiles", None, None, "nearby"),
+        ("skilled_worker", None, None, None, "recent"),
     ],
 )
 def test_all_search_modes_execute_on_postgresql(
     target,
     business_mode,
+    job_worker_mode,
     query,
     sort,
 ) -> None:
@@ -173,6 +209,7 @@ def test_all_search_modes_execute_on_postgresql(
                 target=target,
                 normalized_query=query or "",
                 business_mode=business_mode,
+                job_worker_mode=job_worker_mode,
                 category_id=None,
                 product_type_id=None,
                 normalized_locality="ring road" if sort == "nearby" else None,

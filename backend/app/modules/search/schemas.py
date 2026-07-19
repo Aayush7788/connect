@@ -9,6 +9,7 @@ from app.modules.media.schemas import MediaAssetResponse
 
 SearchTarget = Literal["business", "job_worker", "skilled_worker"]
 BusinessSearchMode = Literal["work_needed_posts", "profiles"]
+JobWorkerSearchMode = Literal["work_cards", "profiles"]
 SearchSort = Literal["best", "verified_first", "nearby", "most_photos", "recent"]
 
 

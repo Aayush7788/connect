@@ -1,6 +1,8 @@
 import 'package:connect_app/src/features/auth/auth_controller.dart';
 import 'package:connect_app/src/features/engagement/saved_screen.dart';
 import 'package:connect_app/src/features/profile/profile_dashboard.dart';
+import 'package:connect_app/src/features/work_cards/work_card_owner_list.dart';
+import 'package:connect_app/src/features/work_needed_posts/work_needed_post_owner_list.dart';
 import 'package:connect_app/src/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,27 +17,67 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
-  bool _jobWorkerWorkListSelected = true;
-  bool _businessWorkNeededSelected = true;
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
     final role = state.me?.profile?.role;
-    final showJobWorkerAdd =
-        _selectedIndex == 3 &&
-        role == 'job_worker' &&
-        _jobWorkerWorkListSelected;
-    final showBusinessAdd =
-        _selectedIndex == 3 &&
-        role == 'business' &&
-        _businessWorkNeededSelected;
+    final hasOwnerContent = role == 'business' || role == 'job_worker';
+    final showOwnerAdd = hasOwnerContent && _selectedIndex == 1;
+    final destinations = <NavigationDestination>[
+      const NavigationDestination(
+        icon: Icon(Icons.home_outlined),
+        selectedIcon: Icon(Icons.home),
+        label: 'Home',
+      ),
+      if (role == 'business')
+        const NavigationDestination(
+          icon: Icon(Icons.post_add_outlined),
+          selectedIcon: Icon(Icons.post_add),
+          label: 'Add Post',
+        ),
+      if (role == 'job_worker')
+        const NavigationDestination(
+          icon: Icon(Icons.add_photo_alternate_outlined),
+          selectedIcon: Icon(Icons.add_photo_alternate),
+          label: 'Add Work',
+        ),
+      const NavigationDestination(
+        icon: Icon(Icons.bookmark_border_outlined),
+        selectedIcon: Icon(Icons.bookmark),
+        label: 'Saved',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.person_outline),
+        selectedIcon: Icon(Icons.person),
+        label: 'My Profile',
+      ),
+    ];
+    final tabs = <Widget>[
+      _HomeTab(
+        displayName: state.displayName,
+        profileComplete: state.me?.profile?.completionScore == 100,
+        onFind: (target) => context.push('/search?target=$target'),
+        onPopularSearch: (query) => context.push(
+          '/search?target=job_worker&q=${Uri.encodeQueryComponent(query)}',
+        ),
+      ),
+      if (role == 'business')
+        const _OwnerContentTab(
+          title: 'Work Needed Posts',
+          child: WorkNeededPostOwnerList(),
+        ),
+      if (role == 'job_worker')
+        const _OwnerContentTab(title: 'My Work', child: WorkCardOwnerList()),
+      const SavedScreen(),
+      const MyProfileDashboard(),
+    ];
     return ScreenFrame(
-      floatingActionButton: showJobWorkerAdd || showBusinessAdd
+      floatingActionButton: showOwnerAdd
           ? FloatingActionButton(
-              tooltip: showBusinessAdd ? 'Add work needed' : 'Add work',
+              tooltip: role == 'business' ? 'Add post' : 'Add work',
               onPressed: () => context.push(
-                showBusinessAdd
+                role == 'business'
                     ? AppRoute.addWorkNeededPost.path
                     : AppRoute.addWorkCard.path,
               ),
@@ -44,67 +86,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (value) {
-          if (value == 1) {
-            context.push(AppRoute.search.path);
-            return;
-          }
-          setState(() => _selectedIndex = value);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bookmark_border_outlined),
-            selectedIcon: Icon(Icons.bookmark),
-            label: 'Saved',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'My Profile',
-          ),
-        ],
+        onDestinationSelected: (value) =>
+            setState(() => _selectedIndex = value),
+        destinations: destinations,
       ),
-      child: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          _HomeTab(
-            displayName: state.displayName,
-            profileComplete: state.me?.profile?.completionScore == 100,
-            onFind: (target) => context.push('/search?target=$target'),
-            onPopularSearch: (query) => context.push(
-              '/search?target=job_worker&q=${Uri.encodeQueryComponent(query)}',
-            ),
-          ),
-          const _PlaceholderTab(
-            icon: Icons.search_outlined,
-            title: 'Search',
-            message: 'Search for profile/work',
-          ),
-          const SavedScreen(),
-          MyProfileDashboard(
-            onWorkListSelectionChanged: (selected) {
-              if (_jobWorkerWorkListSelected != selected) {
-                setState(() => _jobWorkerWorkListSelected = selected);
-              }
-            },
-            onWorkNeededSelectionChanged: (selected) {
-              if (_businessWorkNeededSelected != selected) {
-                setState(() => _businessWorkNeededSelected = selected);
-              }
-            },
-          ),
-        ],
-      ),
+      child: IndexedStack(index: _selectedIndex, children: tabs),
     );
   }
 }
@@ -293,16 +279,11 @@ class _SearchChip extends StatelessWidget {
   }
 }
 
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({
-    required this.icon,
-    required this.title,
-    required this.message,
-  });
+class _OwnerContentTab extends StatelessWidget {
+  const _OwnerContentTab({required this.title, required this.child});
 
-  final IconData icon;
   final String title;
-  final String message;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -310,16 +291,8 @@ class _PlaceholderTab extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 120),
-        Center(
-          child: Column(
-            children: [
-              Icon(icon, size: 42, color: connectTeal),
-              const SizedBox(height: 12),
-              Text(message, style: Theme.of(context).textTheme.titleMedium),
-            ],
-          ),
-        ),
+        const SizedBox(height: 18),
+        child,
       ],
     );
   }

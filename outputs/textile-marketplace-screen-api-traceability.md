@@ -23,8 +23,10 @@ This file maps mobile/admin-visible screens and flows to backend APIs. Use it wh
 | Screen | Primary APIs | Notes |
 |---|---|---|
 | Home | `GET /v1/me`, `GET /v1/search` optional recommendations | Shows greeting, notification count, completion banner, three find cards. |
-| Search from Home card | `GET /v1/search?target=...` | Preselect target based on Home card. Empty query shows recommendations. |
-| Global Search | `GET /v1/search` | User selects Business, Job Worker, or Karigar tab. |
+| Search from Home card | `GET /v1/search?target=...` | The selected Home card fixes the target for the screen. Empty query shows recommendations. Search is not available from bottom navigation. |
+| Business Search | `GET /v1/search?target=business&business_mode=...` | Defaults to work-needed posts and can switch between Work Needed and Profiles. |
+| Job Worker Search | `GET /v1/search?target=job_worker&job_worker_mode=...` | Defaults to work cards and can switch between Work and Profiles. |
+| Karigar Search | `GET /v1/search?target=skilled_worker` | Has no secondary mode tabs. |
 | Search Loading | Same pending request | Show skeleton cards. |
 | Search Empty | `GET /v1/search` result count 0 | Show invite/share action; clear filters if filters active. |
 | Search Error | Failed `GET /v1/search` | Retry; show connection issue if repeated. |
@@ -35,7 +37,8 @@ This file maps mobile/admin-visible screens and flows to backend APIs. Use it wh
 |---|---|---|---|
 | Business profile | `GET /v1/search?target=business&business_mode=profiles` | photos, business name, category, manufacture/sell summary, blue tick | contact, full address |
 | Work-needed post | `GET /v1/search?target=business&business_mode=work_needed_posts` | photos, work type, category, product type, business name, blue tick | contact, full address |
-| Job-worker work card | `GET /v1/search?target=job_worker` | work photos, work name, category, product type, job worker name, blue tick | contact, full address |
+| Job-worker work card | `GET /v1/search?target=job_worker&job_worker_mode=work_cards` | work photos, work name, category, product type, job worker name, blue tick | contact, full address |
+| Job-worker profile | `GET /v1/search?target=job_worker&job_worker_mode=profiles` | workplace/profile photo, job-worker name, work summary, experience, blue tick | contact, full address |
 | Karigar profile | `GET /v1/search?target=skilled_worker` | worker photo, skill, experience, name, blue tick | contact, full address |
 
 ## 5. Profile Detail
@@ -79,7 +82,7 @@ Analytics/share/contact failures must not block the visible user action, except 
 
 | Screen | Primary APIs | Notes |
 |---|---|---|
-| Work List Owner Tab | `GET /v1/me/work-cards` | Shows owner work cards and add button. |
+| Work List Owner Screen | `GET /v1/me/work-cards` | Job-worker footer Add Work opens this dedicated screen. Shows owner work cards and add button. It is not nested in My Profile. |
 | Add Work Card Form | `POST /v1/me/work-cards`, media upload APIs | Can save draft. Custom `Other` text creates category suggestions. |
 | Publish Work Card | `POST /v1/me/work-cards/{id}/publish` | Requires category/work/product/description and minimum 3 ready photos. |
 | Edit Work Card | `PATCH /v1/me/work-cards/{id}` | Published edits go live immediately and update search. |
@@ -89,7 +92,7 @@ Analytics/share/contact failures must not block the visible user action, except 
 
 | Screen | Primary APIs | Notes |
 |---|---|---|
-| Work Needed Owner Tab | `GET /v1/me/work-needed-posts` | Shows owner posts and add button. |
+| Work Needed Owner Screen | `GET /v1/me/work-needed-posts` | Manufacturer footer Add Post opens this dedicated screen. Shows owner posts and add button. It is not nested in My Profile. |
 | Add Work Needed Form | `POST /v1/me/work-needed-posts`, media upload APIs | Supports draft. |
 | Publish Work Needed | `POST /v1/me/work-needed-posts/{id}/publish` | Sets status to `active`. |
 | Pause/Resume/Close | pause/resume/close endpoints | No close reason required in MVP. |

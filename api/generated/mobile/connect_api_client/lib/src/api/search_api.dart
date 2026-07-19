@@ -26,6 +26,7 @@ class SearchApi {
   /// * [target] 
   /// * [q] 
   /// * [businessMode] 
+  /// * [jobWorkerMode]
   /// * [categoryId] 
   /// * [productTypeId] 
   /// * [locality] 
@@ -48,6 +49,7 @@ class SearchApi {
     required SearchTarget target,
     String? q,
     String? businessMode,
+    String? jobWorkerMode,
     String? categoryId,
     String? productTypeId,
     String? locality,
@@ -87,6 +89,7 @@ class SearchApi {
       r'target': target,
       if (q != null) r'q': q,
       if (businessMode != null) r'business_mode': businessMode,
+      if (jobWorkerMode != null) r'job_worker_mode': jobWorkerMode,
       if (categoryId != null) r'category_id': categoryId,
       if (productTypeId != null) r'product_type_id': productTypeId,
       if (locality != null) r'locality': locality,

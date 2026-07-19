@@ -24,19 +24,13 @@ class SearchScreen extends ConsumerStatefulWidget {
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends ConsumerState<SearchScreen>
-    with SingleTickerProviderStateMixin {
+class _SearchScreenState extends ConsumerState<SearchScreen> {
   late final TextEditingController _searchController = TextEditingController(
     text: widget.initialQuery,
   );
   late final String _initialTarget = _targets.contains(widget.initialTarget)
       ? widget.initialTarget
       : 'job_worker';
-  late final TabController _tabController = TabController(
-    length: 3,
-    vsync: this,
-    initialIndex: _targets.indexOf(_initialTarget),
-  );
   Timer? _debounce;
 
   static const _targets = ['business', 'job_worker', 'skilled_worker'];
@@ -55,7 +49,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
   void dispose() {
     _debounce?.cancel();
     _searchController.dispose();
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -129,22 +122,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                 ],
               ),
             ),
-            TabBar(
-              controller: _tabController,
-              labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-              labelStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-              tabs: const [
-                Tab(text: 'Businesses'),
-                Tab(text: 'Job Workers'),
-                Tab(text: 'Karigars'),
-              ],
-              onTap: (index) => ref
-                  .read(discoveryControllerProvider.notifier)
-                  .selectTarget(_targets[index]),
-            ),
             if (state.target == 'business')
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -160,6 +137,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                   onSelectionChanged: (selection) => ref
                       .read(discoveryControllerProvider.notifier)
                       .setBusinessMode(selection.first),
+                ),
+              ),
+            if (state.target == 'job_worker')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'work_cards', label: Text('Work')),
+                    ButtonSegment(value: 'profiles', label: Text('Profiles')),
+                  ],
+                  selected: {state.jobWorkerMode},
+                  onSelectionChanged: (selection) => ref
+                      .read(discoveryControllerProvider.notifier)
+                      .setJobWorkerMode(selection.first),
                 ),
               ),
             if (state.query.trim().isNotEmpty && !state.isLoading)
