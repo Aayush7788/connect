@@ -26,6 +26,7 @@ String completionItemLabel(String key) {
     'workplace_photos' => 'Minimum 3 workplace photos',
     'published_work_card' => 'Add your first work to appear in search',
     'primary_skill' => 'Primary skill',
+    'skills' => 'Skills',
     'skill_mastery' => 'Skill details',
     'experience' => 'Experience',
     _ => key.replaceAll('_', ' '),

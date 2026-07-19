@@ -38,6 +38,7 @@ def test_profile_models_are_registered_in_metadata() -> None:
         "profile_business_subtypes",
         "job_worker_profiles",
         "skilled_worker_profiles",
+        "skilled_worker_profile_skills",
         "profile_gst_details",
         "profile_change_history",
     }
@@ -55,6 +56,7 @@ def test_profile_migration_renders_required_tables_constraints_and_indexes() -> 
         "profile_business_subtypes",
         "job_worker_profiles",
         "skilled_worker_profiles",
+        "skilled_worker_profile_skills",
         "profile_gst_details",
         "profile_change_history",
     ):
@@ -99,6 +101,7 @@ def test_profile_migration_enables_rls_and_updated_at_triggers() -> None:
         "profile_business_subtypes",
         "job_worker_profiles",
         "skilled_worker_profiles",
+        "skilled_worker_profile_skills",
         "profile_gst_details",
         "profile_change_history",
     ):
@@ -151,3 +154,24 @@ def test_skilled_worker_experience_distinguishes_unanswered_from_zero() -> None:
 
     assert experience_years.nullable is True
     assert experience_years.server_default is None
+
+
+def test_skilled_worker_skills_are_normalized_and_backend_only() -> None:
+    table = Base.metadata.tables["skilled_worker_profile_skills"]
+    migration_sql = render_offline_sql()
+
+    assert {
+        "profile_id",
+        "skill_category_id",
+        "custom_skill_text",
+        "sort_order",
+    } <= set(table.columns.keys())
+    assert "CREATE INDEX idx_skilled_worker_profile_skills_category" in migration_sql
+    assert "CREATE INDEX idx_skilled_worker_profile_skills_profile" in migration_sql
+    assert (
+        "CREATE UNIQUE INDEX uq_skilled_worker_profile_skills_mapped" in migration_sql
+    )
+    assert (
+        "revoke all on table public.skilled_worker_profile_skills "
+        "from public, anon, authenticated"
+    ) in migration_sql

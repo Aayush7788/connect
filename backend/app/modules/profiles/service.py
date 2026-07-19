@@ -62,6 +62,8 @@ ROLE_FIELDS = {
     },
     "skilled_worker": {
         "primary_skill_category_id",
+        "skill_category_ids",
+        "custom_skills",
         "skill_mastery",
         "experience_years",
         "bio",
@@ -426,6 +428,13 @@ class ProfileService:
             )
         ):
             field_errors["primary_skill_category_id"] = "Select a valid skill."
+        if "skill_category_ids" in payload.model_fields_set:
+            skill_ids = set(payload.skill_category_ids or [])
+            if not self.repository.category_ids_are_valid(
+                skill_ids, allowed_types={"skill", "work_name"}
+            ):
+                field_errors["skill_category_ids"] = "Select valid skills."
+
         if field_errors:
             raise ApiError(
                 status_code=422,
@@ -716,12 +725,79 @@ class ProfileService:
                     bundle.profile, "public_name", public_name, before, after
                 )
         else:
-            for field in ROLE_FIELDS["skilled_worker"]:
+            for field in ("skill_mastery", "experience_years", "bio"):
                 if field in payload.model_fields_set:
+                    value = getattr(payload, field)
+                    if field == "skill_mastery":
+                        value = value or ""
                     self._set_changed(
                         role_profile,
                         field,
-                        getattr(payload, field),
+                        value,
+                        before,
+                        after,
+                    )
+            skill_fields = {"skill_category_ids", "custom_skills"}
+            has_skill_update = bool(skill_fields & payload.model_fields_set)
+            has_legacy_update = (
+                "primary_skill_category_id" in payload.model_fields_set
+                and not has_skill_update
+            )
+            if has_skill_update or has_legacy_update:
+                existing_ids = [
+                    item.skill_category_id
+                    for item in bundle.skills
+                    if item.skill_category_id is not None
+                ]
+                existing_custom = [
+                    item.custom_skill_text
+                    for item in bundle.skills
+                    if item.custom_skill_text
+                ]
+                if has_legacy_update:
+                    category_ids = (
+                        [payload.primary_skill_category_id]
+                        if payload.primary_skill_category_id is not None
+                        else []
+                    )
+                    custom_values = []
+                else:
+                    category_ids = (
+                        payload.skill_category_ids
+                        if "skill_category_ids" in payload.model_fields_set
+                        else existing_ids
+                    )
+                    custom_values = (
+                        payload.custom_skills
+                        if "custom_skills" in payload.model_fields_set
+                        else existing_custom
+                    )
+                before["skills"] = {
+                    "category_ids": json_value(existing_ids),
+                    "custom_values": existing_custom,
+                }
+                after["skills"] = {
+                    "category_ids": json_value(category_ids or []),
+                    "custom_values": custom_values or [],
+                }
+                if before["skills"] == after["skills"]:
+                    before.pop("skills")
+                    after.pop("skills")
+                else:
+                    self.repository.create_skill_suggestions(
+                        user_id=bundle.user.id,
+                        profile_id=bundle.profile.id,
+                        values=custom_values or [],
+                    )
+                    self.repository.replace_skilled_worker_skills(
+                        profile_id=bundle.profile.id,
+                        category_ids=category_ids or [],
+                        custom_values=custom_values or [],
+                    )
+                    self._set_changed(
+                        role_profile,
+                        "primary_skill_category_id",
+                        (category_ids or [None])[0],
                         before,
                         after,
                     )
@@ -774,7 +850,8 @@ class ProfileService:
         else:
             role_profile = bundle.role_profile
             flags = common | {
-                "primary_skill": role_profile.primary_skill_category_id is not None,
+                "skills": bool(bundle.skills)
+                or role_profile.primary_skill_category_id is not None,
                 "skill_mastery": has_text(role_profile.skill_mastery),
                 "experience": role_profile.experience_years is not None,
             }
@@ -831,12 +908,26 @@ class ProfileService:
             )
         else:
             skilled_worker_profile = cast(SkilledWorkerProfile, role_profile)
-            if skilled_worker_profile.primary_skill_category_id is not None:
-                category_ids.add(skilled_worker_profile.primary_skill_category_id)
+            skill_category_ids = {
+                item.skill_category_id
+                for item in bundle.skills
+                if item.skill_category_id is not None
+            }
+            if (
+                not skill_category_ids
+                and skilled_worker_profile.primary_skill_category_id is not None
+            ):
+                skill_category_ids.add(skilled_worker_profile.primary_skill_category_id)
+            category_ids.update(skill_category_ids)
             values.extend(
                 [
                     skilled_worker_profile.skill_mastery,
                     skilled_worker_profile.bio,
+                    *(
+                        item.custom_skill_text
+                        for item in bundle.skills
+                        if item.custom_skill_text
+                    ),
                 ]
             )
         categories = self.repository.get_categories(category_ids)
@@ -1006,10 +1097,24 @@ class ProfileService:
                 "work_summary": role_profile.work_summary,
                 "profile_experience_years": role_profile.profile_experience_years,
             }
-        skill = bundle.categories.get(role_profile.primary_skill_category_id)
+        skills = [
+            (
+                bundle.categories[item.skill_category_id].name
+                if item.skill_category_id in bundle.categories
+                else item.custom_skill_text
+            )
+            for item in bundle.skills
+            if item.skill_category_id in bundle.categories
+            or has_text(item.custom_skill_text)
+        ]
+        if not skills:
+            legacy_skill = bundle.categories.get(role_profile.primary_skill_category_id)
+            if legacy_skill is not None:
+                skills.append(legacy_skill.name)
         return {
             "owner_name": profile.owner_name,
-            "primary_skill": skill.name if skill else None,
+            "primary_skill": skills[0] if skills else None,
+            "skills": skills,
             "skill_mastery": role_profile.skill_mastery,
             "experience_years": role_profile.experience_years,
             "bio": role_profile.bio,
@@ -1144,8 +1249,7 @@ class ProfileService:
             or has_text(item.custom_product_type_text)
         ]
 
-    @staticmethod
-    def _role_data(bundle: OwnerProfileBundle) -> dict[str, Any]:
+    def _role_data(self, bundle: OwnerProfileBundle) -> dict[str, Any]:
         role_profile = bundle.role_profile
         if bundle.profile.role == "business":
             return {
@@ -1169,8 +1273,40 @@ class ProfileService:
                 "work_summary": role_profile.work_summary,
                 "profile_experience_years": role_profile.profile_experience_years,
             }
+        category_ids = {
+            item.skill_category_id
+            for item in bundle.skills
+            if item.skill_category_id is not None
+        }
+        categories = self.repository.get_categories(category_ids)
+        skills = [
+            (
+                categories[item.skill_category_id].name
+                if item.skill_category_id in categories
+                else item.custom_skill_text
+            )
+            for item in bundle.skills
+            if item.skill_category_id in categories or has_text(item.custom_skill_text)
+        ]
+        if not skills and role_profile.primary_skill_category_id is not None:
+            legacy = self.repository.get_categories(
+                {role_profile.primary_skill_category_id}
+            ).get(role_profile.primary_skill_category_id)
+            if legacy is not None:
+                skills.append(legacy.name)
         return {
             "primary_skill_category_id": role_profile.primary_skill_category_id,
+            "skill_category_ids": [
+                item.skill_category_id
+                for item in bundle.skills
+                if item.skill_category_id is not None
+            ],
+            "custom_skills": [
+                item.custom_skill_text
+                for item in bundle.skills
+                if item.custom_skill_text
+            ],
+            "skills": skills,
             "skill_mastery": role_profile.skill_mastery,
             "experience_years": role_profile.experience_years,
             "bio": role_profile.bio,

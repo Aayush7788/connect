@@ -39,6 +39,10 @@ class ProfileUpdateRequest(BaseModel):
     work_summary: str | None = Field(default=None, max_length=2000)
     profile_experience_years: int | None = Field(default=None, ge=0, le=100)
     primary_skill_category_id: UUID | None = None
+    skill_category_ids: list[UUID] | None = Field(default=None, max_length=20)
+    custom_skills: list[Annotated[str, StringConstraints(max_length=160)]] | None = (
+        Field(default=None, max_length=10)
+    )
     skill_mastery: str | None = Field(default=None, max_length=1000)
     experience_years: int | None = Field(default=None, ge=0, le=100)
     bio: str | None = Field(default=None, max_length=2000)
@@ -72,6 +76,21 @@ class ProfileUpdateRequest(BaseModel):
     @field_validator("custom_product_types")
     @classmethod
     def normalize_custom_products(cls, values: list[str] | None) -> list[str] | None:
+        if values is None:
+            return None
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            cleaned = value.strip()
+            key = cleaned.casefold()
+            if cleaned and key not in seen:
+                normalized.append(cleaned)
+                seen.add(key)
+        return normalized
+
+    @field_validator("custom_skills")
+    @classmethod
+    def normalize_custom_skills(cls, values: list[str] | None) -> list[str] | None:
         if values is None:
             return None
         normalized: list[str] = []

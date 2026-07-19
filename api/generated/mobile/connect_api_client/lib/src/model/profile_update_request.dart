@@ -66,6 +66,10 @@ class ProfileUpdateRequest {
 
      this.primarySkillCategoryId,
 
+     this.skillCategoryIds,
+
+     this.customSkills,
+
      this.skillMastery,
 
      this.experienceYears,
@@ -354,6 +358,30 @@ class ProfileUpdateRequest {
 
 
   @JsonKey(
+
+    name: r'skill_category_ids',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final List<String>? skillCategoryIds;
+
+
+
+  @JsonKey(
+
+    name: r'custom_skills',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final List<String>? customSkills;
+
+
+
+  @JsonKey(
     
     name: r'skill_mastery',
     required: false,
@@ -419,6 +447,8 @@ class ProfileUpdateRequest {
       other.profileExperienceYears == profileExperienceYears &&
       other.primarySkillCategoryId == primarySkillCategoryId &&
       other.skillMastery == skillMastery &&
+      other.skillCategoryIds == skillCategoryIds &&
+      other.customSkills == customSkills &&
       other.experienceYears == experienceYears &&
       other.bio == bio;
 
@@ -448,6 +478,8 @@ class ProfileUpdateRequest {
         profileExperienceYears.hashCode +
         primarySkillCategoryId.hashCode +
         skillMastery.hashCode +
+        skillCategoryIds.hashCode +
+        customSkills.hashCode +
         experienceYears.hashCode +
         bio.hashCode;
 

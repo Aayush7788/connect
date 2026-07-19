@@ -38,6 +38,7 @@ from app.db.models.profile import ProfileBusinessSubtype
 from app.db.models.profile import ProfileChangeHistory
 from app.db.models.profile import ProfileGstDetail
 from app.db.models.profile import SkilledWorkerProfile
+from app.db.models.profile import SkilledWorkerProfileSkill
 from app.db.models.taxonomy import BusinessSubtype
 from app.db.models.taxonomy import Category
 from app.db.models.taxonomy import CategoryAlias
@@ -75,6 +76,7 @@ __all__ = [
     "SearchLog",
     "ShareEvent",
     "SkilledWorkerProfile",
+    "SkilledWorkerProfileSkill",
     "SubscriptionPlan",
     "User",
     "UserAuthSession",

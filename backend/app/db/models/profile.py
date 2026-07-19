@@ -336,6 +336,59 @@ class SkilledWorkerProfile(TimestampMixin, Base):
     bio: Mapped[str | None] = mapped_column(Text)
 
 
+class SkilledWorkerProfileSkill(Base):
+    __tablename__ = "skilled_worker_profile_skills"
+    __table_args__ = (
+        CheckConstraint(
+            "(skill_category_id is not null and custom_skill_text is null) or "
+            "(skill_category_id is null and custom_skill_text is not null)",
+            name="skill_or_custom_required",
+        ),
+        CheckConstraint(
+            "custom_skill_text is null or btrim(custom_skill_text) <> ''",
+            name="custom_skill_not_blank",
+        ),
+        Index(
+            "uq_skilled_worker_profile_skills_mapped",
+            "profile_id",
+            "skill_category_id",
+            unique=True,
+            postgresql_where=text("skill_category_id is not null"),
+        ),
+        Index(
+            "idx_skilled_worker_profile_skills_category",
+            "skill_category_id",
+            "profile_id",
+        ),
+        Index(
+            "idx_skilled_worker_profile_skills_profile",
+            "profile_id",
+            "sort_order",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    profile_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("skilled_worker_profiles.profile_id"),
+    )
+    skill_category_id: Mapped[UUID | None] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("categories.id"),
+    )
+    custom_skill_text: Mapped[str | None] = mapped_column(Text)
+    sort_order: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=text("now()"),
+        nullable=False,
+    )
+
+
 class ProfileGstDetail(TimestampMixin, Base):
     __tablename__ = "profile_gst_details"
     __table_args__ = (

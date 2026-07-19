@@ -905,14 +905,27 @@ Controls:
 
 ### 9.4 `04.04 Complete Profile - Karigar Step`
 
-Fields:
+Step 1 field order:
 
-- Name.
-- Skill.
-- Experience.
-- Contact.
-- Address.
-- Photo handled in photo step.
+1. `Name`.
+2. Read-only verified `Mobile number`.
+3. `Skills` multi-select.
+4. Conditional `Other skill` text field.
+5. `Skill detail`.
+6. `Experience in years`.
+7. `About your work`.
+8. `Alternate contact number`.
+
+Skills interaction:
+
+- Open a bottom sheet with checkbox rows so the karigar can select multiple skills.
+- Include an `Other` option at the end of the list.
+- Show `Other skill` only while `Other` is selected.
+- Show selected values as removable chips below the selector.
+- Require at least one mapped or custom skill before profile completion.
+- Save custom skill text immediately and allow backend/admin taxonomy mapping later.
+
+Address and personal photo remain on their dedicated later steps.
 
 Controls:
 

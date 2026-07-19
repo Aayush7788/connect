@@ -368,6 +368,12 @@ Rules:
 - profile editing is locked while verification is pending
 - sensitive verified-field edits remove blue tick and set `reverification_required`
 - mobile app cannot change role after profile completion
+- skilled-worker updates accept `skill_category_ids` for multiple mapped skills
+- skilled-worker updates accept `custom_skills` for Other values that await admin mapping
+- at least one mapped or custom skill is required for skilled-worker completion
+- skill changes update the profile search projection immediately
+- `primary_skill_category_id` remains response-compatible during migration but is
+  not the new mobile form''s source of truth
 
 ### 6.4 Complete Profile
 
@@ -396,7 +402,7 @@ Job worker:
 Skilled worker:
 
 - name
-- skill/mastery
+- one or more skills, plus skill detail/mastery
 - experience
 - area/address
 - contact

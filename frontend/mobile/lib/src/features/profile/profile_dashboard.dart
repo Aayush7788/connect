@@ -333,7 +333,13 @@ class _OwnerPreview extends StatelessWidget {
       ]);
     } else {
       rows.addAll([
-        MapEntry('Skill', details['skill_mastery']?.toString() ?? ''),
+        MapEntry(
+          'Skills',
+          (details['skills'] as List<dynamic>? ?? const [])
+              .map((value) => value.toString())
+              .join(', '),
+        ),
+        MapEntry('Skill details', details['skill_mastery']?.toString() ?? ''),
         MapEntry(
           'Experience',
           details['experience_years'] == null
