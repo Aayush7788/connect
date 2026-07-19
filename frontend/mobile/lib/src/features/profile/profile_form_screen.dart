@@ -213,7 +213,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
                     )
                   else
                     PrimaryActionButton(
-                      label: 'Done',
+                      label: 'Complete and publish',
                       isLoading: _isSubmitting,
                       onPressed: pending || _isSubmitting ? null : _complete,
                     ),

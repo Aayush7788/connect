@@ -964,15 +964,20 @@ Purpose:
 Content:
 
 - Review summary card.
-- Completion is ready.
-- Two actions:
-  - `Save`
-  - `Verify My Profile`
+- Completion percentage and any remaining required items.
+- Primary action: `Complete and publish`.
+- Secondary action: `Save and exit`.
+- `Previous` returns to the photo step.
 
-If not eligible:
+Behavior:
 
-- Show disabled verification button.
-- Message: `Complete profile first`
+- `Complete and publish` saves pending changes, validates every required
+  completion item, marks the profile complete, and publishes it.
+- If required items are missing, remain on this screen and show them under
+  `Still required`.
+- `Save and exit` preserves an incomplete draft without publishing it.
+- Profile verification is a separate action shown on My Profile only after the
+  profile is complete.
 
 ### 9.7 `04.07 Job Worker Owner Work List`
 

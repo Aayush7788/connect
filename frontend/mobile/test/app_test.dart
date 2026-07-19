@@ -449,6 +449,43 @@ void main() {
     expect(find.text('Workplace photos'), findsOneWidget);
     expect(find.text('Minimum 3 photos required'), findsOneWidget);
   });
+  testWidgets('final profile step names the publish action clearly', (
+    tester,
+  ) async {
+    final api = _FakeConnectApi()
+      ..profile = _ownerProfile(role: 'skilled_worker');
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(
+            _MemoryTokenStore(initialAccessToken: 'access-token'),
+          ),
+          connectApiProvider.overrideWithValue(api),
+          mediaPickerProvider.overrideWithValue(_NoopMediaPicker()),
+        ],
+        child: const ConnectApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(Navigator).first)).go('/splash');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('My Profile'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Complete your profile to get business'));
+    await tester.pumpAndSettle();
+
+    for (var step = 0; step < 3; step += 1) {
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+    }
+
+    expect(find.text('Review profile'), findsOneWidget);
+    expect(find.text('Complete and publish'), findsOneWidget);
+    expect(find.text('Save and exit'), findsOneWidget);
+    expect(find.text('Done'), findsNothing);
+  });
 
   testWidgets('business opens work-needed list and sticky add flow', (
     tester,
