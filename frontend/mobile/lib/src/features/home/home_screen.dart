@@ -58,9 +58,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         displayName: state.displayName,
         profileComplete: state.me?.profile?.completionScore == 100,
         onFind: (target) => context.push('/search?target=$target'),
-        onPopularSearch: (query) => context.push(
-          '/search?target=job_worker&q=${Uri.encodeQueryComponent(query)}',
-        ),
       ),
       if (role == 'business')
         const _OwnerContentTab(
@@ -90,7 +87,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             setState(() => _selectedIndex = value),
         destinations: destinations,
       ),
-      child: IndexedStack(index: _selectedIndex, children: tabs),
+      child: _ContentSizedTabStack(index: _selectedIndex, children: tabs),
+    );
+  }
+}
+
+class _ContentSizedTabStack extends StatelessWidget {
+  const _ContentSizedTabStack({required this.index, required this.children});
+
+  final int index;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.topLeft,
+      children: [
+        for (var childIndex = 0; childIndex < children.length; childIndex += 1)
+          Offstage(
+            offstage: childIndex != index,
+            child: TickerMode(
+              enabled: childIndex == index,
+              child: children[childIndex],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -100,18 +121,17 @@ class _HomeTab extends StatelessWidget {
     required this.displayName,
     required this.profileComplete,
     required this.onFind,
-    required this.onPopularSearch,
   });
 
   final String displayName;
   final bool profileComplete;
   final ValueChanged<String> onFind;
-  final ValueChanged<String> onPopularSearch;
 
   @override
   Widget build(BuildContext context) {
     final greetingName = displayName.isEmpty ? 'there' : displayName;
     return Column(
+      key: const Key('home-tab-content'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
@@ -187,29 +207,6 @@ class _HomeTab extends StatelessWidget {
           ),
           const SizedBox(height: 18),
         ],
-        Text(
-          'Popular searches',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _SearchChip(
-              label: 'Flat hemming',
-              onPressed: () => onPopularSearch('Flat hemming'),
-            ),
-            _SearchChip(
-              label: 'Digital print',
-              onPressed: () => onPopularSearch('Digital print'),
-            ),
-            _SearchChip(
-              label: 'Embroidery',
-              onPressed: () => onPopularSearch('Embroidery'),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -261,24 +258,6 @@ class _FindCard extends StatelessWidget {
   }
 }
 
-class _SearchChip extends StatelessWidget {
-  const _SearchChip({required this.label, required this.onPressed});
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      label: Text(label),
-      onPressed: onPressed,
-      side: const BorderSide(color: connectLine),
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    );
-  }
-}
-
 class _OwnerContentTab extends StatelessWidget {
   const _OwnerContentTab({required this.title, required this.child});
 
@@ -288,6 +267,7 @@ class _OwnerContentTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      key: ValueKey('owner-content-$title'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: Theme.of(context).textTheme.headlineMedium),

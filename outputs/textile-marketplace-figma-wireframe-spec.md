@@ -186,6 +186,13 @@ Validation:
 
 - Show short inline error text exactly as specified.
 
+### 3.7 Scrolling
+
+- A screen scrolls only when its visible content exceeds the available viewport.
+- Short screens stop at their final visible element and must not expose blank scroll space below it.
+- Hidden bottom-navigation tabs must not determine the selected tab's scroll extent.
+- Long forms and lists retain normal content-bounded scrolling, keyboard avoidance, and safe-area padding.
+
 ## 4. Screen Inventory
 
 Create these mobile frames.
@@ -428,13 +435,10 @@ Layout top to bottom:
    - `Find Manufacturers, Traders, Wholesalers`
    - `Find Job worker, value adder`
    - `Find Skilled worker, Karigar`
-5. Popular searches:
-   - Chips: `Flat hemming`, `Digital print`, `Embroidery`
-6. Breathing space.
-7. Complete Profile card:
+5. Complete Profile card when the profile is incomplete:
    - `Add your details and photos to get business`
    - Button: `Complete Profile`
-8. Bottom nav:
+6. Bottom nav:
    - Home selected.
    - Manufacturer/business: Add Post.
    - Job worker/value adder: Add Work.

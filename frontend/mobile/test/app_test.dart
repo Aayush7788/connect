@@ -312,6 +312,92 @@ void main() {
     expect(scrollable.position.maxScrollExtent, 0);
   });
 
+  testWidgets('long ScreenFrame content stops at its final element', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: ScreenFrame(child: SizedBox(height: 1200))),
+    );
+    await tester.pumpAndSettle();
+
+    final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scrollable.position.maxScrollExtent, greaterThan(0));
+
+    scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
+    await tester.pump();
+    final finalExtent = scrollable.position.maxScrollExtent;
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+
+    expect(scrollable.position.pixels, finalExtent);
+  });
+
+  testWidgets(
+    'home removes popular searches and hidden tabs do not add blank scrolling',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final api = _FakeConnectApi()
+        ..profile = _ownerProfile(
+          completionScore: 100,
+          visibilityStatus: 'public',
+          completionFlags: const {
+            'owner_name': true,
+            'address': true,
+            'shop_photos': true,
+          },
+        );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStoreProvider.overrideWithValue(
+              _MemoryTokenStore(initialAccessToken: 'access-token'),
+            ),
+            connectApiProvider.overrideWithValue(api),
+          ],
+          child: const ConnectApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      GoRouter.of(tester.element(find.byType(Navigator).first)).go('/home');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Popular searches'), findsNothing);
+      expect(find.text('Digital print'), findsNothing);
+      expect(find.text('Embroidery'), findsNothing);
+
+      final screenScroll = tester.state<ScrollableState>(
+        find
+            .descendant(
+              of: find.byType(ScreenFrame),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      final contentHeight = tester
+          .getSize(find.byKey(const Key('home-tab-content')))
+          .height;
+      final naturalExtent =
+          contentHeight + 48 - screenScroll.position.viewportDimension;
+      final expectedExtent = naturalExtent > 0 ? naturalExtent : 0.0;
+      expect(
+        screenScroll.position.maxScrollExtent,
+        moreOrLessEquals(expectedExtent, epsilon: 0.01),
+      );
+    },
+  );
+
   testWidgets('job worker opens the role-specific completion form', (
     tester,
   ) async {
@@ -396,6 +482,25 @@ void main() {
     expect(find.text('Work Needed Posts'), findsOneWidget);
     expect(find.text('Find work by posting'), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsOneWidget);
+
+    final screenScroll = tester.state<ScrollableState>(
+      find
+          .descendant(
+            of: find.byType(ScreenFrame),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    final contentHeight = tester
+        .getSize(find.byKey(const ValueKey('owner-content-Work Needed Posts')))
+        .height;
+    final naturalExtent =
+        contentHeight + 48 - screenScroll.position.viewportDimension;
+    final expectedExtent = naturalExtent > 0 ? naturalExtent : 0.0;
+    expect(
+      screenScroll.position.maxScrollExtent,
+      moreOrLessEquals(expectedExtent, epsilon: 0.01),
+    );
 
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
