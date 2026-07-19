@@ -254,8 +254,9 @@ Mobile app rules:
 - Role selection happens after OTP verification.
 - Role is locked after profile completion.
 - Every user sees the same Home with three discovery cards.
-- Home has bottom nav: Home, Search, Saved, My Profile.
-- Search screen can be focused and does not need bottom navigation.
+- Bottom navigation is role-specific: business uses Home, Add Post, Saved, My Profile; job worker uses Home, Add Work, Saved, My Profile; karigar uses Home, Saved, My Profile.
+- Search is entered only through a Home discovery card; its persona target is fixed and the focused Search screen has no bottom navigation.
+- Add Post and Add Work open dedicated owner list screens; My Profile is profile-only.
 - Result cards are photo-first.
 - Result cards never show contact number or full address.
 - Profile detail can show contact/address in MVP.

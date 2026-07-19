@@ -2006,6 +2006,7 @@ export interface operations {
                 target: components["schemas"]["SearchTarget"];
                 q?: string;
                 business_mode?: "work_needed_posts" | "profiles";
+                job_worker_mode?: "work_cards" | "profiles";
                 category_id?: string;
                 product_type_id?: string;
                 locality?: string;

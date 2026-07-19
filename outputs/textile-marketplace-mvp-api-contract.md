@@ -438,6 +438,7 @@ Query parameters:
 - `target`: `business`, `job_worker`, `skilled_worker`
 - `q`: text query
 - `business_mode`: `work_needed_posts` or `profiles`
+- `job_worker_mode`: `work_cards` or `profiles`
 - `filters`: category, work type, product type, locality, experience, verified only
 - `sort`: `best`, `verified_first`, `nearby`, `most_photos`, `recent`
 - `cursor`
@@ -447,7 +448,8 @@ Rules:
 
 - search one target persona at a time
 - business search defaults to work-needed posts
-- job-worker search returns matching work cards first
+- job-worker search defaults to matching work cards and can switch to matching job-worker profiles
+- the search target is fixed by the Home discovery card; users do not switch personas inside Search
 - result cards never include contact number or full address
 - exact/category/alias/keyword matching first, conservative fuzzy fallback
 - log search after execution

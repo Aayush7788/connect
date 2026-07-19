@@ -66,6 +66,7 @@ def test_search_route_returns_privacy_safe_work_card_results() -> None:
             "locality": "Ring Road",
             "min_experience_years": 3,
             "verified_only": "true",
+            "job_worker_mode": "profiles",
         },
     )
 
@@ -78,6 +79,7 @@ def test_search_route_returns_privacy_safe_work_card_results() -> None:
     assert "mobile" not in body["items"][0]
     assert service.arguments["target"] == "job_worker"
     assert service.arguments["verified_only"] is True
+    assert service.arguments["job_worker_mode"] == "profiles"
 
 
 def test_search_route_rejects_invalid_target_and_limit() -> None:

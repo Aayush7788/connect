@@ -20,6 +20,7 @@ from app.modules.search.schemas import SearchResultResponse
 
 SearchTarget = Literal["business", "job_worker", "skilled_worker"]
 BusinessMode = Literal["work_needed_posts", "profiles"]
+JobWorkerMode = Literal["work_cards", "profiles"]
 SortMode = Literal["best", "verified_first", "nearby", "most_photos", "recent"]
 
 
@@ -35,6 +36,7 @@ class SearchCriteria:
     max_experience_years: int | None
     verified_only: bool
     sort: SortMode
+    job_worker_mode: JobWorkerMode | None = None
 
 
 @dataclass(frozen=True)
@@ -111,7 +113,9 @@ class SearchRepository:
         limit: int,
         fuzzy: bool,
     ) -> SearchRepositoryPage:
-        if criteria.target == "job_worker":
+        if criteria.target == "job_worker" and criteria.job_worker_mode == "profiles":
+            statement = self._job_worker_profile_statement(criteria, fuzzy=fuzzy)
+        elif criteria.target == "job_worker":
             statement = self._work_card_statement(criteria, fuzzy=fuzzy)
         elif criteria.target == "business" and criteria.business_mode == "profiles":
             statement = self._business_profile_statement(criteria, fuzzy=fuzzy)
@@ -245,6 +249,113 @@ class SearchRepository:
                     WorkCard.last_activity_at, WorkCard.created_at
                 ),
                 entity_id=WorkCard.id,
+            )
+        )
+
+    def _job_worker_profile_statement(
+        self,
+        criteria: SearchCriteria,
+        *,
+        fuzzy: bool,
+    ):
+        profile_relevance, profile_match = self._text_match(
+            Profile.search_text,
+            Profile.search_vector,
+            criteria.normalized_query,
+            fuzzy=fuzzy,
+        )
+        _, work_card_match = self._text_match(
+            WorkCard.search_text,
+            WorkCard.search_vector,
+            criteria.normalized_query,
+            fuzzy=fuzzy,
+        )
+        matching_work_card = (
+            select(WorkCard.id)
+            .where(
+                WorkCard.profile_id == Profile.id,
+                WorkCard.status == "published",
+                WorkCard.deleted_at.is_(None),
+                work_card_match,
+            )
+            .exists()
+        )
+        relevance = func.greatest(
+            profile_relevance,
+            case((matching_work_card, 0.9), else_=0.0),
+        )
+        match_condition = or_(profile_match, matching_work_card)
+        locality_match = self._locality_match(Profile, criteria.normalized_locality)
+        experience = JobWorkerProfile.profile_experience_years
+        statement = (
+            select(
+                literal("profile").label("result_type"),
+                Profile.id.label("id"),
+                Profile.id.label("profile_id"),
+                Profile.public_name.label("title"),
+                JobWorkerProfile.work_summary.label("subtitle"),
+                literal(None).label("category"),
+                JobWorkerProfile.workshop_name.label("description"),
+                Profile.locality.label("locality"),
+                experience.label("experience_years"),
+                Profile.is_verified.label("is_verified"),
+                Profile.photo_count.label("photo_count"),
+                Profile.last_activity_at.label("last_activity_at"),
+                relevance.label("relevance"),
+                locality_match.label("locality_match"),
+                Profile.ranking_score.label("ranking_score"),
+                Profile.created_at.label("created_at"),
+            )
+            .join(JobWorkerProfile, JobWorkerProfile.profile_id == Profile.id)
+            .outerjoin(User, User.id == Profile.owner_user_id)
+            .where(
+                *self._public_profile_conditions(Profile, User, "job_worker"),
+                match_condition,
+            )
+        )
+        if criteria.category_id is not None:
+            statement = statement.where(
+                select(WorkCard.id)
+                .where(
+                    WorkCard.profile_id == Profile.id,
+                    WorkCard.status == "published",
+                    WorkCard.deleted_at.is_(None),
+                    or_(
+                        WorkCard.work_category_id == criteria.category_id,
+                        WorkCard.work_name_category_id == criteria.category_id,
+                    ),
+                )
+                .exists()
+            )
+        if criteria.product_type_id is not None:
+            statement = statement.where(
+                select(WorkCardProductType.id)
+                .join(WorkCard, WorkCard.id == WorkCardProductType.work_card_id)
+                .where(
+                    WorkCard.profile_id == Profile.id,
+                    WorkCard.status == "published",
+                    WorkCard.deleted_at.is_(None),
+                    WorkCardProductType.product_type_category_id
+                    == criteria.product_type_id,
+                )
+                .exists()
+            )
+        statement = self._common_filters(
+            statement,
+            criteria=criteria,
+            profile=Profile,
+            experience=experience,
+        )
+        return statement.order_by(
+            *self._sort_expressions(
+                criteria.sort,
+                relevance=relevance,
+                verified=Profile.is_verified,
+                locality_match=locality_match,
+                photo_count=Profile.photo_count,
+                ranking_score=Profile.ranking_score,
+                activity_at=func.coalesce(Profile.last_activity_at, Profile.created_at),
+                entity_id=Profile.id,
             )
         )
 

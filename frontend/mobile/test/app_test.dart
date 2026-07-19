@@ -266,8 +266,6 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('My Profile'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('business-profile-tab')));
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Complete your profile to get business'));
       await tester.pumpAndSettle();
 
@@ -342,8 +340,6 @@ void main() {
 
     await tester.tap(find.text('My Profile'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('job-worker-profile-tab')));
-    await tester.pumpAndSettle();
     expect(find.text('25% complete'), findsOneWidget);
 
     await tester.tap(find.text('Complete your profile to get business'));
@@ -394,7 +390,7 @@ void main() {
     GoRouter.of(tester.element(find.byType(Navigator).first)).go('/splash');
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('My Profile'));
+    await tester.tap(find.text('Add Post'));
     await tester.pumpAndSettle();
 
     expect(find.text('Work Needed Posts'), findsOneWidget);
@@ -407,6 +403,121 @@ void main() {
     expect(api.ownerWorkNeededPosts, hasLength(1));
     expect(find.text('Add Work Needed'), findsOneWidget);
     expect(find.text('Save and Publish'), findsOneWidget);
+  });
+
+  testWidgets(
+    'role-specific footer removes Search and separates owner content',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final api = _FakeConnectApi()
+        ..profile = _ownerProfile(role: 'job_worker');
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStoreProvider.overrideWithValue(
+              _MemoryTokenStore(initialAccessToken: 'access-token'),
+            ),
+            connectApiProvider.overrideWithValue(api),
+          ],
+          child: const ConnectApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      GoRouter.of(tester.element(find.byType(Navigator).first)).go('/splash');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Search'), findsNothing);
+      expect(find.text('Add Work'), findsOneWidget);
+      expect(find.text('Saved'), findsOneWidget);
+      expect(find.text('My Profile'), findsOneWidget);
+
+      await tester.tap(find.text('Add Work'));
+      await tester.pumpAndSettle();
+      expect(find.text('My Work'), findsOneWidget);
+      expect(
+        find.text('Add your first work to appear in search'),
+        findsOneWidget,
+      );
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+
+      await tester.tap(find.text('My Profile'));
+      await tester.pumpAndSettle();
+      expect(find.text('My Profile'), findsNWidgets(2));
+      expect(find.text('My Work'), findsNothing);
+      expect(find.byType(FloatingActionButton), findsNothing);
+    },
+  );
+
+  testWidgets('karigar footer contains only Home Saved and My Profile', (
+    tester,
+  ) async {
+    final api = _FakeConnectApi()
+      ..profile = _ownerProfile(role: 'skilled_worker');
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(
+            _MemoryTokenStore(initialAccessToken: 'access-token'),
+          ),
+          connectApiProvider.overrideWithValue(api),
+        ],
+        child: const ConnectApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(Navigator).first)).go('/splash');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('My Profile'), findsOneWidget);
+    expect(find.text('Search'), findsNothing);
+    expect(find.text('Add Post'), findsNothing);
+    expect(find.text('Add Work'), findsNothing);
+  });
+
+  testWidgets('home cards open fixed target-specific search modes', (
+    tester,
+  ) async {
+    final api = _FakeConnectApi();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(
+            _MemoryTokenStore(initialAccessToken: 'access-token'),
+          ),
+          connectApiProvider.overrideWithValue(api),
+        ],
+        child: const ConnectApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(Navigator).first)).go('/home');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Find Manufacturers, Traders, Wholesalers'));
+    await tester.pumpAndSettle();
+    expect(find.text('Work needed'), findsOneWidget);
+    expect(find.text('Profiles'), findsOneWidget);
+    expect(find.text('Businesses'), findsNothing);
+    expect(api.lastSearchRequest?.target, 'business');
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Find Skilled Worker, Karigar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Find Karigar'), findsOneWidget);
+    expect(find.text('Work needed'), findsNothing);
+    expect(find.text('Work'), findsNothing);
+    expect(find.text('Profiles'), findsNothing);
+    expect(api.lastSearchRequest?.target, 'skilled_worker');
   });
 
   testWidgets('search card hides contact and profile detail reveals it', (
@@ -436,6 +547,18 @@ void main() {
 
     await tester.tap(find.text('Find Job Worker, Value Adder'));
     await tester.pumpAndSettle();
+
+    expect(find.text('Businesses'), findsNothing);
+    expect(find.text('Job Workers'), findsNothing);
+    expect(find.text('Karigars'), findsNothing);
+    expect(find.text('Work'), findsOneWidget);
+    expect(find.text('Profiles'), findsOneWidget);
+    expect(api.lastSearchRequest?.target, 'job_worker');
+    expect(api.lastSearchRequest?.jobWorkerMode, 'work_cards');
+
+    await tester.tap(find.text('Profiles'));
+    await tester.pumpAndSettle();
+    expect(api.lastSearchRequest?.jobWorkerMode, 'profiles');
 
     expect(find.text('Flat hemming'), findsOneWidget);
     expect(find.text('+919999999999'), findsNothing);
@@ -622,6 +745,7 @@ class _FakeConnectApi implements ConnectApi {
 
   final ApiFailure? otpFailure;
   OwnerProfileResult profile = _ownerProfile();
+  MarketplaceSearchRequest? lastSearchRequest;
   final List<WorkCardResult> ownerWorkCards = [];
   final List<WorkNeededPostResult> ownerWorkNeededPosts = [];
   Map<String, dynamic>? lastProfileUpdate;
@@ -895,6 +1019,7 @@ class _FakeConnectApi implements ConnectApi {
     MarketplaceSearchRequest request, {
     CancelToken? cancelToken,
   }) async {
+    lastSearchRequest = request;
     return const MarketplaceSearchResponse(
       items: [
         MarketplaceSearchResult(
