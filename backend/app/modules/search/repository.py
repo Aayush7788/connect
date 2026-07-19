@@ -12,6 +12,7 @@ from app.db.models.identity import User
 from app.db.models.marketplace import WorkCard, WorkCardProductType
 from app.db.models.marketplace import WorkNeededPost, WorkNeededPostProductType
 from app.db.models.profile import BusinessProfile, BusinessProfileProductType
+from app.db.models.profile import SkilledWorkerProfileSkill
 from app.db.models.profile import JobWorkerProfile, Profile, SkilledWorkerProfile
 from app.db.models.taxonomy import Category
 from app.modules.media.schemas import MediaAssetResponse, MediaKind, MediaVisibility
@@ -574,7 +575,17 @@ class SearchRepository:
         )
         if criteria.category_id is not None:
             statement = statement.where(
-                SkilledWorkerProfile.primary_skill_category_id == criteria.category_id
+                or_(
+                    select(SkilledWorkerProfileSkill.id)
+                    .where(
+                        SkilledWorkerProfileSkill.profile_id == Profile.id,
+                        SkilledWorkerProfileSkill.skill_category_id
+                        == criteria.category_id,
+                    )
+                    .exists(),
+                    SkilledWorkerProfile.primary_skill_category_id
+                    == criteria.category_id,
+                )
             )
         statement = self._common_filters(
             statement,

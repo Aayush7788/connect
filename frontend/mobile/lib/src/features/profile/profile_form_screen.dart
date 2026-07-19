@@ -21,6 +21,7 @@ class ProfileFormScreen extends ConsumerStatefulWidget {
 
 class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   static const _otherProductTypeId = '__other_product_type__';
+  static const _otherSkillId = '__other_skill__';
 
   final _ownerName = TextEditingController();
   final _alternateContact = TextEditingController();
@@ -35,6 +36,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   final _customProduct = TextEditingController();
   final _workshopName = TextEditingController();
   final _workSummary = TextEditingController();
+  final _customSkill = TextEditingController();
   final _skillMastery = TextEditingController();
   final _experience = TextEditingController();
   final _bio = TextEditingController();
@@ -45,7 +47,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   bool _hasWorkshop = true;
   int _step = 0;
   String? _businessCategoryId;
-  String? _skillCategoryId;
+  final Set<String> _skillCategoryIds = {};
+  bool _otherSkillSelected = false;
   final Set<String> _productTypeIds = {};
   bool _otherProductSelected = false;
   bool _savedOnce = false;
@@ -89,6 +92,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       _customProduct,
       _workshopName,
       _workSummary,
+      _customSkill,
       _skillMastery,
       _experience,
       _bio,
@@ -264,6 +268,14 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         name: 'Other',
       ),
     ];
+    final skillSelectorOptions = [
+      ...skillOptions,
+      const CategoryOption(
+        id: _otherSkillId,
+        categoryType: 'work_name',
+        name: 'Other',
+      ),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -315,7 +327,10 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
               disabled: disabled,
               errorText: state.fieldErrors['custom_business_category'],
             ),
-          _ProductTypeSelector(
+          _MultiCategorySelector(
+            label: 'Product type',
+            buttonLabel: 'Select product types',
+            sheetTitle: 'Product types',
             options: productSelectorOptions,
             selectedIds: {
               ..._productTypeIds,
@@ -360,71 +375,35 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
             maxLines: 3,
             errorText: state.fieldErrors['manufacture_sell_details'],
           ),
-        ] else ...[
-          if (role == 'job_worker') ...[
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('I work from a workshop'),
-              value: _hasWorkshop,
-              onChanged: disabled
-                  ? null
-                  : (value) {
-                      setState(() => _hasWorkshop = value);
-                      _scheduleAutoSave();
-                    },
-            ),
-            if (_hasWorkshop)
-              _field(
-                label: 'Workshop name',
-                placeholder: 'Enter workshop name',
-                controller: _workshopName,
-                disabled: disabled,
-                errorText: state.fieldErrors['workshop_name'],
-              ),
+        ] else if (role == 'job_worker') ...[
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('I work from a workshop'),
+            value: _hasWorkshop,
+            onChanged: disabled
+                ? null
+                : (value) {
+                    setState(() => _hasWorkshop = value);
+                    _scheduleAutoSave();
+                  },
+          ),
+          if (_hasWorkshop)
             _field(
-              label: 'What work do you do?',
-              placeholder: 'Example: Flat hemming and overlock',
-              controller: _workSummary,
+              label: 'Workshop name',
+              placeholder: 'Enter workshop name',
+              controller: _workshopName,
               disabled: disabled,
-              maxLines: 3,
+              errorText: state.fieldErrors['workshop_name'],
             ),
-          ] else ...[
-            _dropdown(
-              label: 'Primary skill',
-              value: _skillCategoryId,
-              options: skillOptions,
-              disabled: disabled,
-              onChanged: (value) {
-                setState(() => _skillCategoryId = value);
-                _scheduleAutoSave();
-              },
-            ),
-            _field(
-              label: 'Skill details',
-              placeholder: 'Describe the work you have mastery in',
-              controller: _skillMastery,
-              disabled: disabled,
-              maxLines: 3,
-              errorText: state.fieldErrors['skill_mastery'],
-            ),
-            _field(
-              label: 'Experience in years',
-              placeholder: 'Example: 4',
-              controller: _experience,
-              disabled: disabled,
-              keyboardType: TextInputType.number,
-              errorText: state.fieldErrors['experience_years'],
-            ),
-            _field(
-              label: 'About your work',
-              placeholder: 'Optional',
-              controller: _bio,
-              disabled: disabled,
-              maxLines: 3,
-            ),
-          ],
           _field(
-            label: role == 'skilled_worker' ? 'Name' : 'Owner name',
+            label: 'What work do you do?',
+            placeholder: 'Example: Flat hemming and overlock',
+            controller: _workSummary,
+            disabled: disabled,
+            maxLines: 3,
+          ),
+          _field(
+            label: 'Owner name',
             placeholder: 'Enter name',
             controller: _ownerName,
             disabled: disabled || ownerLocked,
@@ -434,6 +413,83 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
             label: 'Mobile number',
             placeholder: primaryMobile,
             readOnlyValue: primaryMobile,
+          ),
+          _field(
+            label: 'Alternate contact number',
+            placeholder: 'Optional',
+            controller: _alternateContact,
+            disabled: disabled,
+            keyboardType: TextInputType.phone,
+            errorText: state.fieldErrors['alternate_contact_number'],
+          ),
+        ] else ...[
+          _field(
+            label: 'Name',
+            placeholder: 'Enter name',
+            controller: _ownerName,
+            disabled: disabled || ownerLocked,
+            errorText: state.fieldErrors['owner_name'],
+          ),
+          _field(
+            label: 'Mobile number',
+            placeholder: primaryMobile,
+            readOnlyValue: primaryMobile,
+          ),
+          _MultiCategorySelector(
+            label: 'Skills',
+            buttonLabel: 'Select skills',
+            sheetTitle: 'Select your skills',
+            options: skillSelectorOptions,
+            selectedIds: {
+              ..._skillCategoryIds,
+              if (_otherSkillSelected) _otherSkillId,
+            },
+            disabled: disabled,
+            onChanged: (values) {
+              final selected = Set<String>.from(values);
+              final otherSelected = selected.remove(_otherSkillId);
+              setState(() {
+                _skillCategoryIds
+                  ..clear()
+                  ..addAll(selected);
+                _otherSkillSelected = otherSelected;
+                if (!otherSelected) {
+                  _customSkill.clear();
+                }
+              });
+              _scheduleAutoSave();
+            },
+          ),
+          if (_otherSkillSelected)
+            _field(
+              label: 'Other skill',
+              placeholder: 'Enter the name of your skill',
+              controller: _customSkill,
+              disabled: disabled,
+              errorText: state.fieldErrors['custom_skills'],
+            ),
+          _field(
+            label: 'Skill detail',
+            placeholder: 'Describe the work you have mastery in',
+            controller: _skillMastery,
+            disabled: disabled,
+            maxLines: 3,
+            errorText: state.fieldErrors['skill_mastery'],
+          ),
+          _field(
+            label: 'Experience in years',
+            placeholder: 'Example: 4',
+            controller: _experience,
+            disabled: disabled,
+            keyboardType: TextInputType.number,
+            errorText: state.fieldErrors['experience_years'],
+          ),
+          _field(
+            label: 'About your work',
+            placeholder: 'Describe your work',
+            controller: _bio,
+            disabled: disabled,
+            maxLines: 3,
           ),
           _field(
             label: 'Alternate contact number',
@@ -1058,7 +1114,17 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     _workshopName.text = details['workshop_name']?.toString() ?? '';
     _hasWorkshop = details['has_workshop'] as bool? ?? true;
     _workSummary.text = details['work_summary']?.toString() ?? '';
-    _skillCategoryId = details['primary_skill_category_id']?.toString();
+    final skillIds = details['skill_category_ids'] as List<dynamic>? ?? [];
+    _skillCategoryIds.addAll(skillIds.map((value) => value.toString()));
+    final legacySkillId = details['primary_skill_category_id']?.toString();
+    if (_skillCategoryIds.isEmpty && legacySkillId != null) {
+      _skillCategoryIds.add(legacySkillId);
+    }
+    final customSkills = details['custom_skills'] as List<dynamic>? ?? [];
+    if (customSkills.isNotEmpty) {
+      _customSkill.text = customSkills.first.toString();
+      _otherSkillSelected = true;
+    }
     _skillMastery.text = details['skill_mastery']?.toString() ?? '';
     _experience.text = details['experience_years']?.toString() ?? '';
     _bio.text = details['bio']?.toString() ?? '';
@@ -1119,7 +1185,10 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       });
     } else {
       fields.addAll({
-        'primary_skill_category_id': _skillCategoryId,
+        'skill_category_ids': _skillCategoryIds.toList(growable: false),
+        'custom_skills': !_otherSkillSelected || _value(_customSkill) == null
+            ? <String>[]
+            : [_value(_customSkill)],
         'skill_mastery': _value(_skillMastery),
         'experience_years': int.tryParse(_experience.text.trim()),
         'bio': _value(_bio),
@@ -1244,14 +1313,20 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   }
 }
 
-class _ProductTypeSelector extends StatelessWidget {
-  const _ProductTypeSelector({
+class _MultiCategorySelector extends StatelessWidget {
+  const _MultiCategorySelector({
+    required this.label,
+    required this.buttonLabel,
+    required this.sheetTitle,
     required this.options,
     required this.selectedIds,
     required this.disabled,
     required this.onChanged,
   });
 
+  final String label;
+  final String buttonLabel;
+  final String sheetTitle;
   final List<CategoryOption> options;
   final Set<String> selectedIds;
   final bool disabled;
@@ -1267,10 +1342,7 @@ class _ProductTypeSelector extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Product type',
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 7),
           OutlinedButton.icon(
             onPressed: disabled
@@ -1279,7 +1351,8 @@ class _ProductTypeSelector extends StatelessWidget {
                     final result = await showModalBottomSheet<Set<String>>(
                       context: context,
                       isScrollControlled: true,
-                      builder: (context) => _ProductTypeSheet(
+                      builder: (context) => _MultiCategorySheet(
+                        title: sheetTitle,
                         options: options,
                         selectedIds: selectedIds,
                       ),
@@ -1289,7 +1362,7 @@ class _ProductTypeSelector extends StatelessWidget {
                     }
                   },
             icon: const Icon(Icons.checklist_outlined),
-            label: const Text('Select product types'),
+            label: Text(buttonLabel),
           ),
           if (selected.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -1318,17 +1391,22 @@ class _ProductTypeSelector extends StatelessWidget {
   }
 }
 
-class _ProductTypeSheet extends StatefulWidget {
-  const _ProductTypeSheet({required this.options, required this.selectedIds});
+class _MultiCategorySheet extends StatefulWidget {
+  const _MultiCategorySheet({
+    required this.title,
+    required this.options,
+    required this.selectedIds,
+  });
 
+  final String title;
   final List<CategoryOption> options;
   final Set<String> selectedIds;
 
   @override
-  State<_ProductTypeSheet> createState() => _ProductTypeSheetState();
+  State<_MultiCategorySheet> createState() => _MultiCategorySheetState();
 }
 
-class _ProductTypeSheetState extends State<_ProductTypeSheet> {
+class _MultiCategorySheetState extends State<_MultiCategorySheet> {
   late final Set<String> _selected = Set<String>.from(widget.selectedIds);
 
   @override
@@ -1340,10 +1418,7 @@ class _ProductTypeSheetState extends State<_ProductTypeSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Product types',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
             Flexible(
               child: ListView(

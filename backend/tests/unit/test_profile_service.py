@@ -21,6 +21,7 @@ class FakeProfileRepository:
         self.histories: list[dict] = []
         self.suggestions: list[str] = []
         self.business_category_suggestions: list[str] = []
+        self.skill_suggestions: list[str] = []
 
     def get_owner_bundle(self, user_id, *, for_update=False):
         return self.bundle if self.bundle.user.id == user_id else None
@@ -84,6 +85,36 @@ class FakeProfileRepository:
     ):
         self.business_category_suggestions.append(value)
 
+    def replace_skilled_worker_skills(
+        self,
+        *,
+        profile_id,
+        category_ids,
+        custom_values,
+    ):
+        self.bundle.skills = [
+            SimpleNamespace(
+                skill_category_id=category_id,
+                custom_skill_text=None,
+            )
+            for category_id in category_ids
+        ] + [
+            SimpleNamespace(
+                skill_category_id=None,
+                custom_skill_text=value,
+            )
+            for value in custom_values
+        ]
+
+    def create_skill_suggestions(
+        self,
+        *,
+        user_id,
+        profile_id,
+        values,
+    ):
+        self.skill_suggestions.extend(values)
+
     def add_change_history(self, **values):
         self.histories.append(values)
 
@@ -131,6 +162,7 @@ def make_bundle(role: str) -> OwnerProfileBundle:
         reverification_required=False,
         last_activity_at=None,
     )
+    skills = []
     if role == "business":
         role_profile = SimpleNamespace(
             business_name="Connect Textiles",
@@ -147,17 +179,25 @@ def make_bundle(role: str) -> OwnerProfileBundle:
             profile_experience_years=4,
         )
     else:
+        skill_id = uuid4()
         role_profile = SimpleNamespace(
-            primary_skill_category_id=uuid4(),
+            primary_skill_category_id=skill_id,
             skill_mastery="Zari hand work",
             experience_years=3,
             bio=None,
         )
+        skills = [
+            SimpleNamespace(
+                skill_category_id=skill_id,
+                custom_skill_text=None,
+            )
+        ]
     return OwnerProfileBundle(
         user=user,
         profile=profile,
         role_profile=role_profile,
         product_types=[],
+        skills=skills,
         media=[],
     )
 
@@ -286,6 +326,48 @@ def test_skilled_worker_zero_years_is_valid_only_after_value_is_provided() -> No
     assert after.profile.completion_score == 100
 
 
+def test_empty_skill_detail_is_saved_as_an_incomplete_draft() -> None:
+    service, repository, current_user = make_service("skilled_worker", photos=0)
+
+    response = service.update_owner_profile(
+        current_user=current_user,
+        payload=ProfileUpdateRequest(skill_mastery=None),
+    )
+
+    assert repository.bundle.role_profile.skill_mastery == ""
+    assert response.profile.completion_flags["skill_mastery"] is False
+    assert response.profile.completion_score < 100
+
+
+def test_multiple_skills_and_custom_skill_are_saved_and_searchable() -> None:
+    service, repository, current_user = make_service("skilled_worker", photos=0)
+    first_skill_id = uuid4()
+    second_skill_id = uuid4()
+
+    response = service.update_owner_profile(
+        current_user=current_user,
+        payload=ProfileUpdateRequest(
+            skill_category_ids=[first_skill_id, second_skill_id],
+            custom_skills=["Mirror finishing"],
+        ),
+    )
+
+    assert [item.skill_category_id for item in repository.bundle.skills] == [
+        first_skill_id,
+        second_skill_id,
+        None,
+    ]
+    assert repository.bundle.skills[-1].custom_skill_text == "Mirror finishing"
+    assert repository.skill_suggestions == ["Mirror finishing"]
+    assert response.profile.completion_flags["skills"] is True
+    assert response.role_specific["skills"] == [
+        "Mapped category",
+        "Mapped category",
+        "Mirror finishing",
+    ]
+    assert "mirror finishing" in repository.bundle.profile.search_text
+
+
 def test_pending_verification_locks_profile_edits() -> None:
     service, repository, current_user = make_service("job_worker")
     repository.bundle.profile.verification_status = "pending"
@@ -388,7 +470,5 @@ def test_custom_business_category_is_saved_and_searchable() -> None:
         "Dupatta exporter"
     )
     assert repository.business_category_suggestions == ["Dupatta exporter"]
-    assert response.role_specific["custom_business_category"] == (
-        "Dupatta exporter"
-    )
+    assert response.role_specific["custom_business_category"] == ("Dupatta exporter")
     assert "dupatta exporter" in repository.bundle.profile.search_text

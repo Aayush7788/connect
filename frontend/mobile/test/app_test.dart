@@ -487,6 +487,92 @@ void main() {
     expect(find.text('Done'), findsNothing);
   });
 
+  testWidgets('karigar first step supports ordered multi-skill entry', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final api = _FakeConnectApi()
+      ..profile = _ownerProfile(role: 'skilled_worker');
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(
+            _MemoryTokenStore(initialAccessToken: 'access-token'),
+          ),
+          connectApiProvider.overrideWithValue(api),
+          mediaPickerProvider.overrideWithValue(_NoopMediaPicker()),
+        ],
+        child: const ConnectApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(Navigator).first)).go('/splash');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('My Profile'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Complete your profile to get business'));
+    await tester.pumpAndSettle();
+
+    final labels = tester
+        .widgetList<Text>(find.byType(Text))
+        .map((widget) => widget.data)
+        .whereType<String>()
+        .toList(growable: false);
+    final expectedOrder = [
+      'Name',
+      'Mobile number',
+      'Skills',
+      'Skill detail',
+      'Experience in years',
+      'About your work',
+      'Alternate contact number',
+    ];
+    var previousIndex = -1;
+    for (final label in expectedOrder) {
+      final index = labels.indexOf(label);
+      expect(
+        index,
+        greaterThan(previousIndex),
+        reason: '$label is out of order',
+      );
+      previousIndex = index;
+    }
+    expect(find.text('Other skill'), findsNothing);
+
+    await tester.tap(find.text('Select skills'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Flat hemming'));
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Aari work'));
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Other'));
+    await tester.tap(find.text('Done').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Other skill'), findsOneWidget);
+    final otherSkillField = find.byWidgetPredicate(
+      (widget) =>
+          widget is TextField &&
+          widget.decoration?.hintText == 'Enter the name of your skill',
+    );
+    await tester.enterText(otherSkillField, 'Fabric knotting');
+    await tester.ensureVisible(find.text('Next'));
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+
+    expect(
+      api.lastProfileUpdate?['skill_category_ids'],
+      containsAll([
+        '44444444-4444-4444-4444-444444444444',
+        '55555555-5555-5555-5555-555555555555',
+      ]),
+    );
+    expect(api.lastProfileUpdate?['custom_skills'], ['Fabric knotting']);
+  });
+
   testWidgets('business opens work-needed list and sticky add flow', (
     tester,
   ) async {
@@ -920,6 +1006,18 @@ class _FakeConnectApi implements ConnectApi {
           id: '33333333-3333-3333-3333-333333333333',
           categoryType: 'product_type',
           name: 'Dupatta',
+        ),
+      ],
+      'work_name' => const [
+        CategoryOption(
+          id: '44444444-4444-4444-4444-444444444444',
+          categoryType: 'work_name',
+          name: 'Flat hemming',
+        ),
+        CategoryOption(
+          id: '55555555-5555-5555-5555-555555555555',
+          categoryType: 'work_name',
+          name: 'Aari work',
         ),
       ],
       _ => const [],

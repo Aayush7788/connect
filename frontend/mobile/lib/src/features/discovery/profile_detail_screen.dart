@@ -389,8 +389,8 @@ class _ProfileTab extends ConsumerWidget {
           ),
           DetailRow(
             icon: Icons.star_outline,
-            label: 'Skill',
-            value: _text(data['primary_skill']),
+            label: 'Skills',
+            value: _listText(data['skills']) ?? _text(data['primary_skill']),
           ),
           DetailRow(
             icon: Icons.workspace_premium_outlined,

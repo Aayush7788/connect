@@ -327,7 +327,7 @@ Columns:
 | Column | Type | Notes |
 |---|---|---|
 | `profile_id` | uuid pk fk profiles(id) |  |
-| `primary_skill_category_id` | uuid null fk categories(id) | Category type `skill` or `work_name` |
+| `primary_skill_category_id` | uuid null fk categories(id) | Transitional first mapped skill for backward-compatible cards; new writes use `skilled_worker_profile_skills` |
 | `skill_mastery` | text not null | Mandatory |
 | `experience_years` | integer null | Mandatory before completion; null distinguishes unanswered from zero years |
 | `bio` | text null | Optional |
@@ -338,11 +338,38 @@ Required for minimum complete profile:
 
 - mobile number on `users`
 - name/public name
-- skill/mastery
+- at least one mapped or custom skill
+- skill mastery/detail
 - experience
 - area/address
 
 Worker photo and work photos are recommended, not mandatory for search visibility.
+
+### 5.7 `skilled_worker_profile_skills`
+
+Purpose: normalized, ordered multi-skill selection for one karigar profile.
+
+Columns:
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid pk | Generated with `gen_random_uuid()` |
+| `profile_id` | uuid fk skilled_worker_profiles(profile_id) | Required |
+| `skill_category_id` | uuid null fk categories(id) | Mapped skill selected from taxonomy |
+| `custom_skill_text` | text null | Other skill entered by the user |
+| `sort_order` | smallint not null | Preserves selection/display order |
+| `created_at` | timestamptz | |
+
+Constraints and behavior:
+
+- exactly one of `skill_category_id` and `custom_skill_text` is populated
+- the same mapped skill cannot be selected twice for one profile
+- custom values are also added to `category_suggestions` with type `skill`
+- changing skills replaces this small owned collection in one backend transaction
+- all selected skills feed profile `search_text` and `search_vector`
+- the table has RLS enabled and direct `public`, `anon`, and `authenticated`
+  privileges revoked; Flutter accesses it only through FastAPI
+- existing `primary_skill_category_id` values are backfilled into this table
 
 ## 6. GST And Sensitive Verification Data
 

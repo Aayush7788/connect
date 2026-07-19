@@ -53,6 +53,10 @@ abstract class _$ProfileUpdateRequestCWProxy {
 
   ProfileUpdateRequest primarySkillCategoryId(String? primarySkillCategoryId);
 
+  ProfileUpdateRequest skillCategoryIds(List<String>? skillCategoryIds);
+
+  ProfileUpdateRequest customSkills(List<String>? customSkills);
+
   ProfileUpdateRequest skillMastery(String? skillMastery);
 
   ProfileUpdateRequest experienceYears(int? experienceYears);
@@ -89,6 +93,8 @@ abstract class _$ProfileUpdateRequestCWProxy {
     String? workSummary,
     int? profileExperienceYears,
     String? primarySkillCategoryId,
+    List<String>? skillCategoryIds,
+    List<String>? customSkills,
     String? skillMastery,
     int? experienceYears,
     String? bio,
@@ -190,6 +196,14 @@ class _$ProfileUpdateRequestCWProxyImpl
       this(primarySkillCategoryId: primarySkillCategoryId);
 
   @override
+  ProfileUpdateRequest skillCategoryIds(List<String>? skillCategoryIds) =>
+      this(skillCategoryIds: skillCategoryIds);
+
+  @override
+  ProfileUpdateRequest customSkills(List<String>? customSkills) =>
+      this(customSkills: customSkills);
+
+  @override
   ProfileUpdateRequest skillMastery(String? skillMastery) =>
       this(skillMastery: skillMastery);
 
@@ -231,6 +245,8 @@ class _$ProfileUpdateRequestCWProxyImpl
     Object? workSummary = const $CopyWithPlaceholder(),
     Object? profileExperienceYears = const $CopyWithPlaceholder(),
     Object? primarySkillCategoryId = const $CopyWithPlaceholder(),
+    Object? skillCategoryIds = const $CopyWithPlaceholder(),
+    Object? customSkills = const $CopyWithPlaceholder(),
     Object? skillMastery = const $CopyWithPlaceholder(),
     Object? experienceYears = const $CopyWithPlaceholder(),
     Object? bio = const $CopyWithPlaceholder(),
@@ -333,6 +349,14 @@ class _$ProfileUpdateRequestCWProxyImpl
           ? _value.primarySkillCategoryId
           // ignore: cast_nullable_to_non_nullable
           : primarySkillCategoryId as String?,
+      skillCategoryIds: skillCategoryIds == const $CopyWithPlaceholder()
+          ? _value.skillCategoryIds
+          // ignore: cast_nullable_to_non_nullable
+          : skillCategoryIds as List<String>?,
+      customSkills: customSkills == const $CopyWithPlaceholder()
+          ? _value.customSkills
+          // ignore: cast_nullable_to_non_nullable
+          : customSkills as List<String>?,
       skillMastery: skillMastery == const $CopyWithPlaceholder()
           ? _value.skillMastery
           // ignore: cast_nullable_to_non_nullable
@@ -414,6 +438,14 @@ ProfileUpdateRequest _$ProfileUpdateRequestFromJson(
         'primary_skill_category_id',
         (v) => v as String?,
       ),
+      skillCategoryIds: $checkedConvert(
+        'skill_category_ids',
+        (v) => (v as List<dynamic>?)?.map((e) => e as String).toList(),
+      ),
+      customSkills: $checkedConvert(
+        'custom_skills',
+        (v) => (v as List<dynamic>?)?.map((e) => e as String).toList(),
+      ),
       skillMastery: $checkedConvert('skill_mastery', (v) => v as String?),
       experienceYears: $checkedConvert(
         'experience_years',
@@ -443,6 +475,8 @@ ProfileUpdateRequest _$ProfileUpdateRequestFromJson(
     'workSummary': 'work_summary',
     'profileExperienceYears': 'profile_experience_years',
     'primarySkillCategoryId': 'primary_skill_category_id',
+    'skillCategoryIds': 'skill_category_ids',
+    'customSkills': 'custom_skills',
     'skillMastery': 'skill_mastery',
     'experienceYears': 'experience_years',
   },
@@ -474,6 +508,8 @@ Map<String, dynamic> _$ProfileUpdateRequestToJson(
   'work_summary': ?instance.workSummary,
   'profile_experience_years': ?instance.profileExperienceYears,
   'primary_skill_category_id': ?instance.primarySkillCategoryId,
+  'skill_category_ids': ?instance.skillCategoryIds,
+  'custom_skills': ?instance.customSkills,
   'skill_mastery': ?instance.skillMastery,
   'experience_years': ?instance.experienceYears,
   'bio': ?instance.bio,

@@ -1185,6 +1185,8 @@ export interface components {
             profile_experience_years?: number | null;
             /** Format: uuid */
             primary_skill_category_id?: string | null;
+            skill_category_ids?: string[] | null;
+            custom_skills?: string[] | null;
             skill_mastery?: string | null;
             experience_years?: number | null;
             bio?: string | null;

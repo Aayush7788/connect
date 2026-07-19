@@ -1780,6 +1780,20 @@ components:
           type: string
           format: uuid
           nullable: true
+        skill_category_ids:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            format: uuid
+          nullable: true
+        custom_skills:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 160
+          nullable: true
         skill_mastery:
           type: string
           maxLength: 1000

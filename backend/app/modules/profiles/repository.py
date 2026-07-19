@@ -13,6 +13,7 @@ from app.db.models.marketplace import WorkNeededPost, WorkNeededPostProductType
 from app.db.models.profile import BusinessProfile, BusinessProfileProductType
 from app.db.models.profile import JobWorkerProfile, Profile, ProfileChangeHistory
 from app.db.models.profile import SkilledWorkerProfile
+from app.db.models.profile import SkilledWorkerProfileSkill
 from app.db.models.taxonomy import Category, CategoryAlias, CategorySuggestion
 
 
@@ -30,6 +31,7 @@ class OwnerProfileBundle:
     profile: Profile
     role_profile: BusinessProfile | JobWorkerProfile | SkilledWorkerProfile
     product_types: list[BusinessProfileProductType]
+    skills: list[SkilledWorkerProfileSkill]
     media: list[MediaAsset]
 
 
@@ -56,6 +58,7 @@ class PublicProfileBundle:
     role_profile: BusinessProfile | JobWorkerProfile | SkilledWorkerProfile
     product_types: list[BusinessProfileProductType]
     media: list[MediaAsset]
+    skills: list[SkilledWorkerProfileSkill]
     categories: dict[UUID, Category]
     work_cards: list[PublicWorkCardBundle]
     work_needed_posts: list[PublicWorkNeededPostBundle]
@@ -111,6 +114,11 @@ class ProfileRepository:
             if profile.role == "business"
             else []
         )
+        skills = (
+            self.list_skilled_worker_skills(profile.id)
+            if profile.role == "skilled_worker"
+            else []
+        )
         media = list(
             self.session.scalars(
                 select(MediaAsset)
@@ -128,6 +136,7 @@ class ProfileRepository:
             profile=profile,
             role_profile=role_profile,
             product_types=product_types,
+            skills=skills,
             media=media,
         )
 
@@ -193,6 +202,11 @@ class ProfileRepository:
             if profile.role == "business"
             else []
         )
+        skills = (
+            self.list_skilled_worker_skills(profile.id)
+            if profile.role == "skilled_worker"
+            else []
+        )
         category_ids = {
             item.product_type_category_id
             for item in product_types
@@ -200,13 +214,20 @@ class ProfileRepository:
         }
         if profile.role == "business" and role_profile.business_category_id:
             category_ids.add(role_profile.business_category_id)
-        if profile.role == "skilled_worker" and role_profile.primary_skill_category_id:
-            category_ids.add(role_profile.primary_skill_category_id)
+        if profile.role == "skilled_worker":
+            category_ids.update(
+                item.skill_category_id
+                for item in skills
+                if item.skill_category_id is not None
+            )
+            if not skills and role_profile.primary_skill_category_id is not None:
+                category_ids.add(role_profile.primary_skill_category_id)
         return PublicProfileBundle(
             user=user,
             profile=profile,
             role_profile=role_profile,
             product_types=product_types,
+            skills=skills,
             media=profile_media,
             categories=self.get_categories(category_ids),
             work_cards=(
@@ -312,6 +333,90 @@ class ProfileRepository:
                     custom_product_type_text=value,
                 )
                 for value in custom_values
+            ]
+        )
+
+    def list_skilled_worker_skills(
+        self,
+        profile_id: UUID,
+    ) -> list[SkilledWorkerProfileSkill]:
+        return list(
+            self.session.scalars(
+                select(SkilledWorkerProfileSkill)
+                .where(SkilledWorkerProfileSkill.profile_id == profile_id)
+                .order_by(
+                    SkilledWorkerProfileSkill.sort_order,
+                    SkilledWorkerProfileSkill.created_at,
+                )
+            )
+        )
+
+    def replace_skilled_worker_skills(
+        self,
+        *,
+        profile_id: UUID,
+        category_ids: list[UUID],
+        custom_values: list[str],
+    ) -> None:
+        self.session.execute(
+            delete(SkilledWorkerProfileSkill).where(
+                SkilledWorkerProfileSkill.profile_id == profile_id
+            )
+        )
+        items = [
+            SkilledWorkerProfileSkill(
+                profile_id=profile_id,
+                skill_category_id=category_id,
+                sort_order=index,
+            )
+            for index, category_id in enumerate(dict.fromkeys(category_ids))
+        ]
+        offset = len(items)
+        items.extend(
+            SkilledWorkerProfileSkill(
+                profile_id=profile_id,
+                custom_skill_text=value,
+                sort_order=offset + index,
+            )
+            for index, value in enumerate(custom_values)
+        )
+        self.session.add_all(items)
+
+    def create_skill_suggestions(
+        self,
+        *,
+        user_id: UUID,
+        profile_id: UUID,
+        values: list[str],
+    ) -> None:
+        normalized_values = {value.casefold(): value for value in values}
+        if not normalized_values:
+            return
+        existing = set(
+            self.session.scalars(
+                select(CategorySuggestion.normalized_text).where(
+                    CategorySuggestion.profile_id == profile_id,
+                    CategorySuggestion.source_entity_type == "profile",
+                    CategorySuggestion.category_type == "skill",
+                    CategorySuggestion.normalized_text.in_(set(normalized_values)),
+                    CategorySuggestion.status == "pending",
+                )
+            )
+        )
+        self.session.add_all(
+            [
+                CategorySuggestion(
+                    submitted_by_user_id=user_id,
+                    profile_id=profile_id,
+                    source_entity_type="profile",
+                    source_entity_id=profile_id,
+                    category_type="skill",
+                    raw_text=raw_text,
+                    normalized_text=normalized_text,
+                    status="pending",
+                )
+                for normalized_text, raw_text in normalized_values.items()
+                if normalized_text not in existing
             ]
         )
 
