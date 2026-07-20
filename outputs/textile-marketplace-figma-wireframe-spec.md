@@ -650,12 +650,13 @@ Never show:
 
 Card content:
 
-- Worker photo placeholder.
-- Name.
-- Work/skill.
+- Compact horizontal layout with details on the left and one prominent circular worker portrait on the right.
+- Name with verified tick when verified.
+- All selected skills, truncated to two lines when necessary.
+- Skill detail/mastery.
+- Locality.
 - Experience.
-- Locality if space permits.
-- Verified tick if verified.
+- The portrait uses the karigar's single square-cropped profile photo and falls back to a person placeholder.
 
 Tap behavior:
 
@@ -791,9 +792,10 @@ Header:
 
 Content:
 
-- Worker photo.
+- One centered circular worker portrait rendered from the square-cropped profile photo.
 - Name.
-- Skill.
+- All selected skills.
+- Skill detail/mastery.
 - Experience.
 - Contact number.
 - Address.
@@ -967,7 +969,10 @@ Note:
 
 - Business/shop photos and job-worker workplace photos need minimum 3 for trust/verification.
 - Add Work and Add Work Needed also require minimum 3 photos.
-- Karigar personal profile photo is a single portrait/photo requirement in the profile-completion flow; do not show the 3-photo validation on the karigar portrait upload unless the screen is explicitly about work photos.
+- Karigar personal profile photo is one required portrait in the profile-completion flow; do not show the 3-photo validation on this screen.
+- After selecting the portrait, open a fixed `1:1` crop screen where the user can pan and zoom the image before confirming the visible square.
+- Store and upload the cropped square. Render it as a circle on karigar result cards and profile surfaces.
+- Only one active karigar portrait is shown. With an existing portrait, the primary action is `Replace photo`; deletion remains available and returns the profile to incomplete status until another portrait is uploaded.
 
 ### 9.6 `04.06 Complete Profile - Final Actions`
 

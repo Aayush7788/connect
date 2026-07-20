@@ -406,7 +406,7 @@ Skilled worker:
 - experience
 - area/address
 - contact
-- recommended worker photo
+- one square-cropped public worker profile photo
 
 ### 6.5 Hide/Show Own Profile
 
@@ -457,6 +457,7 @@ Rules:
 - job-worker search defaults to matching work cards and can switch to matching job-worker profiles
 - the search target is fixed by the Home discovery card; users do not switch personas inside Search
 - result cards never include contact number or full address
+- skilled-worker results include a `skills` array containing all mapped and custom skill labels, plus skill mastery, locality, experience, and the single public profile portrait
 - exact/category/alias/keyword matching first, conservative fuzzy fallback
 - log search after execution
 

@@ -145,6 +145,31 @@ class MediaRepository:
             statement = statement.where(MediaAsset.document_type == document_type)
         return int(self.session.scalar(statement) or 0)
 
+    def list_ready_public_photos(
+        self,
+        *,
+        entity_type: str,
+        entity_id: UUID,
+        document_type: str,
+        exclude_media_id: UUID | None = None,
+    ) -> list[MediaAsset]:
+        statement = select(MediaAsset).where(
+            MediaAsset.entity_type == entity_type,
+            MediaAsset.entity_id == entity_id,
+            MediaAsset.media_kind == "image",
+            MediaAsset.visibility == "public",
+            MediaAsset.document_type == document_type,
+            MediaAsset.upload_status == "ready",
+            MediaAsset.deleted_at.is_(None),
+        )
+        if exclude_media_id is not None:
+            statement = statement.where(MediaAsset.id != exclude_media_id)
+        return list(
+            self.session.scalars(
+                statement.order_by(MediaAsset.sort_order, MediaAsset.created_at)
+            )
+        )
+
     def sync_target_photo_count(self, target: MediaTarget) -> None:
         if not hasattr(target.entity, "photo_count"):
             return

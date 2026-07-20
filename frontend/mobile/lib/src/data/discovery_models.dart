@@ -89,6 +89,7 @@ class MarketplaceSearchResult {
     required this.photoCount,
     this.subtitle,
     this.category,
+    this.skills = const [],
     this.productTypes = const [],
     this.description,
     this.locality,
@@ -104,6 +105,9 @@ class MarketplaceSearchResult {
       title: json['title'] as String? ?? '',
       subtitle: json['subtitle'] as String?,
       category: json['category'] as String?,
+      skills: (json['skills'] as List<dynamic>? ?? [])
+          .map((value) => value.toString())
+          .toList(growable: false),
       productTypes: (json['product_types'] as List<dynamic>? ?? [])
           .map((value) => value.toString())
           .toList(growable: false),
@@ -126,6 +130,7 @@ class MarketplaceSearchResult {
   final String title;
   final String? subtitle;
   final String? category;
+  final List<String> skills;
   final List<String> productTypes;
   final String? description;
   final String? locality;

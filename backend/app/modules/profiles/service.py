@@ -854,6 +854,7 @@ class ProfileService:
                 or role_profile.primary_skill_category_id is not None,
                 "skill_mastery": has_text(role_profile.skill_mastery),
                 "experience": role_profile.experience_years is not None,
+                "profile_photo": evidence.required_profile_photo_count >= 1,
             }
         complete_count = sum(flags.values())
         score = int((complete_count * 100) / len(flags))

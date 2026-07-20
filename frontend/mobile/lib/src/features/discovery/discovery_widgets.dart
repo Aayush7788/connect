@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connect_app/src/data/connect_api.dart';
+import 'package:connect_app/src/data/discovery_models.dart';
 import 'package:connect_app/src/features/media/full_screen_media_gallery.dart';
 import 'package:connect_app/src/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -184,6 +185,170 @@ class VerifiedTitle extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class KarigarPortrait extends StatelessWidget {
+  const KarigarPortrait({required this.photos, required this.size, super.key});
+
+  final List<MediaAssetResult> photos;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    MediaAssetResult? photo;
+    for (final item in photos) {
+      if (item.thumbnailUrl != null || item.url != null) {
+        photo = item;
+        break;
+      }
+    }
+    final selectedPhoto = photo;
+    return Container(
+      width: size,
+      height: size,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFFE8ECE8),
+        border: Border.all(color: connectLine),
+      ),
+      child: selectedPhoto == null
+          ? Icon(Icons.person_outline, size: size * 0.46, color: connectTeal)
+          : InkWell(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => FullScreenMediaGallery(
+                    images: [
+                      GalleryImage(
+                        url: selectedPhoto.url ?? selectedPhoto.thumbnailUrl!,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              child: Image.network(
+                selectedPhoto.thumbnailUrl ?? selectedPhoto.url!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Icon(
+                  Icons.person_outline,
+                  size: size * 0.46,
+                  color: connectTeal,
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+class KarigarResultCard extends StatelessWidget {
+  const KarigarResultCard({
+    required this.result,
+    required this.onTap,
+    super.key,
+    this.trailing,
+  });
+
+  final MarketplaceSearchResult result;
+  final VoidCallback onTap;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final skills = result.skills.isNotEmpty
+        ? result.skills.join(', ')
+        : result.category;
+    return Material(
+      key: const Key('karigar-result-card'),
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 172),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            border: Border.all(color: connectLine),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    VerifiedTitle(
+                      title: result.title,
+                      isVerified: result.isVerified,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    _KarigarFact(label: 'Skills', value: skills),
+                    _KarigarFact(label: 'Mastery', value: result.subtitle),
+                    _KarigarFact(label: 'Locality', value: result.locality),
+                    _KarigarFact(
+                      label: 'Experience',
+                      value: result.experienceYears == null
+                          ? null
+                          : '${result.experienceYears} years',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  KarigarPortrait(
+                    key: const Key('karigar-profile-photo'),
+                    photos: result.photos,
+                    size: 112,
+                  ),
+                  if (trailing != null) ...[
+                    const SizedBox(height: 4),
+                    trailing!,
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _KarigarFact extends StatelessWidget {
+  const _KarigarFact({required this.label, required this.value});
+
+  final String label;
+  final String? value;
+
+  @override
+  Widget build(BuildContext context) {
+    if (value == null || value!.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5),
+      child: Text.rich(
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        TextSpan(
+          style: Theme.of(context).textTheme.bodySmall,
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            TextSpan(text: value),
+          ],
+        ),
+      ),
     );
   }
 }

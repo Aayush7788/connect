@@ -14,6 +14,7 @@ DocumentType = Literal[
     "gst_proof",
     "shop_photo",
     "workplace_photo",
+    "profile_photo",
     "work_photo",
     "other",
 ]

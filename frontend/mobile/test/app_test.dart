@@ -751,6 +751,13 @@ void main() {
     expect(find.text('Work'), findsNothing);
     expect(find.text('Profiles'), findsNothing);
     expect(api.lastSearchRequest?.target, 'skilled_worker');
+    expect(find.byKey(const Key('karigar-result-card')), findsOneWidget);
+    expect(find.byKey(const Key('karigar-profile-photo')), findsOneWidget);
+    expect(find.text('Skills: Flat hemming, Embroidery'), findsOneWidget);
+    expect(find.text('Mastery: Dupatta finishing specialist'), findsOneWidget);
+    expect(find.text('Locality: Ring Road'), findsOneWidget);
+    expect(find.text('Experience: 8 years'), findsOneWidget);
+    expect(find.text('+919999999999'), findsNothing);
   });
 
   testWidgets('search card hides contact and profile detail reveals it', (
@@ -1265,6 +1272,27 @@ class _FakeConnectApi implements ConnectApi {
     CancelToken? cancelToken,
   }) async {
     lastSearchRequest = request;
+    if (request.target == 'skilled_worker') {
+      return const MarketplaceSearchResponse(
+        items: [
+          MarketplaceSearchResult(
+            resultType: 'profile',
+            id: 'karigar-profile-1',
+            profileId: 'karigar-profile-1',
+            title: 'Ramesh Kumar',
+            subtitle: 'Dupatta finishing specialist',
+            category: 'Flat hemming',
+            skills: ['Flat hemming', 'Embroidery'],
+            locality: 'Ring Road',
+            experienceYears: 8,
+            isVerified: true,
+            photoCount: 1,
+          ),
+        ],
+        resultCount: 1,
+        searchLogId: 'search-log-1',
+      );
+    }
     return const MarketplaceSearchResponse(
       items: [
         MarketplaceSearchResult(

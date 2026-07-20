@@ -343,7 +343,7 @@ Required for minimum complete profile:
 - experience
 - area/address
 
-Worker photo and work photos are recommended, not mandatory for search visibility.
+One square-cropped public worker profile photo is required for profile completion and search visibility. Additional work photos remain recommended and are not stored as extra profile portraits.
 
 ### 5.7 `skilled_worker_profile_skills`
 
@@ -639,7 +639,7 @@ Columns:
 | `entity_type` | text not null | `profile`, `work_card`, `work_needed_post`, `verification_case` |
 | `entity_id` | uuid not null | Polymorphic target id |
 | `media_kind` | text not null | `image`, `document` |
-| `document_type` | text null | `identity_proof`, `masked_aadhaar`, `gst_proof`, `shop_photo`, `workplace_photo`, `work_photo`, `other` |
+| `document_type` | text null | `identity_proof`, `masked_aadhaar`, `gst_proof`, `shop_photo`, `workplace_photo`, `profile_photo`, `work_photo`, `other` |
 | `visibility` | text not null | `public`, `private_admin_only` |
 | `upload_status` | text not null | `pending_upload`, `uploaded`, `processing`, `ready`, `failed`, `deleted` |
 | `original_path` | text not null | Storage object path |
@@ -659,6 +659,7 @@ Constraints:
 
 - `entity_type in ('profile', 'work_card', 'work_needed_post', 'verification_case')`
 - `media_kind in ('image', 'document')`
+- skilled-worker public portraits use `document_type = 'profile_photo'`, must have equal stored width and height, and are limited to one ready portrait by the backend replacement transaction
 - `visibility in ('public', 'private_admin_only')`
 - `upload_status in ('pending_upload', 'uploaded', 'processing', 'ready', 'failed', 'deleted')`
 

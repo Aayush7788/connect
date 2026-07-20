@@ -268,6 +268,45 @@ void main() {
       findsNothing,
     );
   });
+
+  testWidgets('karigar portrait is cropped and replaces the previous photo', (
+    tester,
+  ) async {
+    final picker = _FakePicker([
+      SelectedMediaImage(name: 'portrait.png', bytes: _imageBytes),
+    ]);
+    final cropper = _FakeCropper();
+    final api = _FakeMediaApi();
+    await _pumpGrid(
+      tester,
+      picker: picker,
+      cropper: cropper,
+      api: api,
+      target: const MediaTargetConfig(
+        entityType: 'profile',
+        entityId: 'profile-1',
+        documentType: 'profile_photo',
+        minimumPhotos: 1,
+        maximumPhotos: 1,
+        cropToSquare: true,
+      ),
+      existingMedia: const [_existingProfilePhoto],
+    );
+
+    expect(find.text('Replace photo'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('media-upload-button')));
+    await tester.pumpAndSettle();
+
+    expect(picker.lastLimit, 1);
+    expect(cropper.cropCount, 1);
+    expect(api.lastRequest?.documentType, 'profile_photo');
+    expect(find.text('1 photo added'), findsOneWidget);
+    expect(find.text('Uploaded'), findsOneWidget);
+    expect(
+      find.byKey(const Key('media-tile-server-profile-photo-1')),
+      findsNothing,
+    );
+  });
 }
 
 Future<void> _pumpGrid(
@@ -276,6 +315,8 @@ Future<void> _pumpGrid(
   required _FakeMediaApi api,
   ValueChanged<MediaUploadSummary>? onSummaryChanged,
   AppSettingsGateway? appSettings,
+  MediaCropperGateway? cropper,
+  MediaTargetConfig? target,
   List<MediaAssetResult> existingMedia = const [],
   bool rebuildWithStaleMediaAfterChange = false,
   bool showMinimumError = false,
@@ -284,6 +325,7 @@ Future<void> _pumpGrid(
     ProviderScope(
       overrides: [
         mediaPickerProvider.overrideWithValue(picker),
+        if (cropper != null) mediaCropperProvider.overrideWithValue(cropper),
         mediaUploadCoordinatorProvider.overrideWithValue(
           MediaUploadCoordinator(api: api, compressor: _FakeCompressor()),
         ),
@@ -296,12 +338,14 @@ Future<void> _pumpGrid(
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: MediaUploadGrid(
-                target: const MediaTargetConfig(
-                  entityType: 'profile',
-                  entityId: 'profile-1',
-                  documentType: 'shop_photo',
-                  minimumPhotos: 3,
-                ),
+                target:
+                    target ??
+                    const MediaTargetConfig(
+                      entityType: 'profile',
+                      entityId: 'profile-1',
+                      documentType: 'shop_photo',
+                      minimumPhotos: 3,
+                    ),
                 title: 'Shop photos',
                 existingMedia: existingMedia,
                 showMinimumError: showMinimumError,
@@ -318,6 +362,17 @@ Future<void> _pumpGrid(
   );
   await tester.pumpAndSettle();
 }
+
+const _existingProfilePhoto = MediaAssetResult(
+  id: 'profile-photo-1',
+  mediaKind: 'image',
+  visibility: 'public',
+  uploadStatus: 'ready',
+  sortOrder: 0,
+  url: 'https://media.test/profile-photo-1.jpg',
+  thumbnailUrl: 'https://media.test/profile-photo-1-thumbnail.jpg',
+  documentType: 'profile_photo',
+);
 
 const _existingShopPhoto = MediaAssetResult(
   id: 'server-photo-1',
@@ -337,9 +392,11 @@ class _FakePicker implements MediaPickerGateway {
   _FakePicker(this.images);
 
   final List<SelectedMediaImage> images;
+  int? lastLimit;
 
   @override
   Future<List<SelectedMediaImage>> pickImages({required int limit}) async {
+    lastLimit = limit;
     return images.take(limit).toList(growable: false);
   }
 
@@ -358,6 +415,16 @@ class _PermissionDeniedPicker implements MediaPickerGateway {
 
   @override
   Future<List<SelectedMediaImage>> recoverLostImages() async => const [];
+}
+
+class _FakeCropper implements MediaCropperGateway {
+  int cropCount = 0;
+
+  @override
+  Future<SelectedMediaImage?> cropSquare(SelectedMediaImage image) async {
+    cropCount += 1;
+    return SelectedMediaImage(name: 'cropped.jpg', bytes: image.bytes);
+  }
 }
 
 class _FakeCompressor implements MediaCompressor {

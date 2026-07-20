@@ -12,6 +12,8 @@ from app.db.models.cross_cutting import Notification, Report, SavedItem, ShareEv
 from app.db.models.identity import User, UserDevice, UserSetting
 from app.db.models.marketplace import WorkCard, WorkNeededPost
 from app.db.models.profile import JobWorkerProfile, Profile, SkilledWorkerProfile
+from app.db.models.profile import SkilledWorkerProfileSkill
+from app.db.models.taxonomy import Category
 from app.modules.engagement.schemas import ProfileRole, SavedItemResponse
 from app.modules.media.schemas import MediaAssetResponse
 from app.modules.search.schemas import SearchResultResponse
@@ -322,6 +324,8 @@ class EngagementRepository:
         target_id: UUID,
         profile: Profile,
     ) -> SearchResultResponse | None:
+        skills: list[str] = []
+        subtitle: str | None = None
         if target_type == "work_card":
             work = self.session.get(WorkCard, target_id)
             if work is None:
@@ -349,14 +353,20 @@ class EngagementRepository:
             activity = profile.last_activity_at
             experience = self._profile_experience(profile)
             photo_count = profile.photo_count
+            if profile.role == "skilled_worker":
+                worker = self.session.get(SkilledWorkerProfile, profile.id)
+                skills = self._profile_skills(profile.id)
+                subtitle = worker.skill_mastery if worker else None
+                category = skills[0] if skills else None
         photos = self._photos(target_type, target_id)
         return SearchResultResponse(
             result_type=cast(str, target_type),
             id=target_id,
             profile_id=profile.id,
             title=title,
-            subtitle=profile.public_name if target_type != "profile" else None,
+            subtitle=profile.public_name if target_type != "profile" else subtitle,
             category=category,
+            skills=skills,
             description=description,
             locality=profile.locality,
             experience_years=experience,
@@ -374,6 +384,26 @@ class EngagementRepository:
             value = self.session.get(SkilledWorkerProfile, profile.id)
             return value.experience_years if value else None
         return None
+
+    def _profile_skills(self, profile_id: UUID) -> list[str]:
+        rows = self.session.execute(
+            select(
+                func.coalesce(
+                    Category.name,
+                    SkilledWorkerProfileSkill.custom_skill_text,
+                )
+            )
+            .outerjoin(
+                Category,
+                Category.id == SkilledWorkerProfileSkill.skill_category_id,
+            )
+            .where(SkilledWorkerProfileSkill.profile_id == profile_id)
+            .order_by(
+                SkilledWorkerProfileSkill.sort_order,
+                SkilledWorkerProfileSkill.id,
+            )
+        )
+        return [name for (name,) in rows if name]
 
     def _photos(self, entity_type: str, entity_id: UUID) -> list[MediaAssetResponse]:
         assets = list(

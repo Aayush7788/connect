@@ -143,6 +143,7 @@ class SearchRepository:
         else:
             result_count = 0
         product_types = self._product_types(rows)
+        skills = self._skills(rows)
         photos = self._photos(rows)
         items = [
             SearchResultResponse(
@@ -152,6 +153,12 @@ class SearchRepository:
                 title=row["title"],
                 subtitle=row["subtitle"],
                 category=row["category"],
+                skills=skills.get(
+                    (row["result_type"], row["id"]),
+                    [row["category"]]
+                    if criteria.target == "skilled_worker" and row["category"]
+                    else [],
+                ),
                 product_types=product_types.get((row["result_type"], row["id"]), []),
                 description=row["description"],
                 locality=row["locality"],
@@ -754,6 +761,35 @@ class SearchRepository:
             for entity_id, name in product_rows:
                 if name:
                     result.setdefault((result_type, entity_id), []).append(name)
+        return result
+
+    def _skills(self, rows) -> dict[tuple[str, UUID], list[str]]:
+        profile_ids = {row["id"] for row in rows if row["result_type"] == "profile"}
+        if not profile_ids:
+            return {}
+        skill_rows = self.session.execute(
+            select(
+                SkilledWorkerProfileSkill.profile_id,
+                func.coalesce(
+                    Category.name,
+                    SkilledWorkerProfileSkill.custom_skill_text,
+                ).label("name"),
+            )
+            .outerjoin(
+                Category,
+                Category.id == SkilledWorkerProfileSkill.skill_category_id,
+            )
+            .where(SkilledWorkerProfileSkill.profile_id.in_(profile_ids))
+            .order_by(
+                SkilledWorkerProfileSkill.profile_id,
+                SkilledWorkerProfileSkill.sort_order,
+                SkilledWorkerProfileSkill.id,
+            )
+        )
+        result: dict[tuple[str, UUID], list[str]] = {}
+        for profile_id, name in skill_rows:
+            if name:
+                result.setdefault(("profile", profile_id), []).append(name)
         return result
 
     def _photos(self, rows) -> dict[tuple[str, UUID], list[MediaAssetResponse]]:

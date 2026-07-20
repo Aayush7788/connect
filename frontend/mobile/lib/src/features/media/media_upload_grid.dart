@@ -143,15 +143,24 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
   @override
   Widget build(BuildContext context) {
     final readyCount = _readyCount;
+    final singlePhoto = widget.target.maximumPhotos == 1;
     final remaining = widget.target.maximumPhotos - _tiles.length;
-    final canAdd = !widget.disabled && !_isPicking && !_isBusy && remaining > 0;
+    final hasUnresolvedSinglePhoto =
+        singlePhoto && _tiles.any((tile) => tile.phase != _MediaPhase.ready);
+    final canAdd =
+        !widget.disabled &&
+        !_isPicking &&
+        !_isBusy &&
+        (singlePhoto ? !hasUnresolvedSinglePhoto : remaining > 0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 6),
         Text(
-          widget.target.minimumPhotos > 0
+          singlePhoto
+              ? 'Add one clear face photo'
+              : widget.target.minimumPhotos > 0
               ? 'Add at least ${widget.target.minimumPhotos} clear photos'
               : 'Add a clear photo to improve trust',
         ),
@@ -160,10 +169,18 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
           key: const Key('media-upload-button'),
           onPressed: canAdd ? _pickImages : null,
           icon: const Icon(Icons.add_photo_alternate_outlined),
-          label: Text(_tiles.isEmpty ? 'Upload photos' : 'Add more photos'),
+          label: Text(
+            singlePhoto
+                ? (_tiles.isEmpty ? 'Upload photo' : 'Replace photo')
+                : (_tiles.isEmpty ? 'Upload photos' : 'Add more photos'),
+          ),
         ),
         const SizedBox(height: 8),
-        Text('$readyCount of ${widget.target.maximumPhotos} photos added'),
+        Text(
+          singlePhoto
+              ? '$readyCount photo added'
+              : '$readyCount of ${widget.target.maximumPhotos} photos added',
+        ),
         if (_selectionError != null) ...[
           const SizedBox(height: 12),
           _InlineMessage(
@@ -356,8 +373,13 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
     try {
       final selected = await ref
           .read(mediaPickerProvider)
-          .pickImages(limit: widget.target.maximumPhotos - _tiles.length);
-      unawaited(_queueSelected(selected));
+          .pickImages(
+            limit: widget.target.maximumPhotos == 1
+                ? 1
+                : widget.target.maximumPhotos - _tiles.length,
+          );
+      final preparedSelection = await _prepareSelection(selected);
+      unawaited(_queueSelected(preparedSelection));
     } on MediaSelectionFailure catch (error) {
       if (mounted) {
         setState(() {
@@ -379,8 +401,13 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
   Future<void> _recoverLostImages() async {
     try {
       final images = await ref.read(mediaPickerProvider).recoverLostImages();
-      final remaining = widget.target.maximumPhotos - _tiles.length;
-      unawaited(_queueSelected(images.take(remaining).toList(growable: false)));
+      final remaining = widget.target.maximumPhotos == 1
+          ? 1
+          : widget.target.maximumPhotos - _tiles.length;
+      final recovered = await _prepareSelection(
+        images.take(remaining).toList(growable: false),
+      );
+      unawaited(_queueSelected(recovered));
     } on MediaSelectionFailure catch (error) {
       if (mounted) {
         setState(() {
@@ -389,6 +416,18 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
         });
       }
     }
+  }
+
+  Future<List<SelectedMediaImage>> _prepareSelection(
+    List<SelectedMediaImage> selected,
+  ) async {
+    if (!widget.target.cropToSquare || selected.isEmpty) {
+      return selected;
+    }
+    final cropped = await ref
+        .read(mediaCropperProvider)
+        .cropSquare(selected.first);
+    return cropped == null ? const [] : [cropped];
   }
 
   Future<void> _queueSelected(List<SelectedMediaImage> selected) async {
@@ -488,6 +527,7 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
           thumbnailUrl: ready.thumbnailUrl,
         ),
       );
+      _retainSinglePhoto(localId);
     } on DioException catch (error) {
       if (!CancelToken.isCancel(error)) {
         _markFailed(localId, intent?.mediaAsset.id);
@@ -675,6 +715,24 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
               : 'Unable to upload, please retry',
         ),
       );
+    }
+  }
+
+  void _retainSinglePhoto(String localId) {
+    if (widget.target.maximumPhotos != 1 || !mounted) {
+      return;
+    }
+    final removed = _tiles
+        .where((tile) => tile.localId != localId)
+        .toList(growable: false);
+    for (final tile in removed) {
+      if (tile.mediaAssetId != null) {
+        _deletedMediaIds.add(tile.mediaAssetId!);
+      }
+    }
+    if (removed.isNotEmpty) {
+      setState(() => _tiles.removeWhere((tile) => tile.localId != localId));
+      _notifySummary();
     }
   }
 

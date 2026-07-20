@@ -1900,6 +1900,10 @@ components:
           type: string
         category:
           type: string
+        skills:
+          type: array
+          items:
+            type: string
         product_types:
           type: array
           items:
@@ -2190,7 +2194,7 @@ components:
           $ref: '#/components/schemas/MediaVisibility'
         document_type:
           type: string
-          enum: [identity_proof, masked_aadhaar, gst_proof, shop_photo, workplace_photo, work_photo, other]
+          enum: [identity_proof, masked_aadhaar, gst_proof, shop_photo, workplace_photo, profile_photo, work_photo, other]
         filename:
           type: string
           minLength: 1

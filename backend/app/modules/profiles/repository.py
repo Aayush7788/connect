@@ -797,6 +797,7 @@ class ProfileRepository:
         required_document_type = {
             "business": "shop_photo",
             "job_worker": "workplace_photo",
+            "skilled_worker": "profile_photo",
         }.get(profile.role)
         required_profile_photo_count = 0
         if required_document_type is not None:
