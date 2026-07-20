@@ -4,10 +4,11 @@ import 'dart:typed_data';
 import 'package:app_settings/app_settings.dart';
 import 'package:connect_app/src/data/connect_api.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show VoidCallback;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 const maxMediaUploadBytes = 10 * 1024 * 1024;
@@ -16,6 +17,10 @@ const mediaUploadJpegQuality = 72;
 
 final mediaPickerProvider = Provider<MediaPickerGateway>((ref) {
   return DeviceMediaPicker(ImagePicker());
+});
+
+final mediaCropperProvider = Provider<MediaCropperGateway>((ref) {
+  return DeviceMediaCropper(ImageCropper());
 });
 
 final mediaCompressorProvider = Provider<MediaCompressor>((ref) {
@@ -40,6 +45,7 @@ class MediaTargetConfig {
     required this.documentType,
     required this.minimumPhotos,
     this.maximumPhotos = 5,
+    this.cropToSquare = false,
   });
 
   final String entityType;
@@ -47,6 +53,7 @@ class MediaTargetConfig {
   final String documentType;
   final int minimumPhotos;
   final int maximumPhotos;
+  final bool cropToSquare;
 }
 
 class SelectedMediaImage {
@@ -146,6 +153,51 @@ class DeviceMediaPicker implements MediaPickerGateway {
       permissionRequired ? 'Permission required' : 'Unable to open photos',
       permissionRequired: permissionRequired,
     );
+  }
+}
+
+abstract class MediaCropperGateway {
+  Future<SelectedMediaImage?> cropSquare(SelectedMediaImage image);
+}
+
+class DeviceMediaCropper implements MediaCropperGateway {
+  DeviceMediaCropper(this._cropper);
+
+  final ImageCropper _cropper;
+
+  @override
+  Future<SelectedMediaImage?> cropSquare(SelectedMediaImage image) async {
+    if (image.path == null) {
+      throw const MediaSelectionFailure('Unable to crop this photo.');
+    }
+    try {
+      final cropped = await _cropper.cropImage(
+        sourcePath: image.path!,
+        maxWidth: mediaUploadMaxDimension,
+        maxHeight: mediaUploadMaxDimension,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        compressFormat: ImageCompressFormat.jpg,
+        compressQuality: 95,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop your photo',
+            toolbarColor: const Color(0xFF0F766E),
+            toolbarWidgetColor: Colors.white,
+            activeControlsWidgetColor: const Color(0xFF0F766E),
+            initAspectRatio: CropAspectRatioPreset.square,
+            lockAspectRatio: true,
+            hideBottomControls: true,
+            aspectRatioPresets: const [CropAspectRatioPreset.square],
+          ),
+        ],
+      );
+      if (cropped == null) {
+        return null;
+      }
+      return SelectedMediaImage(name: 'profile-photo.jpg', path: cropped.path);
+    } on PlatformException {
+      throw const MediaSelectionFailure('Unable to crop this photo.');
+    }
   }
 }
 

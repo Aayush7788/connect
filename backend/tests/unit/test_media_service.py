@@ -60,6 +60,27 @@ class FakeMediaRepository:
             and (document_type is None or media.document_type == document_type)
         )
 
+    def list_ready_public_photos(
+        self,
+        *,
+        entity_type,
+        entity_id,
+        document_type,
+        exclude_media_id=None,
+    ):
+        return [
+            media
+            for media in self.media.values()
+            if media.entity_type == entity_type
+            and media.entity_id == entity_id
+            and media.visibility == "public"
+            and media.media_kind == "image"
+            and media.document_type == document_type
+            and media.upload_status == "ready"
+            and media.deleted_at is None
+            and media.id != exclude_media_id
+        ]
+
     def sync_target_photo_count(self, target):
         target.entity.photo_count = self.ready_public_photo_count(
             entity_type=target.entity_type,
@@ -122,18 +143,23 @@ class FakeStorage:
         return f"https://storage.test/public/{bucket}/{path}"
 
 
-def make_png() -> bytes:
+def make_png(*, width: int = 320, height: int = 240) -> bytes:
     output = BytesIO()
-    Image.new("RGB", (320, 240), "white").save(output, format="PNG")
+    Image.new("RGB", (width, height), "white").save(output, format="PNG")
     return output.getvalue()
 
 
-def make_service(*, completion_score: int = 50, verified: bool = False):
+def make_service(
+    *,
+    completion_score: int = 50,
+    verified: bool = False,
+    role: str = "business",
+):
     user_id = uuid4()
     profile = Profile(
         id=uuid4(),
         owner_user_id=user_id,
-        role="business",
+        role=role,
         visibility_status="draft",
         verification_status="verified" if verified else "unverified",
         completion_score=completion_score,
@@ -158,7 +184,7 @@ def make_service(*, completion_score: int = 50, verified: bool = False):
         user_id=user_id,
         auth_user_id=uuid4(),
         mobile="+919999999999",
-        role="business",
+        role=role,
         account_status="active",
     )
     return service, repository, storage, profile_service, current_user
@@ -432,3 +458,85 @@ def test_ready_shop_photo_change_removes_verification_badge() -> None:
     assert profile.verification_status == "unverified"
     assert profile.reverification_required is True
     assert service.profile_repository.histories[0]["requires_reverification"] is True
+
+
+def test_skilled_worker_profile_photo_must_be_square() -> None:
+    service, repository, storage, _, current_user = make_service(role="skilled_worker")
+    content = make_png(width=320, height=240)
+    payload = UploadIntentRequest(
+        entity_type="profile",
+        entity_id=repository.target.entity.id,
+        media_kind="image",
+        visibility="public",
+        document_type="profile_photo",
+        filename="karigar.png",
+        mime_type="image/png",
+        byte_size=len(content),
+    )
+    intent = service.create_upload_intent(current_user=current_user, payload=payload)
+    media = repository.media[intent.media_asset.id]
+    storage.objects[
+        (service.settings.supabase_private_verification_bucket, media.original_path)
+    ] = content
+
+    with pytest.raises(ApiError) as exc_info:
+        service.complete_upload(
+            current_user=current_user,
+            media_asset_id=media.id,
+        )
+
+    assert exc_info.value.code == ErrorCode.VALIDATION_FAILED
+    assert exc_info.value.message == "Profile photo must be cropped to a square."
+    assert media.upload_status == "failed"
+
+
+def test_new_skilled_worker_profile_photo_replaces_previous_photo() -> None:
+    service, repository, storage, _, current_user = make_service(role="skilled_worker")
+    old = MediaAsset(
+        id=uuid4(),
+        entity_type="profile",
+        entity_id=repository.target.entity.id,
+        media_kind="image",
+        document_type="profile_photo",
+        visibility="public",
+        upload_status="ready",
+        original_path="profile/old.jpg",
+        thumbnail_path="profile/old-thumbnail.jpg",
+        sort_order=0,
+        uploaded_by_user_id=current_user.user_id,
+    )
+    repository.media[old.id] = old
+    public_bucket = service.settings.supabase_public_media_bucket
+    storage.objects[(public_bucket, old.original_path)] = make_png(
+        width=320,
+        height=320,
+    )
+    storage.objects[(public_bucket, old.thumbnail_path)] = make_png(
+        width=100,
+        height=100,
+    )
+    content = make_png(width=320, height=320)
+    payload = UploadIntentRequest(
+        entity_type="profile",
+        entity_id=repository.target.entity.id,
+        media_kind="image",
+        visibility="public",
+        document_type="profile_photo",
+        filename="karigar.png",
+        mime_type="image/png",
+        byte_size=len(content),
+    )
+    intent = service.create_upload_intent(current_user=current_user, payload=payload)
+    media = repository.media[intent.media_asset.id]
+    storage.objects[
+        (service.settings.supabase_private_verification_bucket, media.original_path)
+    ] = content
+
+    service.complete_upload(current_user=current_user, media_asset_id=media.id)
+
+    assert media.upload_status == "ready"
+    assert old.upload_status == "deleted"
+    assert old.deleted_at is not None
+    assert (public_bucket, old.original_path) not in storage.objects
+    assert (public_bucket, old.thumbnail_path) not in storage.objects
+    assert repository.target.profile.photo_count == 1

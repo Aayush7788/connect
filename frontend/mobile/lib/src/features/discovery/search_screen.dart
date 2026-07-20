@@ -209,6 +209,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               final result = state.results[index];
               return _SearchResultCard(
                 result: result,
+                isKarigar: state.target == 'skilled_worker',
                 onTap: () => context.push(
                   '/profiles/${result.profileId}',
                   extra: ProfileDetailRouteExtra(
@@ -255,13 +256,21 @@ class ProfileDetailRouteExtra {
 }
 
 class _SearchResultCard extends StatelessWidget {
-  const _SearchResultCard({required this.result, required this.onTap});
+  const _SearchResultCard({
+    required this.result,
+    required this.onTap,
+    required this.isKarigar,
+  });
 
   final MarketplaceSearchResult result;
   final VoidCallback onTap;
+  final bool isKarigar;
 
   @override
   Widget build(BuildContext context) {
+    if (isKarigar) {
+      return KarigarResultCard(result: result, onTap: onTap);
+    }
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(8),

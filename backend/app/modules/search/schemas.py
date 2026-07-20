@@ -20,6 +20,7 @@ class SearchResultResponse(BaseModel):
     title: str
     subtitle: str | None = None
     category: str | None = None
+    skills: list[str] = Field(default_factory=list)
     product_types: list[str] = Field(default_factory=list)
     description: str | None = None
     locality: str | None = None

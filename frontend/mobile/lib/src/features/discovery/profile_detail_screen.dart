@@ -332,7 +332,10 @@ class _ProfileTab extends ConsumerWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
-        PublicPhotoCarousel(photos: detail.media, height: 220),
+        if (isKarigar)
+          Center(child: KarigarPortrait(photos: detail.media, size: 180))
+        else
+          PublicPhotoCarousel(photos: detail.media, height: 220),
         const SizedBox(height: 20),
         if (detail.profile.role == 'business') ...[
           DetailRow(
@@ -601,7 +604,10 @@ class _ProfileDetailPreview extends StatelessWidget {
       children: [
         const LinearProgressIndicator(minHeight: 2),
         const SizedBox(height: 14),
-        PublicPhotoCarousel(photos: preview.photos, height: 220),
+        if (preview.skills.isNotEmpty)
+          Center(child: KarigarPortrait(photos: preview.photos, size: 180))
+        else
+          PublicPhotoCarousel(photos: preview.photos, height: 220),
         const SizedBox(height: 16),
         VerifiedTitle(
           title: preview.title,

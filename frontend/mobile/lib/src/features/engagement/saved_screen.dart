@@ -108,6 +108,25 @@ class _SavedList extends ConsumerWidget {
           if (card == null) {
             return const AppCard(child: Text('This saved item is unavailable'));
           }
+          if (item.profileRole == 'skilled_worker') {
+            return KarigarResultCard(
+              result: card,
+              onTap: () => context.push(
+                '/profiles/${card.profileId}',
+                extra: ProfileDetailRouteExtra(
+                  sourceType: 'profile',
+                  sourceId: item.id,
+                ),
+              ),
+              trailing: IconButton(
+                tooltip: 'Remove',
+                onPressed: () => ref
+                    .read(engagementControllerProvider.notifier)
+                    .removeSaved(item.id),
+                icon: const Icon(Icons.bookmark_remove_outlined),
+              ),
+            );
+          }
           return AppCard(
             onTap: () => context.push(
               '/profiles/${card.profileId}',

@@ -728,11 +728,11 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
 
   Widget _photoStep(OwnerProfileResult ownerProfile, {required bool disabled}) {
     final role = ownerProfile.profile.role;
-    final minimumPhotos = role == 'skilled_worker' ? 0 : 3;
+    final minimumPhotos = role == 'skilled_worker' ? 1 : 3;
     final documentType = switch (role) {
       'business' => 'shop_photo',
       'job_worker' => 'workplace_photo',
-      _ => 'other',
+      _ => 'profile_photo',
     };
     final title = switch (role) {
       'business' => 'Shop photos',
@@ -745,6 +745,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         entityId: ownerProfile.profile.id,
         documentType: documentType,
         minimumPhotos: minimumPhotos,
+        maximumPhotos: role == 'skilled_worker' ? 1 : 5,
+        cropToSquare: role == 'skilled_worker',
       ),
       title: title,
       existingMedia: ownerProfile.media,

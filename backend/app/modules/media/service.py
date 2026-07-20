@@ -32,7 +32,11 @@ EXTENSION_BY_MIME = {
     "application/pdf": ".pdf",
 }
 PRIVATE_DOCUMENT_TYPES = {"identity_proof", "masked_aadhaar", "gst_proof", "other"}
-SENSITIVE_PROFILE_PHOTO_TYPES = {"shop_photo", "workplace_photo"}
+SENSITIVE_PROFILE_PHOTO_TYPES = {
+    "shop_photo",
+    "workplace_photo",
+    "profile_photo",
+}
 
 
 class InvalidMediaContent(Exception):
@@ -131,6 +135,7 @@ class MediaService:
 
         try:
             actual_mime, width, height = self._inspect_content(media, content)
+            self._validate_profile_photo_dimensions(owned, width=width, height=height)
         except InvalidMediaContent as error:
             media.upload_status = "failed"
             self._remove_if_exists(bucket=source_bucket, path=media.original_path)
@@ -178,6 +183,7 @@ class MediaService:
         media.height = height
         media.upload_status = "ready"
         self.repository.flush()
+        self._retire_previous_profile_photos(owned)
         self.repository.sync_target_photo_count(owned.target)
         self._refresh_profile_after_change(owned, current_user.user_id)
         self.repository.commit()
@@ -302,7 +308,7 @@ class MediaService:
             expected = {
                 "business": "shop_photo",
                 "job_worker": "workplace_photo",
-                "skilled_worker": "other",
+                "skilled_worker": "profile_photo",
             }[target.profile.role]
             valid = (
                 payload.media_kind == "image"
@@ -498,6 +504,42 @@ class MediaService:
             )
         profile.last_activity_at = datetime.now(timezone.utc)
         self.profile_service.refresh_completion(profile.id)
+
+    @staticmethod
+    def _validate_profile_photo_dimensions(
+        owned: OwnedMedia,
+        *,
+        width: int | None,
+        height: int | None,
+    ) -> None:
+        if (
+            owned.target.entity_type == "profile"
+            and owned.target.profile.role == "skilled_worker"
+            and owned.media.document_type == "profile_photo"
+            and (width is None or height is None or width != height)
+        ):
+            raise InvalidMediaContent("Profile photo must be cropped to a square.")
+
+    def _retire_previous_profile_photos(self, owned: OwnedMedia) -> None:
+        media = owned.media
+        if (
+            owned.target.entity_type != "profile"
+            or owned.target.profile.role != "skilled_worker"
+            or media.document_type != "profile_photo"
+        ):
+            return
+        previous = self.repository.list_ready_public_photos(
+            entity_type="profile",
+            entity_id=owned.target.profile.id,
+            document_type="profile_photo",
+            exclude_media_id=media.id,
+        )
+        bucket = self.settings.supabase_public_media_bucket
+        for existing in previous:
+            self._remove_if_exists(bucket=bucket, path=existing.original_path)
+            if existing.thumbnail_path is not None:
+                self._remove_if_exists(bucket=bucket, path=existing.thumbnail_path)
+            self._mark_deleted(existing)
 
     def _create_signed_upload(self, path: str) -> SignedUpload:
         try:

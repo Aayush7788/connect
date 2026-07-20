@@ -312,7 +312,7 @@ def test_job_worker_cannot_reach_complete_without_published_valid_work_card() ->
 
 
 def test_skilled_worker_zero_years_is_valid_only_after_value_is_provided() -> None:
-    service, repository, current_user = make_service("skilled_worker", photos=0)
+    service, repository, current_user = make_service("skilled_worker", photos=1)
     repository.bundle.role_profile.experience_years = None
 
     before = service.get_owner_profile(current_user)
