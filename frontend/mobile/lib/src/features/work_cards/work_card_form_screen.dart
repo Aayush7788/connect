@@ -253,7 +253,17 @@ class _WorkCardFormScreenState extends ConsumerState<WorkCardFormScreen> {
             title: 'Work photos',
             existingMedia: _card!.photos,
             disabled: state.isSaving,
-            onSummaryChanged: (summary) => _mediaSummary = summary,
+            showMinimumError:
+                _localErrors.containsKey('photos') ||
+                serverErrors.containsKey('photos'),
+            onSummaryChanged: (summary) {
+              _mediaSummary = summary;
+              if (summary.meetsMinimum &&
+                  _localErrors.containsKey('photos') &&
+                  mounted) {
+                setState(() => _localErrors.remove('photos'));
+              }
+            },
             onMediaChanged: _reloadCard,
           ),
           const SizedBox(height: 24),

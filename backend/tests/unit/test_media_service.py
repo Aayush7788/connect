@@ -8,6 +8,7 @@ from app.core.auth_context import CurrentUser
 from app.core.config import Settings
 from app.core.errors import ApiError, ErrorCode
 from app.db.models.cross_cutting import MediaAsset, VerificationCase
+from app.db.models.marketplace import WorkCard
 from app.db.models.profile import Profile
 from app.integrations.supabase_storage import SignedUpload, StorageObjectNotFound
 from app.modules.media.repository import MediaTarget, OwnedMedia
@@ -275,7 +276,7 @@ def test_cancel_marks_pending_upload_deleted() -> None:
     assert media.deleted_at is not None
 
 
-def test_delete_blocks_completed_profile_at_minimum_photo_count() -> None:
+def test_delete_allows_completed_profile_to_drop_below_photo_minimum() -> None:
     service, repository, storage, _, current_user = make_service(completion_score=100)
     for index in range(3):
         media = MediaAsset(
@@ -287,6 +288,46 @@ def test_delete_blocks_completed_profile_at_minimum_photo_count() -> None:
             visibility="public",
             upload_status="ready",
             original_path=f"profile/photo-{index}.png",
+            sort_order=index,
+            uploaded_by_user_id=current_user.user_id,
+        )
+        repository.media[media.id] = media
+        storage.objects[
+            (service.settings.supabase_public_media_bucket, media.original_path)
+        ] = make_png()
+
+    selected = next(iter(repository.media.values()))
+    service.delete_media(current_user=current_user, media_asset_id=selected.id)
+
+    assert selected.upload_status == "deleted"
+    assert selected.deleted_at is not None
+    assert repository.target.entity.photo_count == 2
+
+
+def test_delete_still_protects_published_work_card_photo_minimum() -> None:
+    service, repository, storage, _, current_user = make_service()
+    card = WorkCard(
+        id=uuid4(),
+        profile_id=uuid4(),
+        title="Flat hemming",
+        status="published",
+        photo_count=3,
+    )
+    repository.target = MediaTarget(
+        entity_type="work_card",
+        entity=card,
+        profile=repository.target.profile,
+    )
+    for index in range(3):
+        media = MediaAsset(
+            id=uuid4(),
+            entity_type="work_card",
+            entity_id=card.id,
+            media_kind="image",
+            document_type="work_photo",
+            visibility="public",
+            upload_status="ready",
+            original_path=f"work-card/photo-{index}.png",
             sort_order=index,
             uploaded_by_user_id=current_user.user_id,
         )

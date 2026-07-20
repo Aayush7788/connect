@@ -107,7 +107,7 @@ Analytics/share/contact failures must not block the visible user action, except 
 | Complete upload | `POST /v1/media/{id}/complete` | Backend verifies object before ready. |
 | Upload failed | `POST /v1/media/{id}/retry` or cancel | UI text: `Unable to upload, please retry`. |
 | Cancel upload | `POST /v1/media/{id}/cancel` | Required before replacement. |
-| Delete photo | `DELETE /v1/media/{id}` | Block if deletion drops entity below minimum photos. |
+| Delete profile photo | `DELETE /v1/media/{id}` | Remove optimistically in the UI and restore on failure. Profile/shop/workplace photos may drop below the completion minimum; validate minimum 3 only when Next is pressed. Published work/post photo invariants remain protected. |
 
 ## 11. Verification
 

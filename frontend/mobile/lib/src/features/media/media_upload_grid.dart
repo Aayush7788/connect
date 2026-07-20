@@ -29,6 +29,7 @@ class MediaUploadGrid extends ConsumerStatefulWidget {
     required this.existingMedia,
     super.key,
     this.disabled = false,
+    this.showMinimumError = false,
     this.onSummaryChanged,
     this.onMediaChanged,
   });
@@ -37,6 +38,7 @@ class MediaUploadGrid extends ConsumerStatefulWidget {
   final String title;
   final List<MediaAssetResult> existingMedia;
   final bool disabled;
+  final bool showMinimumError;
   final ValueChanged<MediaUploadSummary>? onSummaryChanged;
   final Future<void> Function()? onMediaChanged;
 
@@ -196,7 +198,8 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
             itemBuilder: (context, index) => _tile(_tiles[index]),
           ),
         ],
-        if (widget.target.minimumPhotos > 0 &&
+        if (widget.showMinimumError &&
+            widget.target.minimumPhotos > 0 &&
             readyCount < widget.target.minimumPhotos) ...[
           const SizedBox(height: 12),
           _InlineMessage(
@@ -574,22 +577,35 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
     if (tile.mediaAssetId == null) {
       return;
     }
-    _replace(tile.localId, tile.copyWith(phase: _MediaPhase.deleting));
+    final originalIndex = _tiles.indexWhere(
+      (candidate) => candidate.localId == tile.localId,
+    );
+    if (originalIndex < 0) {
+      return;
+    }
+    final mediaAssetId = tile.mediaAssetId!;
+    _deletedMediaIds.add(mediaAssetId);
+    _remove(tile.localId);
     try {
-      await ref.read(mediaUploadCoordinatorProvider).delete(tile.mediaAssetId!);
-      _deletedMediaIds.add(tile.mediaAssetId!);
-      _remove(tile.localId);
+      await ref.read(mediaUploadCoordinatorProvider).delete(mediaAssetId);
       await _notifyMediaChanged();
     } on ApiFailure catch (error) {
       if (error.code == 'not_found') {
-        _deletedMediaIds.add(tile.mediaAssetId!);
-        _remove(tile.localId);
         await _notifyMediaChanged();
         return;
       }
-      _replace(tile.localId, tile.copyWith(phase: _MediaPhase.ready));
+      _deletedMediaIds.remove(mediaAssetId);
+      _insert(originalIndex, tile);
       if (mounted) {
         setState(() => _selectionError = error.message);
+      }
+    } catch (_) {
+      _deletedMediaIds.remove(mediaAssetId);
+      _insert(originalIndex, tile);
+      if (mounted) {
+        setState(
+          () => _selectionError = 'Unable to delete photo, please retry',
+        );
       }
     }
   }
@@ -697,6 +713,14 @@ class _MediaUploadGridState extends ConsumerState<MediaUploadGrid> {
       return;
     }
     setState(() => _tiles.removeWhere((tile) => tile.localId == localId));
+    _notifySummary();
+  }
+
+  void _insert(int index, _MediaTile tile) {
+    if (!mounted || _contains(tile.localId)) {
+      return;
+    }
+    setState(() => _tiles.insert(index.clamp(0, _tiles.length), tile));
     _notifySummary();
   }
 

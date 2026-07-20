@@ -441,12 +441,10 @@ class MediaService:
         ):
             return
         target = owned.target
-        required = False
-        document_type: str | None = None
         if target.entity_type == "profile":
-            required = target.profile.completion_score == 100
-            document_type = media.document_type
-        elif target.entity_type == "work_card":
+            return
+        required = False
+        if target.entity_type == "work_card":
             required = isinstance(target.entity, WorkCard) and target.entity.status in {
                 "published",
                 "hidden_by_user",
@@ -464,7 +462,6 @@ class MediaService:
         count = self.repository.ready_public_photo_count(
             entity_type=target.entity_type,
             entity_id=target.entity.id,
-            document_type=document_type if target.entity_type == "profile" else None,
         )
         if count <= 3:
             raise ApiError(

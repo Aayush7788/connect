@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -93,7 +94,7 @@ void main() {
       onSummaryChanged: (value) => summary = value,
     );
 
-    expect(find.text('Minimum 3 photos required'), findsOneWidget);
+    expect(find.text('Minimum 3 photos required'), findsNothing);
     await tester.tap(find.byKey(const Key('media-upload-button')));
     await tester.pumpAndSettle();
 
@@ -108,6 +109,71 @@ void main() {
     expect(find.text('1 of 3'), findsOneWidget);
   });
 
+  testWidgets('minimum warning appears only when submission requests it', (
+    tester,
+  ) async {
+    await _pumpGrid(
+      tester,
+      picker: _FakePicker(const []),
+      api: _FakeMediaApi(),
+      showMinimumError: true,
+    );
+
+    expect(find.text('Minimum 3 photos required'), findsOneWidget);
+  });
+
+  testWidgets('delete removes the tile before the API responds', (
+    tester,
+  ) async {
+    final api = _FakeMediaApi()..deleteGate = Completer<void>();
+    await _pumpGrid(
+      tester,
+      picker: _FakePicker(const []),
+      api: api,
+      existingMedia: const [_existingShopPhoto],
+    );
+
+    await tester.tap(find.byTooltip('Delete photo'));
+    await tester.pump();
+
+    expect(
+      find.byKey(const Key('media-tile-server-server-photo-1')),
+      findsNothing,
+    );
+    expect(api.deleteGate!.isCompleted, isFalse);
+    api.deleteGate!.complete();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('failed optimistic delete restores the photo', (tester) async {
+    final api = _FakeMediaApi()
+      ..deleteGate = Completer<void>()
+      ..deleteFailure = const ApiFailure(
+        code: 'delete_failed',
+        message: 'Unable to delete photo, please retry',
+      );
+    await _pumpGrid(
+      tester,
+      picker: _FakePicker(const []),
+      api: api,
+      existingMedia: const [_existingShopPhoto],
+    );
+
+    await tester.tap(find.byTooltip('Delete photo'));
+    await tester.pump();
+    expect(
+      find.byKey(const Key('media-tile-server-server-photo-1')),
+      findsNothing,
+    );
+
+    api.deleteGate!.complete();
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('media-tile-server-server-photo-1')),
+      findsOneWidget,
+    );
+    expect(find.text('Unable to delete photo, please retry'), findsOneWidget);
+  });
   testWidgets('failed upload shows exact message and retries', (tester) async {
     final api = _FakeMediaApi()..remainingUploadFailures = 1;
     await _pumpGrid(
@@ -212,6 +278,7 @@ Future<void> _pumpGrid(
   AppSettingsGateway? appSettings,
   List<MediaAssetResult> existingMedia = const [],
   bool rebuildWithStaleMediaAfterChange = false,
+  bool showMinimumError = false,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -237,6 +304,7 @@ Future<void> _pumpGrid(
                 ),
                 title: 'Shop photos',
                 existingMedia: existingMedia,
+                showMinimumError: showMinimumError,
                 onSummaryChanged: onSummaryChanged,
                 onMediaChanged: rebuildWithStaleMediaAfterChange
                     ? () async => setState(() {})
@@ -251,6 +319,16 @@ Future<void> _pumpGrid(
   await tester.pumpAndSettle();
 }
 
+const _existingShopPhoto = MediaAssetResult(
+  id: 'server-photo-1',
+  mediaKind: 'image',
+  visibility: 'public',
+  uploadStatus: 'ready',
+  sortOrder: 0,
+  url: 'https://media.test/server-photo-1.jpg',
+  thumbnailUrl: 'https://media.test/server-photo-1-thumbnail.jpg',
+  documentType: 'shop_photo',
+);
 final Uint8List _imageBytes = base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
 );
@@ -299,6 +377,8 @@ class _FakeMediaApi implements MediaApiGateway {
   MediaUploadIntentRequest? lastRequest;
   final List<String> cancelled = [];
   final List<String> deleted = [];
+  Completer<void>? deleteGate;
+  ApiFailure? deleteFailure;
 
   @override
   Future<void> cancelMediaUpload(String mediaAssetId) async {
@@ -329,6 +409,10 @@ class _FakeMediaApi implements MediaApiGateway {
   @override
   Future<void> deleteMedia(String mediaAssetId) async {
     deleted.add(mediaAssetId);
+    await deleteGate?.future;
+    if (deleteFailure != null) {
+      throw deleteFailure!;
+    }
   }
 
   @override
