@@ -960,7 +960,8 @@ Layout:
 
 Validation:
 
-- If fewer than 3 photos required for the profile type: `Minimum 3 photos required`.
+- Do not show a minimum-photo error merely because fewer than 3 photos are present. When the user taps `Next`, stay on the photo step and show `Minimum 3 photos required` if the profile type requires 3 photos.
+- Deleting a profile/shop/workplace photo is always available, removes the tile immediately, and may return the profile to incomplete status.
 
 Note:
 

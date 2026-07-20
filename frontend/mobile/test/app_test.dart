@@ -447,6 +447,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Workplace photos'), findsOneWidget);
+    expect(find.text('Minimum 3 photos required'), findsNothing);
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('Workplace photos'), findsOneWidget);
     expect(find.text('Minimum 3 photos required'), findsOneWidget);
   });
   testWidgets('final profile step names the publish action clearly', (

@@ -554,7 +554,8 @@ Rules:
 - first uploaded ready image is cover
 - upload order is carousel order
 - no reorder/cover picker in MVP
-- deletion is blocked if it would drop below required photo minimum
+- profile/shop/workplace photo deletion is allowed below the completion minimum; the profile returns to incomplete/unverified state as applicable
+- deletion remains blocked for published work cards and active/paused/closed work-needed posts if it would violate their minimum 3 ready-photo invariant
 - owner cannot preview/download private verification proof after upload
 - cancel marks an abandoned pending/failed media row as deleted
 

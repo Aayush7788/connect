@@ -56,6 +56,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   Future<bool>? _saveFuture;
   Map<String, dynamic> _lastPersistedPayload = const {};
   MediaUploadSummary? _mediaSummary;
+  bool _showMinimumPhotoError = false;
   List<LocationOption> _states = const [];
   List<LocationOption> _districts = const [];
   LocationOption? _selectedState;
@@ -748,11 +749,17 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       title: title,
       existingMedia: ownerProfile.media,
       disabled: disabled,
+      showMinimumError: _showMinimumPhotoError,
       onSummaryChanged: (summary) {
         if (!mounted) {
           return;
         }
-        setState(() => _mediaSummary = summary);
+        setState(() {
+          _mediaSummary = summary;
+          if (summary.meetsMinimum) {
+            _showMinimumPhotoError = false;
+          }
+        });
       },
     );
   }
@@ -1258,6 +1265,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     if (_step == 2) {
       final role = ref.read(profileControllerProvider).profile?.profile.role;
       if (role != 'skilled_worker' && _mediaSummary?.meetsMinimum != true) {
+        setState(() => _showMinimumPhotoError = true);
         return;
       }
     }

@@ -745,7 +745,7 @@ Build scope:
 - `POST /v1/media/{media_asset_id}/cancel`
 - `DELETE /v1/media/{media_asset_id}`
 - File type, size, width, height checks.
-- Minimum photo deletion protection.
+- Profile/shop/workplace photos may be deleted below the completion minimum; published work cards and active/paused/closed work-needed posts retain minimum-photo deletion protection.
 
 Exit criteria:
 

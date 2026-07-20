@@ -149,11 +149,12 @@ void main() {
     expect(find.text('Work name'), findsOneWidget);
     expect(find.text('Product type'), findsOneWidget);
     expect(find.text('Work photos'), findsOneWidget);
-    expect(find.text('Minimum 3 photos required'), findsOneWidget);
+    expect(find.text('Minimum 3 photos required'), findsNothing);
     expect(find.text('Save and Publish'), findsOneWidget);
 
     await tester.tap(find.text('Save and Publish'));
     await tester.pump();
+    expect(find.byKey(const Key('minimum-photo-error')), findsOneWidget);
     expect(find.text('Select a category'), findsOneWidget);
     expect(find.text('Select a work name'), findsOneWidget);
     expect(find.text('Select at least one product type'), findsOneWidget);
