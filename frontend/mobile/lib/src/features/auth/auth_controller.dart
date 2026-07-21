@@ -223,6 +223,13 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
+  Future<void> refreshMe() async {
+    try {
+      final me = await ref.read(connectApiProvider).me();
+      state = state.copyWith(me: me, errorMessage: null);
+    } catch (_) {}
+  }
+
   void _invalidateAccountState() {
     ref.invalidate(profileControllerProvider);
     ref.invalidate(workCardControllerProvider);

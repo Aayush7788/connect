@@ -15,8 +15,38 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _refreshAccountSummary(),
+    );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshAccountSummary();
+    }
+  }
+
+  Future<void> _refreshAccountSummary() async {
+    if (!mounted) {
+      return;
+    }
+    await ref.read(authControllerProvider.notifier).refreshMe();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +87,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _HomeTab(
         displayName: state.displayName,
         profileComplete: state.me?.profile?.completionScore == 100,
+        unreadNotificationCount: state.me?.unreadNotificationCount ?? 0,
+        onNotifications: () async {
+          await context.push(AppRoute.notifications.path);
+          await _refreshAccountSummary();
+        },
         onFind: (target) => context.push('/search?target=$target'),
       ),
       if (role == 'business')
@@ -120,11 +155,15 @@ class _HomeTab extends StatelessWidget {
   const _HomeTab({
     required this.displayName,
     required this.profileComplete,
+    required this.unreadNotificationCount,
+    required this.onNotifications,
     required this.onFind,
   });
 
   final String displayName;
   final bool profileComplete;
+  final int unreadNotificationCount;
+  final Future<void> Function() onNotifications;
   final ValueChanged<String> onFind;
 
   @override
@@ -140,8 +179,17 @@ class _HomeTab extends StatelessWidget {
             const Spacer(),
             IconButton(
               tooltip: 'Notifications',
-              onPressed: () => context.push(AppRoute.notifications.path),
-              icon: const Icon(Icons.notifications_none_outlined),
+              onPressed: onNotifications,
+              icon: Badge(
+                key: const Key('notification-unread-badge'),
+                isLabelVisible: unreadNotificationCount > 0,
+                label: Text(
+                  unreadNotificationCount > 99
+                      ? '99+'
+                      : '$unreadNotificationCount',
+                ),
+                child: const Icon(Icons.notifications_none_outlined),
+              ),
             ),
           ],
         ),

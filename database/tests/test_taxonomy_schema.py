@@ -9,6 +9,13 @@ from app.db.base import Base
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ALEMBIC_INI = REPO_ROOT / "database" / "alembic.ini"
 SEED_FILE = REPO_ROOT / "database" / "seeds" / "001_initial_taxonomy.sql"
+CATEGORY_DEACTIVATION_MIGRATION = (
+    REPO_ROOT
+    / "database"
+    / "migrations"
+    / "versions"
+    / "20260721_0023_deactivate_business_categories.py"
+)
 
 
 def render_offline_sql() -> str:
@@ -94,6 +101,16 @@ def test_taxonomy_seed_data_contains_mvp_terms() -> None:
         "other-textile-business",
     ):
         assert expected_term in combined_seed_text
+
+
+def test_removed_business_categories_are_inactive_and_not_reseeded() -> None:
+    seed_sql = SEED_FILE.read_text(encoding="utf-8")
+    migration_sql = CATEGORY_DEACTIVATION_MIGRATION.read_text(encoding="utf-8")
+
+    assert "'process-house'" not in seed_sql
+    assert "'textile-brand'" not in seed_sql
+    assert "is_active = false" in migration_sql
+    assert "slug in ('process-house', 'textile-brand')" in migration_sql
 
 
 def test_category_suggestions_profile_reference_has_fk_after_profile_schema() -> None:

@@ -90,11 +90,12 @@ void main() {
   });
 
   testWidgets('otp and role confirmation reaches home', (tester) async {
+    final api = _FakeConnectApi();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           tokenStoreProvider.overrideWithValue(_MemoryTokenStore()),
-          connectApiProvider.overrideWithValue(_FakeConnectApi()),
+          connectApiProvider.overrideWithValue(api),
         ],
         child: const ConnectApp(),
       ),
@@ -108,8 +109,9 @@ void main() {
 
     expect(find.text('Enter OTP'), findsOneWidget);
     await tester.enterText(find.byType(EditableText), '123456');
-    await tester.tap(find.text('Verify'));
     await tester.pumpAndSettle();
+
+    expect(api.verifyOtpCallCount, 1);
 
     expect(find.text('Select your role'), findsOneWidget);
     await tester.tap(find.text('Job Worker / Value Adder'));
@@ -859,6 +861,16 @@ void main() {
     await tester.tap(find.widgetWithText(Tab, 'Job Worker'));
     await tester.pumpAndSettle();
     expect(find.text('Surat Hemming Works'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Remove'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Remove'));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove saved profile?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+    await tester.pumpAndSettle();
+
+    expect(api.saved, isEmpty);
+    expect(find.text('Surat Hemming Works'), findsNothing);
   });
 
   testWidgets('notification bell opens list and marks a row read', (
@@ -880,6 +892,13 @@ void main() {
     GoRouter.of(tester.element(find.byType(Navigator).first)).go('/home');
     await tester.pumpAndSettle();
 
+    final unreadBadge = tester.widget<Badge>(
+      find.byKey(const Key('notification-unread-badge')),
+    );
+    expect(unreadBadge.isLabelVisible, isTrue);
+    expect(unreadBadge.label, isA<Text>());
+    expect((unreadBadge.label! as Text).data, '1');
+
     await tester.tap(find.byTooltip('Notifications'));
     await tester.pumpAndSettle();
 
@@ -887,6 +906,13 @@ void main() {
     await tester.tap(find.text('Profile approved'));
     await tester.pumpAndSettle();
     expect(api.notificationRead, isTrue);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    final refreshedBadge = tester.widget<Badge>(
+      find.byKey(const Key('notification-unread-badge')),
+    );
+    expect(refreshedBadge.isLabelVisible, isFalse);
   });
 
   testWidgets('settings updates push preference through backend API', (
@@ -995,6 +1021,8 @@ class _FakeConnectApi implements ConnectApi {
   bool pushNotificationsEnabled = true;
   int reportCount = 0;
   int publicProfileCallCount = 0;
+  int verifyOtpCallCount = 0;
+  int unreadNotificationCount = 1;
 
   @override
   Future<List<CategoryOption>> categories({
@@ -1259,7 +1287,7 @@ class _FakeConnectApi implements ConnectApi {
       nextState: 'home',
       profile: profile.profile,
       allowedActions: const ['search', 'view_profile', 'logout'],
-      unreadNotificationCount: 0,
+      unreadNotificationCount: unreadNotificationCount,
     );
   }
 
@@ -1419,6 +1447,7 @@ class _FakeConnectApi implements ConnectApi {
   @override
   Future<NotificationResult> markNotificationRead(String notificationId) async {
     notificationRead = true;
+    unreadNotificationCount = 0;
     final now = DateTime.now();
     return NotificationResult(
       id: notificationId,
@@ -1561,6 +1590,7 @@ class _FakeConnectApi implements ConnectApi {
     required String otp,
     required String otpRequestId,
   }) async {
+    verifyOtpCallCount += 1;
     return AuthSessionResult(
       accessToken: 'access-token',
       refreshToken: 'refresh-token',

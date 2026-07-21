@@ -118,12 +118,8 @@ class _SavedList extends ConsumerWidget {
                   sourceId: item.id,
                 ),
               ),
-              trailing: IconButton(
-                tooltip: 'Remove',
-                onPressed: () => ref
-                    .read(engagementControllerProvider.notifier)
-                    .removeSaved(item.id),
-                icon: const Icon(Icons.bookmark_remove_outlined),
+              trailing: _RemoveSavedButton(
+                onPressed: () => _confirmRemoveSaved(context, ref, item),
               ),
             );
           }
@@ -150,12 +146,8 @@ class _SavedList extends ConsumerWidget {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                    IconButton(
-                      tooltip: 'Remove',
-                      onPressed: () => ref
-                          .read(engagementControllerProvider.notifier)
-                          .removeSaved(item.id),
-                      icon: const Icon(Icons.bookmark_remove_outlined),
+                    _RemoveSavedButton(
+                      onPressed: () => _confirmRemoveSaved(context, ref, item),
                     ),
                   ],
                 ),
@@ -172,6 +164,64 @@ class _SavedList extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+Future<void> _confirmRemoveSaved(
+  BuildContext context,
+  WidgetRef ref,
+  SavedItemResult item,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Remove saved profile?'),
+      content: const Text('This profile will be removed from your Saved list.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton.icon(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          icon: const Icon(Icons.bookmark_remove_outlined),
+          label: const Text('Remove'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) {
+    return;
+  }
+  final removed = await ref
+      .read(engagementControllerProvider.notifier)
+      .removeSaved(item.id);
+  if (!removed && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to remove saved profile')),
+    );
+  }
+}
+
+class _RemoveSavedButton extends StatelessWidget {
+  const _RemoveSavedButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFFB91C1C),
+        side: const BorderSide(color: Color(0xFFB91C1C)),
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        visualDensity: VisualDensity.compact,
+      ),
+      icon: const Icon(Icons.bookmark_remove_outlined, size: 18),
+      label: const Text('Remove'),
     );
   }
 }

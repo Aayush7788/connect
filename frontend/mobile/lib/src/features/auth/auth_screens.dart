@@ -176,10 +176,14 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   }
 
   Future<void> _verify() async {
+    final otp = _otpController.text.trim();
+    if (otp.length != 6 || ref.read(authControllerProvider).isLoading) {
+      return;
+    }
     try {
       final route = await ref
           .read(authControllerProvider.notifier)
-          .verifyOtp(_otpController.text);
+          .verifyOtp(otp);
       if (mounted) {
         context.go(route.path);
       }
@@ -512,6 +516,7 @@ class _OtpBoxesField extends StatefulWidget {
 
 class _OtpBoxesFieldState extends State<_OtpBoxesField> {
   final _focusNode = FocusNode();
+  String? _lastAutoSubmittedOtp;
 
   @override
   void initState() {
@@ -526,7 +531,23 @@ class _OtpBoxesFieldState extends State<_OtpBoxesField> {
     super.dispose();
   }
 
-  void _onTextChanged() => setState(() {});
+  void _onTextChanged() {
+    final otp = widget.controller.text;
+    setState(() {});
+    if (otp.length < 6) {
+      _lastAutoSubmittedOtp = null;
+      return;
+    }
+    if (otp.length != 6 || otp == _lastAutoSubmittedOtp) {
+      return;
+    }
+    _lastAutoSubmittedOtp = otp;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.controller.text == otp) {
+        widget.onSubmitted();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
