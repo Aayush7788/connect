@@ -436,6 +436,8 @@ Constraints:
 
 - `category_type in ('business_category', 'work_category', 'work_name', 'product_type', 'skill')`
 - unique `(category_type, slug)`
+- taxonomy endpoints return only `is_active = true`; deactivating a category removes it from new selections without breaking historical profile foreign keys
+- `process-house` and `textile-brand` business categories are inactive and must not be reseeded as selectable options
 
 Example hierarchy:
 

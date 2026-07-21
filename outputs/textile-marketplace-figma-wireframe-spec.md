@@ -354,6 +354,8 @@ Layout:
 - Supporting text: `Code sent to {mobile number}`
 - OTP boxes: 4 or 6 boxes, depending on final OTP provider; wireframe can show 6.
 - Primary button: `Verify`
+- Entering or pasting the sixth digit automatically starts verification.
+- Keep `Verify` as a visible fallback action, but prevent a second request while verification is already running.
 - Text actions:
   - `Resend OTP`
   - `Change mobile number`
@@ -426,7 +428,7 @@ Layout top to bottom:
 
 1. Header:
    - Left: `Connect`
-   - Right: notification bell.
+   - Right: notification bell with a numeric unread badge when unread count is greater than zero.
 2. Greeting:
    - `Hi, Aayush`
 3. Prompt:
@@ -871,6 +873,9 @@ Fields:
 - Business name.
 - Manufacture/sell detail.
 - Category.
+  - Active mapped options: Manufacturing, Wholesale, Trading, Retail, and Other textile business.
+  - Do not offer Process house or Textile brand as selectable business categories.
+  - Selecting Other textile business reveals the custom category text field.
 - Product type.
 - Owner name.
 - Address.
@@ -1337,7 +1342,8 @@ Layout:
 Card style:
 
 - Same as search result card.
-- Include remove button.
+- Include an explicit red-outlined `Remove` button with an icon; do not use an unlabeled icon-only action.
+- Ask for confirmation before removing the profile from Saved.
 
 Bottom navigation:
 
